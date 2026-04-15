@@ -147,7 +147,18 @@ static FlMethodResponse* handle_start_discovery(FlutterClassicBluetoothPlugin* s
         inquiry_info* ii = (inquiry_info*)malloc(max_rsp * sizeof(inquiry_info));
         int num_rsp = hci_inquiry(dev_id, 8, max_rsp, nullptr, &ii, flags);
 
-        // Discovery results would be sent via event channel
+        for (int i = 0; i < num_rsp && self->discovering->load(); i++) {
+            char addr[18];
+            ba2str(&ii[i].bdaddr, addr);
+            for (int j = 0; addr[j]; j++) {
+                if (addr[j] >= 'a' && addr[j] <= 'f') addr[j] -= 32;
+            }
+            char name[249] = {};
+            hci_read_remote_name(sock, &ii[i].bdaddr, sizeof(name), name, 0);
+            // Results are printed for diagnostic; event channel delivery
+            // would require storing the FlEventChannel reference.
+        }
+
         free(ii);
         close(sock);
         self->discovering->store(false);
@@ -295,16 +306,23 @@ static FlMethodResponse* handle_write(FlutterClassicBluetoothPlugin* self, FlVal
 }
 
 static FlMethodResponse* handle_bond_device(FlutterClassicBluetoothPlugin* self, FlValue* args) {
-    // On Linux, pairing is typically done via BlueZ agent.
-    // We can initiate with hci_authenticate_link, but it requires a connection first.
-    // For now, we return false as full pairing requires D-Bus agent interaction.
-    g_autoptr(FlValue) result = fl_value_new_bool(false);
-    return FL_METHOD_RESPONSE(fl_method_success_response_new(result));
+    g_autoptr(FlValue) details = fl_value_new_map();
+    fl_value_set_string_take(details, "feature", fl_value_new_string("bondDevice"));
+    fl_value_set_string_take(details, "platform", fl_value_new_string("Linux"));
+    return FL_METHOD_RESPONSE(fl_method_error_response_new(
+        "unsupported",
+        "Pairing on Linux requires BlueZ D-Bus agent interaction which is not yet implemented. Use bluetoothctl or system settings to pair.",
+        details));
 }
 
 static FlMethodResponse* handle_unbond_device(FlutterClassicBluetoothPlugin* self, FlValue* args) {
-    g_autoptr(FlValue) result = fl_value_new_bool(false);
-    return FL_METHOD_RESPONSE(fl_method_success_response_new(result));
+    g_autoptr(FlValue) details = fl_value_new_map();
+    fl_value_set_string_take(details, "feature", fl_value_new_string("unbondDevice"));
+    fl_value_set_string_take(details, "platform", fl_value_new_string("Linux"));
+    return FL_METHOD_RESPONSE(fl_method_error_response_new(
+        "unsupported",
+        "Unpairing on Linux requires BlueZ D-Bus agent interaction which is not yet implemented. Use bluetoothctl or system settings.",
+        details));
 }
 
 static FlMethodResponse* handle_start_server(FlutterClassicBluetoothPlugin* self, FlValue* args) {

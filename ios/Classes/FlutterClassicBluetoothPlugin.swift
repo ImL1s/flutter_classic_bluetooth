@@ -79,11 +79,17 @@ public class FlutterClassicBluetoothPlugin: NSObject, FlutterPlugin {
             ))
 
         case "connect":
-            guard let protocolString = args?["protocol"] as? String else {
-                result(FlutterError(code: "connectionFailed", message: "Protocol string is required for iOS MFi connection", details: nil))
+            // iOS MFi: accept either "protocol" (preferred) or fall back to "uuid"
+            let protocolString = args?["protocol"] as? String ?? args?["uuid"] as? String
+            guard let proto = protocolString else {
+                result(FlutterError(
+                    code: "connectionFailed",
+                    message: "Protocol string (or uuid) is required for iOS MFi connection. On iOS, the uuid parameter is used as the MFi protocol string.",
+                    details: ["feature": "connect", "platform": "iOS"]
+                ))
                 return
             }
-            handleConnect(protocolString: protocolString, result: result)
+            handleConnect(protocolString: proto, result: result)
 
         case "disconnect":
             guard let id = args?["id"] as? Int else {

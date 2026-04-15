@@ -1,6 +1,7 @@
 #ifndef FLUTTER_PLUGIN_BLUETOOTH_HELPER_H_
 #define FLUTTER_PLUGIN_BLUETOOTH_HELPER_H_
 
+#include <winsock2.h>
 #include <windows.h>
 #include <ws2bth.h>
 #include <BluetoothAPIs.h>

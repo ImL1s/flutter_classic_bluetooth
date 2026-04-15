@@ -1,6 +1,6 @@
 name: flutter_classic_bluetooth
-description: "A new Flutter plugin project."
-version: 0.0.1
+description: "A Flutter plugin for Bluetooth Classic (RFCOMM) communication across Android, iOS (MFi), Windows, macOS, and Linux. Discover, pair, connect, and exchange data with Bluetooth Classic devices."
+version: 0.1.0
 homepage:
 
 environment:

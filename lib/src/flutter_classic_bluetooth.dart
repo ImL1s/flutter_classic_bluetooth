@@ -259,6 +259,21 @@ class FlutterClassicBluetooth {
     return _platform.connect(address: address, uuid: uuid, secure: secure);
   }
 
+  /// Disconnects the connection with the given [id].
+  ///
+  /// Prefer using [BluetoothConnection.close] or [BluetoothConnection.finish]
+  /// when you have a connection object. Use this when you only have the
+  /// connection ID.
+  ///
+  /// | Platform | Supported |
+  /// |----------|-----------|
+  /// | Android | ✅ |
+  /// | Windows | ✅ |
+  /// | macOS | ✅ |
+  /// | Linux | ✅ |
+  /// | iOS | ✅ |
+  Future<void> disconnect(int id) => _platform.disconnect(id);
+
   // ── Server ───────────────────────────────────────────────────────────
 
   /// Creates an RFCOMM server socket listening on the given [uuid].

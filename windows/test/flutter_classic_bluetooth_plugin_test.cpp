@@ -1,3 +1,4 @@
+#include <winsock2.h>
 #include <flutter/method_call.h>
 #include <flutter/method_result_functions.h>
 #include <flutter/standard_method_codec.h>
@@ -22,21 +23,52 @@ using flutter::MethodResultFunctions;
 
 }  // namespace
 
-TEST(FlutterClassicBluetoothPlugin, GetPlatformVersion) {
-  FlutterClassicBluetoothPlugin plugin;
-  // Save the reply value from the success callback.
-  std::string result_string;
+TEST(FlutterClassicBluetoothPlugin, IsSupported) {
+  FlutterClassicBluetoothPlugin plugin(nullptr);
+  bool success_called = false;
   plugin.HandleMethodCall(
-      MethodCall("getPlatformVersion", std::make_unique<EncodableValue>()),
+      MethodCall("isSupported", std::make_unique<EncodableValue>()),
       std::make_unique<MethodResultFunctions<>>(
-          [&result_string](const EncodableValue* result) {
-            result_string = std::get<std::string>(*result);
+          [&success_called](const EncodableValue* result) {
+            success_called = true;
+            EXPECT_TRUE(std::holds_alternative<bool>(*result));
           },
           nullptr, nullptr));
 
-  // Since the exact string varies by host, just ensure that it's a string
-  // with the expected format.
-  EXPECT_TRUE(result_string.rfind("Windows ", 0) == 0);
+  EXPECT_TRUE(success_called);
+}
+
+TEST(FlutterClassicBluetoothPlugin, GetPlatformCapabilities) {
+  FlutterClassicBluetoothPlugin plugin(nullptr);
+  bool success_called = false;
+  plugin.HandleMethodCall(
+      MethodCall("getPlatformCapabilities", std::make_unique<EncodableValue>()),
+      std::make_unique<MethodResultFunctions<>>(
+          [&success_called](const EncodableValue* result) {
+            success_called = true;
+            EXPECT_TRUE(std::holds_alternative<EncodableMap>(*result));
+            auto& map = std::get<EncodableMap>(*result);
+            // should contain canDiscoverDevices
+            auto it = map.find(EncodableValue("canDiscoverDevices"));
+            EXPECT_NE(it, map.end());
+          },
+          nullptr, nullptr));
+
+  EXPECT_TRUE(success_called);
+}
+
+TEST(FlutterClassicBluetoothPlugin, UnknownMethodNotImplemented) {
+  FlutterClassicBluetoothPlugin plugin(nullptr);
+  bool not_implemented = false;
+  plugin.HandleMethodCall(
+      MethodCall("nonExistentMethod", std::make_unique<EncodableValue>()),
+      std::make_unique<MethodResultFunctions<>>(
+          nullptr, nullptr,
+          [&not_implemented]() {
+            not_implemented = true;
+          }));
+
+  EXPECT_TRUE(not_implemented);
 }
 
 }  // namespace test

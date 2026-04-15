@@ -16,6 +16,28 @@
 
 namespace flutter_classic_bluetooth {
 
+// StreamHandler that stores the event sink for later use
+class PluginStreamHandler : public flutter::StreamHandler<flutter::EncodableValue> {
+ public:
+  std::unique_ptr<flutter::StreamHandlerError<flutter::EncodableValue>> OnListenInternal(
+      const flutter::EncodableValue* arguments,
+      std::unique_ptr<flutter::EventSink<flutter::EncodableValue>>&& events) override {
+    sink_ = std::move(events);
+    return nullptr;
+  }
+
+  std::unique_ptr<flutter::StreamHandlerError<flutter::EncodableValue>> OnCancelInternal(
+      const flutter::EncodableValue* arguments) override {
+    sink_.reset();
+    return nullptr;
+  }
+
+  flutter::EventSink<flutter::EncodableValue>* sink() const { return sink_.get(); }
+
+ private:
+  std::unique_ptr<flutter::EventSink<flutter::EncodableValue>> sink_;
+};
+
 class FlutterClassicBluetoothPlugin : public flutter::Plugin {
  public:
   static void RegisterWithRegistrar(flutter::PluginRegistrarWindows *registrar);
@@ -44,6 +66,14 @@ class FlutterClassicBluetoothPlugin : public flutter::Plugin {
   // Discovery
   std::atomic<bool> discovering_{false};
   std::thread discovery_thread_;
+
+  // Event channels
+  std::unique_ptr<flutter::EventChannel<flutter::EncodableValue>> adapter_state_channel_;
+  std::unique_ptr<flutter::EventChannel<flutter::EncodableValue>> discovery_state_channel_;
+  std::unique_ptr<flutter::EventChannel<flutter::EncodableValue>> discovery_results_channel_;
+  PluginStreamHandler* adapter_state_handler_ = nullptr;
+  PluginStreamHandler* discovery_state_handler_ = nullptr;
+  PluginStreamHandler* discovery_results_handler_ = nullptr;
 
   void InitWinsock();
   void CleanupWinsock();

@@ -1,7 +1,7 @@
 #include "flutter_classic_bluetooth_plugin.h"
 
-#include <windows.h>
 #include <winsock2.h>
+#include <windows.h>
 #include <ws2bth.h>
 #include <BluetoothAPIs.h>
 
@@ -42,6 +42,29 @@ void FlutterClassicBluetoothPlugin::RegisterWithRegistrar(
       [plugin_pointer = plugin.get()](const auto &call, auto result) {
         plugin_pointer->HandleMethodCall(call, std::move(result));
       });
+
+  // Register event channels
+  plugin->adapter_state_channel_ = std::make_unique<flutter::EventChannel<EncodableValue>>(
+      registrar->messenger(), "flutter_classic_bluetooth/adapter_state",
+      &flutter::StandardMethodCodec::GetInstance());
+  plugin->discovery_state_channel_ = std::make_unique<flutter::EventChannel<EncodableValue>>(
+      registrar->messenger(), "flutter_classic_bluetooth/discovery_state",
+      &flutter::StandardMethodCodec::GetInstance());
+  plugin->discovery_results_channel_ = std::make_unique<flutter::EventChannel<EncodableValue>>(
+      registrar->messenger(), "flutter_classic_bluetooth/discovery_results",
+      &flutter::StandardMethodCodec::GetInstance());
+
+  auto adapter_handler = std::make_unique<PluginStreamHandler>();
+  plugin->adapter_state_handler_ = adapter_handler.get();
+  plugin->adapter_state_channel_->SetStreamHandler(std::move(adapter_handler));
+
+  auto disc_state_handler = std::make_unique<PluginStreamHandler>();
+  plugin->discovery_state_handler_ = disc_state_handler.get();
+  plugin->discovery_state_channel_->SetStreamHandler(std::move(disc_state_handler));
+
+  auto disc_results_handler = std::make_unique<PluginStreamHandler>();
+  plugin->discovery_results_handler_ = disc_results_handler.get();
+  plugin->discovery_results_channel_->SetStreamHandler(std::move(disc_results_handler));
 
   registrar->AddPlugin(std::move(plugin));
 }
@@ -227,8 +250,12 @@ void FlutterClassicBluetoothPlugin::HandleStartDiscovery(
 
   discovering_.store(true);
 
+  // Notify Dart that discovery has started
+  if (discovery_state_handler_ && discovery_state_handler_->sink()) {
+    discovery_state_handler_->sink()->Success(EncodableValue(true));
+  }
+
   // Discovery runs in a background thread — results are sent via event channel
-  // For simplicity, we use the Windows Bluetooth API which is synchronous
   discovery_thread_ = std::thread([this]() {
     BLUETOOTH_DEVICE_SEARCH_PARAMS search_params = {};
     search_params.dwSize = sizeof(BLUETOOTH_DEVICE_SEARCH_PARAMS);
@@ -246,13 +273,17 @@ void FlutterClassicBluetoothPlugin::HandleStartDiscovery(
     if (find) {
       do {
         if (!discovering_.load()) break;
-        // Results delivered via discovery_results event channel on Dart side
-        // The Windows API doesn't have a callback mechanism like Android broadcasts
-        // So results are sent after the inquiry completes
+        if (discovery_results_handler_ && discovery_results_handler_->sink()) {
+          discovery_results_handler_->sink()->Success(
+              EncodableValue(DeviceToMap(device_info)));
+        }
       } while (BluetoothFindNextDevice(find, &device_info));
       BluetoothFindDeviceClose(find);
     }
     discovering_.store(false);
+    if (discovery_state_handler_ && discovery_state_handler_->sink()) {
+      discovery_state_handler_->sink()->Success(EncodableValue(false));
+    }
   });
   discovery_thread_.detach();
 
