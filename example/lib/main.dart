@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'dart:async';
 
-import 'package:flutter/services.dart';
 import 'package:flutter_classic_bluetooth/flutter_classic_bluetooth.dart';
 
 void main() {
@@ -16,43 +15,39 @@ class MyApp extends StatefulWidget {
 }
 
 class _MyAppState extends State<MyApp> {
-  String _platformVersion = 'Unknown';
-  final _flutterClassicBluetoothPlugin = FlutterClassicBluetooth();
+  String _status = 'Unknown';
+  final _bluetooth = FlutterClassicBluetooth();
 
   @override
   void initState() {
     super.initState();
-    initPlatformState();
+    _checkBluetooth();
   }
 
-  // Platform messages are asynchronous, so we initialize in an async method.
-  Future<void> initPlatformState() async {
-    String platformVersion;
-    // Platform messages may fail, so we use a try/catch PlatformException.
-    // We also handle the message potentially returning null.
+  Future<void> _checkBluetooth() async {
+    String status;
     try {
-      platformVersion =
-          await _flutterClassicBluetoothPlugin.getPlatformVersion() ?? 'Unknown platform version';
-    } on PlatformException {
-      platformVersion = 'Failed to get platform version.';
+      final supported = await _bluetooth.isSupported();
+      if (!supported) {
+        status = 'Bluetooth Classic not supported';
+      } else {
+        final enabled = await _bluetooth.isEnabled();
+        status = enabled ? 'Bluetooth is enabled' : 'Bluetooth is disabled';
+      }
+    } on BluetoothException catch (e) {
+      status = 'Error: ${e.message}';
     }
 
-    // If the widget was removed from the tree while the asynchronous platform
-    // message was in flight, we want to discard the reply rather than calling
-    // setState to update our non-existent appearance.
     if (!mounted) return;
-
-    setState(() {
-      _platformVersion = platformVersion;
-    });
+    setState(() => _status = status);
   }
 
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
       home: Scaffold(
-        appBar: AppBar(title: const Text('Plugin example app')),
-        body: Center(child: Text('Running on: $_platformVersion\n')),
+        appBar: AppBar(title: const Text('Bluetooth Classic Example')),
+        body: Center(child: Text('Status: $_status\n')),
       ),
     );
   }
