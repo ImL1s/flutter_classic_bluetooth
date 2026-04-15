@@ -14,7 +14,16 @@ set(PLUGIN_NAME "flutter_classic_bluetooth_plugin")
 # Any new source files that you add to the plugin should be added here.
 list(APPEND PLUGIN_SOURCES
   "flutter_classic_bluetooth_plugin.cc"
+  "bluetooth_helper.h"
+  "bluetooth_connection.h"
+  "bluetooth_server.h"
 )
+
+# Find BlueZ bluetooth library
+find_library(BLUETOOTH_LIB bluetooth)
+if(NOT BLUETOOTH_LIB)
+  message(FATAL_ERROR "libbluetooth-dev not found. Install with: sudo apt install libbluetooth-dev")
+endif()
 
 # Define the plugin library target. Its name must not be changed (see comment
 # on PLUGIN_NAME above).
@@ -40,6 +49,7 @@ target_include_directories(${PLUGIN_NAME} INTERFACE
   "${CMAKE_CURRENT_SOURCE_DIR}/include")
 target_link_libraries(${PLUGIN_NAME} PRIVATE flutter)
 target_link_libraries(${PLUGIN_NAME} PRIVATE PkgConfig::GTK)
+target_link_libraries(${PLUGIN_NAME} PRIVATE ${BLUETOOTH_LIB})
 
 # List of absolute paths to libraries that should be bundled with the plugin.
 # This list could contain prebuilt libraries, or libraries created by an
@@ -84,6 +94,7 @@ apply_standard_settings(${TEST_RUNNER})
 target_include_directories(${TEST_RUNNER} PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}")
 target_link_libraries(${TEST_RUNNER} PRIVATE flutter)
 target_link_libraries(${TEST_RUNNER} PRIVATE PkgConfig::GTK)
+target_link_libraries(${TEST_RUNNER} PRIVATE ${BLUETOOTH_LIB})
 target_link_libraries(${TEST_RUNNER} PRIVATE gtest_main gmock)
 
 # Enable automatic test discovery.
