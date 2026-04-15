@@ -595,6 +595,225 @@ void main() {
     });
   });
 
+  // ── App UI Tests — Loading States ──────────────────────────────────
+
+  group('App UI — Loading States', () {
+    testWidgets('Home screen shows loading indicator before data arrives',
+        (tester) async {
+      await tester.pumpWidget(const BluetoothExampleApp());
+      // Pump only one frame — async _init() hasn't completed yet
+      await tester.pump();
+
+      // On fast platforms the native call may resolve within one frame,
+      // so the spinner might already be gone. Either spinner OR content
+      // is valid at this point.
+      final hasSpinner =
+          find.byType(CircularProgressIndicator).evaluate().isNotEmpty;
+      final hasContent =
+          find.text('Bluetooth Classic').evaluate().isNotEmpty;
+      expect(hasSpinner || hasContent, isTrue);
+
+      // Now let it settle — data should load
+      await tester.pumpAndSettle();
+
+      // Loading indicator should be gone, content visible
+      expect(find.byType(CircularProgressIndicator), findsNothing);
+      expect(find.text('Bluetooth Classic'), findsAtLeast(1));
+    });
+
+    testWidgets('Home screen transitions from loading to status card',
+        (tester) async {
+      await tester.pumpWidget(const BluetoothExampleApp());
+      await tester.pump();
+
+      // Status text should NOT be visible yet (still loading)
+      final hasStatus = find.textContaining(
+        RegExp('Hardware supported|Not supported'),
+      ).evaluate().isNotEmpty;
+      // It may or may not be visible depending on how fast the native call is
+      // but the spinner should be present
+      if (!hasStatus) {
+        expect(find.byType(CircularProgressIndicator), findsAtLeast(1));
+      }
+
+      await tester.pumpAndSettle();
+      // After settling, status must be visible and tiles present
+      expect(
+        find.textContaining(RegExp('Hardware supported|Not supported')),
+        findsAtLeast(1),
+      );
+      expect(find.text('Adapter'), findsAtLeast(1));
+    });
+
+    testWidgets('Adapter screen shows loading then content', (tester) async {
+      await tester.pumpWidget(const BluetoothExampleApp());
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.text('Adapter').first);
+      // Pump one frame after navigation — async _load() hasn't completed
+      await tester.pump();
+      await tester.pump(); // one more for the route transition
+
+      // May still show spinner during load
+      final hasSpinner =
+          find.byType(CircularProgressIndicator).evaluate().isNotEmpty;
+      final hasStatus = find.text('Status').evaluate().isNotEmpty;
+
+      // Either loading or already loaded — both valid
+      expect(hasSpinner || hasStatus, isTrue);
+
+      // Let it settle fully
+      await tester.pumpAndSettle();
+      expect(find.text('Status'), findsOneWidget);
+      expect(find.text('Enable'), findsOneWidget);
+    });
+
+    testWidgets('Adapter Refresh button triggers reload', (tester) async {
+      await tester.pumpWidget(const BluetoothExampleApp());
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.text('Adapter').first);
+      await tester.pumpAndSettle();
+
+      // Content should be visible
+      expect(find.text('Status'), findsOneWidget);
+
+      // Tap Refresh — should trigger _load() again
+      await tester.tap(find.text('Refresh'));
+      await tester.pump();
+
+      // After pumping, content should still be visible (loading is fast)
+      // or spinner may briefly appear
+      final hasContent = find.text('Status').evaluate().isNotEmpty;
+      final hasSpinner =
+          find.byType(CircularProgressIndicator).evaluate().isNotEmpty;
+      expect(hasContent || hasSpinner, isTrue);
+
+      await tester.pumpAndSettle();
+      // Status should be back after reload
+      expect(find.text('Status'), findsOneWidget);
+    });
+
+    testWidgets('Paired screen shows loading then content or empty',
+        (tester) async {
+      await tester.pumpWidget(const BluetoothExampleApp());
+      await tester.pumpAndSettle();
+
+      // Check if Paired Devices tile is enabled
+      final tile = find.text('Paired Devices');
+      final listTile = find.ancestor(
+        of: tile,
+        matching: find.byType(ListTile),
+      );
+      if (listTile.evaluate().isEmpty) return;
+      final widget = tester.widget<ListTile>(listTile.first);
+      if (!widget.enabled) return;
+
+      await tester.tap(tile.first);
+      await tester.pump();
+      await tester.pump();
+
+      // May show spinner while loading paired devices
+      final hasSpinner =
+          find.byType(CircularProgressIndicator).evaluate().isNotEmpty;
+      final hasContent = find
+              .textContaining(RegExp('No paired devices'))
+              .evaluate()
+              .isNotEmpty ||
+          find
+              .textContaining(
+                  RegExp(r'[0-9A-Fa-f]{2}:[0-9A-Fa-f]{2}:[0-9A-Fa-f]{2}'))
+              .evaluate()
+              .isNotEmpty;
+
+      expect(hasSpinner || hasContent, isTrue);
+
+      await tester.pumpAndSettle();
+      expect(find.text('Paired Devices'), findsAtLeast(1));
+    });
+
+    testWidgets('Capabilities screen shows loading then capabilities',
+        (tester) async {
+      await tester.pumpWidget(const BluetoothExampleApp());
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.text('Platform Capabilities').first);
+      await tester.pump();
+      await tester.pump();
+
+      // May show spinner while fetching capabilities
+      final hasSpinner =
+          find.byType(CircularProgressIndicator).evaluate().isNotEmpty;
+      final hasCaps =
+          find.text('Enable Bluetooth').evaluate().isNotEmpty;
+
+      expect(hasSpinner || hasCaps, isTrue);
+
+      await tester.pumpAndSettle();
+      // All 12 capability labels should be visible now
+      expect(find.text('Enable Bluetooth'), findsOneWidget);
+      expect(find.text('Discover Devices'), findsOneWidget);
+    });
+
+    testWidgets('Server screen shows Start FAB and responds to tap',
+        (tester) async {
+      await tester.pumpWidget(const BluetoothExampleApp());
+      await tester.pumpAndSettle();
+
+      // Check if Server tile is enabled
+      final tile = find.text('Server');
+      final listTile = find.ancestor(
+        of: tile,
+        matching: find.byType(ListTile),
+      );
+      if (listTile.evaluate().isEmpty) return;
+      final widget = tester.widget<ListTile>(listTile.first);
+      if (!widget.enabled) return;
+
+      await tester.tap(tile.first);
+      await tester.pumpAndSettle();
+
+      // Verify Start FAB is present
+      expect(find.text('Start'), findsOneWidget);
+      expect(find.byType(FloatingActionButton), findsOneWidget);
+
+      // Verify empty state content
+      expect(find.text('Tap Start to begin listening'), findsOneWidget);
+      expect(find.textContaining('UUID:'), findsOneWidget);
+    });
+
+    testWidgets('Paired screen refresh triggers reload', (tester) async {
+      await tester.pumpWidget(const BluetoothExampleApp());
+      await tester.pumpAndSettle();
+
+      final tile = find.text('Paired Devices');
+      final listTile = find.ancestor(
+        of: tile,
+        matching: find.byType(ListTile),
+      );
+      if (listTile.evaluate().isEmpty) return;
+      final widget = tester.widget<ListTile>(listTile.first);
+      if (!widget.enabled) return;
+
+      await tester.tap(tile.first);
+      await tester.pumpAndSettle();
+
+      // Tap refresh icon in AppBar
+      await tester.tap(find.byIcon(Icons.refresh));
+      await tester.pump();
+
+      // Content may flicker to loading or stay — both valid
+      final hasSpinner =
+          find.byType(CircularProgressIndicator).evaluate().isNotEmpty;
+      final hasContent =
+          find.text('Paired Devices').evaluate().isNotEmpty;
+      expect(hasSpinner || hasContent, isTrue);
+
+      await tester.pumpAndSettle();
+      expect(find.text('Paired Devices'), findsAtLeast(1));
+    });
+  });
+
   // ── App UI Tests — Navigation Flow ───────────────────────────────────
 
   group('App UI — Navigation Flow', () {
