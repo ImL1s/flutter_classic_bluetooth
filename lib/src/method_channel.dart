@@ -2,12 +2,12 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 
 import 'platform_interface.dart';
-import 'models/enums.dart';
-import 'models/bluetooth_connection.dart';
-import 'models/bluetooth_device.dart';
-import 'models/bluetooth_server_socket.dart';
-import 'models/platform_capabilities.dart';
-import 'models/exceptions.dart';
+import 'models/btc_enums.dart';
+import 'models/btc_connection.dart';
+import 'models/btc_device.dart';
+import 'models/btc_server_socket.dart';
+import 'models/btc_platform_capabilities.dart';
+import 'models/btc_exceptions.dart';
 
 /// An implementation of [FlutterClassicBluetoothPlatform] that uses
 /// method channels and event channels to communicate with native code.
@@ -31,9 +31,9 @@ class MethodChannelFlutterClassicBluetooth
       const EventChannel('flutter_classic_bluetooth/bond_state');
 
   // Cached broadcast streams
-  Stream<BluetoothAdapterState>? _adapterStateStream;
+  Stream<BtcAdapterState>? _adapterStateStream;
   Stream<bool>? _discoveryStateStream;
-  Stream<BluetoothDevice>? _discoveryResultsStream;
+  Stream<BtcDevice>? _discoveryResultsStream;
 
   // ── Adapter ──────────────────────────────────────────────────────────
 
@@ -58,12 +58,12 @@ class MethodChannelFlutterClassicBluetooth
   }
 
   @override
-  Stream<BluetoothAdapterState> adapterState() {
+  Stream<BtcAdapterState> adapterState() {
     _adapterStateStream ??= _adapterStateChannel
         .receiveBroadcastStream()
-        .map((event) => BluetoothAdapterState.values.firstWhere(
+        .map((event) => BtcAdapterState.values.firstWhere(
               (e) => e.name == event,
-              orElse: () => BluetoothAdapterState.unknown,
+              orElse: () => BtcAdapterState.unknown,
             ));
     return _adapterStateStream!;
   }
@@ -104,10 +104,10 @@ class MethodChannelFlutterClassicBluetooth
   }
 
   @override
-  Stream<BluetoothDevice> discoveryResults() {
+  Stream<BtcDevice> discoveryResults() {
     _discoveryResultsStream ??= _discoveryResultsChannel
         .receiveBroadcastStream()
-        .map((event) => BluetoothDevice.fromMap(
+        .map((event) => BtcDevice.fromMap(
               Map<dynamic, dynamic>.from(event as Map),
             ));
     return _discoveryResultsStream!;
@@ -116,11 +116,11 @@ class MethodChannelFlutterClassicBluetooth
   // ── Pairing ──────────────────────────────────────────────────────────
 
   @override
-  Future<List<BluetoothDevice>> getPairedDevices() async {
+  Future<List<BtcDevice>> getPairedDevices() async {
     final result = await _invoke<List>('getPairedDevices');
     if (result == null) return [];
     return result
-        .map((e) => BluetoothDevice.fromMap(Map<dynamic, dynamic>.from(e as Map)))
+        .map((e) => BtcDevice.fromMap(Map<dynamic, dynamic>.from(e as Map)))
         .toList();
   }
 
@@ -135,12 +135,12 @@ class MethodChannelFlutterClassicBluetooth
   }
 
   @override
-  Stream<BluetoothBondState> bondState(String address) {
+  Stream<BtcBondState> bondState(String address) {
     return _bondStateChannel
         .receiveBroadcastStream({'address': address}).map((event) {
-      return BluetoothBondState.values.firstWhere(
+      return BtcBondState.values.firstWhere(
         (e) => e.name == event,
-        orElse: () => BluetoothBondState.none,
+        orElse: () => BtcBondState.none,
       );
     });
   }
@@ -148,7 +148,7 @@ class MethodChannelFlutterClassicBluetooth
   // ── Connection ───────────────────────────────────────────────────────
 
   @override
-  Future<BluetoothConnection> connect({
+  Future<BtcConnection> connect({
     required String address,
     required String uuid,
     bool secure = true,
@@ -159,7 +159,7 @@ class MethodChannelFlutterClassicBluetooth
       'secure': secure,
     });
     final map = Map<dynamic, dynamic>.from(result!);
-    return BluetoothConnection(
+    return BtcConnection(
       id: map['id'] as int,
       address: address,
       methodChannel: methodChannel,
@@ -179,7 +179,7 @@ class MethodChannelFlutterClassicBluetooth
   // ── Server ───────────────────────────────────────────────────────────
 
   @override
-  Future<BluetoothServerSocket> startServer({
+  Future<BtcServerSocket> startServer({
     required String uuid,
     required String serviceName,
     bool secure = true,
@@ -190,7 +190,7 @@ class MethodChannelFlutterClassicBluetooth
       'secure': secure,
     });
     final map = Map<dynamic, dynamic>.from(result!);
-    return BluetoothServerSocket(
+    return BtcServerSocket(
       id: map['id'] as int,
       uuid: uuid,
       serviceName: serviceName,
@@ -215,9 +215,9 @@ class MethodChannelFlutterClassicBluetooth
   // ── Capabilities ─────────────────────────────────────────────────────
 
   @override
-  Future<PlatformCapabilities> getPlatformCapabilities() async {
+  Future<BtcPlatformCapabilities> getPlatformCapabilities() async {
     final result = await _invoke<Map>('getPlatformCapabilities');
-    return PlatformCapabilities.fromMap(
+    return BtcPlatformCapabilities.fromMap(
       Map<dynamic, dynamic>.from(result!),
     );
   }
@@ -225,7 +225,7 @@ class MethodChannelFlutterClassicBluetooth
   // ── Helpers ──────────────────────────────────────────────────────────
 
   /// Invokes a method on the platform channel and converts
-  /// [PlatformException] to typed [BluetoothException].
+  /// [PlatformException] to typed [BtcException].
   Future<T?> _invoke<T>(String method, [Map<String, dynamic>? arguments]) async {
     try {
       return await methodChannel.invokeMethod<T>(method, arguments);
@@ -234,40 +234,40 @@ class MethodChannelFlutterClassicBluetooth
     }
   }
 
-  /// Converts a [PlatformException] to a typed [BluetoothException].
-  BluetoothException _convertException(PlatformException e) {
+  /// Converts a [PlatformException] to a typed [BtcException].
+  BtcException _convertException(PlatformException e) {
     switch (e.code) {
       case 'unsupported':
-        return BluetoothUnsupportedException(
+        return BtcUnsupportedException(
           feature: e.details?['feature'] as String? ?? 'unknown',
           platform: e.details?['platform'] as String? ?? 'unknown',
           reason: e.message,
         );
       case 'permissionDenied':
-        return BluetoothPermissionException(e.message ?? 'Permission denied');
+        return BtcPermissionException(e.message ?? 'Permission denied');
       case 'bluetoothDisabled':
-        return BluetoothDisabledException(
+        return BtcDisabledException(
             e.message ?? 'Bluetooth adapter is disabled');
       case 'connectionFailed':
-        return BluetoothConnectionException(
+        return BtcConnectionException(
           e.message ?? 'Connection failed',
           address: e.details?['address'] as String?,
         );
       case 'writeFailed':
-        return BluetoothWriteException(e.message ?? 'Write failed');
+        return BtcWriteException(e.message ?? 'Write failed');
       case 'timeout':
-        return BluetoothTimeoutException(
+        return BtcTimeoutException(
           message: e.message ?? 'Operation timed out',
           timeoutMs: e.details?['timeoutMs'] as int?,
         );
       case 'invalidAddress':
-        return BluetoothAddressException(
+        return BtcAddressException(
             e.details?['address'] as String? ?? 'unknown');
       case 'invalidUuid':
-        return BluetoothUuidException(
+        return BtcUuidException(
             e.details?['uuid'] as String? ?? 'unknown');
       default:
-        return BluetoothException(
+        return BtcException(
           e.message ?? 'Unknown Bluetooth error',
           code: e.code,
         );

@@ -1,10 +1,10 @@
 import 'platform_interface.dart';
-import 'models/enums.dart';
-import 'models/bluetooth_connection.dart';
-import 'models/bluetooth_device.dart';
-import 'models/bluetooth_server_socket.dart';
-import 'models/platform_capabilities.dart';
-import 'models/exceptions.dart';
+import 'models/btc_enums.dart';
+import 'models/btc_connection.dart';
+import 'models/btc_device.dart';
+import 'models/btc_server_socket.dart';
+import 'models/btc_platform_capabilities.dart';
+import 'models/btc_exceptions.dart';
 
 /// Primary API for Bluetooth Classic operations.
 ///
@@ -116,7 +116,7 @@ class FlutterClassicBluetooth {
   /// | macOS | ✅ |
   /// | Linux | ✅ |
   /// | iOS | ✅ |
-  Stream<BluetoothAdapterState> get adapterState => _platform.adapterState();
+  Stream<BtcAdapterState> get adapterState => _platform.adapterState();
 
   /// Returns the local adapter's friendly name.
   ///
@@ -182,7 +182,7 @@ class FlutterClassicBluetooth {
   Stream<bool> get discoveryState => _platform.discoveryState();
 
   /// Stream of devices found during discovery.
-  Stream<BluetoothDevice> get discoveryResults => _platform.discoveryResults();
+  Stream<BtcDevice> get discoveryResults => _platform.discoveryResults();
 
   // ── Pairing ──────────────────────────────────────────────────────────
 
@@ -195,7 +195,7 @@ class FlutterClassicBluetooth {
   /// | macOS | ✅ |
   /// | Linux | ✅ |
   /// | iOS | ✅ (connected MFi accessories) |
-  Future<List<BluetoothDevice>> getPairedDevices() =>
+  Future<List<BtcDevice>> getPairedDevices() =>
       _platform.getPairedDevices();
 
   /// Initiates pairing with the device at [address].
@@ -210,7 +210,7 @@ class FlutterClassicBluetooth {
   /// | Linux | ✅ |
   /// | iOS | ❌ |
   ///
-  /// Throws [BluetoothAddressException] if [address] is not a valid MAC.
+  /// Throws [BtcAddressException] if [address] is not a valid MAC.
   Future<bool> bondDevice(String address) {
     _validateAddress(address);
     return _platform.bondDevice(address);
@@ -228,7 +228,7 @@ class FlutterClassicBluetooth {
   /// | Linux | ✅ |
   /// | iOS | ❌ |
   ///
-  /// Throws [BluetoothAddressException] if [address] is not a valid MAC.
+  /// Throws [BtcAddressException] if [address] is not a valid MAC.
   Future<bool> unbondDevice(String address) {
     _validateAddress(address);
     return _platform.unbondDevice(address);
@@ -236,8 +236,8 @@ class FlutterClassicBluetooth {
 
   /// Stream of bond state changes for a specific device.
   ///
-  /// Throws [BluetoothAddressException] if [address] is not a valid MAC.
-  Stream<BluetoothBondState> bondState(String address) {
+  /// Throws [BtcAddressException] if [address] is not a valid MAC.
+  Stream<BtcBondState> bondState(String address) {
     _validateAddress(address);
     return _platform.bondState(address);
   }
@@ -247,7 +247,7 @@ class FlutterClassicBluetooth {
   /// Connects to the device at [address] using the given [uuid].
   ///
   /// If [secure] is `true` (default), uses authenticated/encrypted RFCOMM.
-  /// Returns a [BluetoothConnection] for reading/writing data.
+  /// Returns a [BtcConnection] for reading/writing data.
   ///
   /// | Platform | Supported |
   /// |----------|-----------|
@@ -257,9 +257,9 @@ class FlutterClassicBluetooth {
   /// | Linux | ✅ |
   /// | iOS | ⚠️ (MFi accessories via protocol string) |
   ///
-  /// Throws [BluetoothAddressException] if [address] is not a valid MAC.
-  /// Throws [BluetoothUuidException] if [uuid] is not a valid UUID.
-  Future<BluetoothConnection> connect({
+  /// Throws [BtcAddressException] if [address] is not a valid MAC.
+  /// Throws [BtcUuidException] if [uuid] is not a valid UUID.
+  Future<BtcConnection> connect({
     required String address,
     required String uuid,
     bool secure = true,
@@ -271,7 +271,7 @@ class FlutterClassicBluetooth {
 
   /// Disconnects the connection with the given [id].
   ///
-  /// Prefer using [BluetoothConnection.close] or [BluetoothConnection.finish]
+  /// Prefer using [BtcConnection.close] or [BtcConnection.finish]
   /// when you have a connection object. Use this when you only have the
   /// connection ID.
   ///
@@ -299,8 +299,8 @@ class FlutterClassicBluetooth {
   /// | Linux | ✅ |
   /// | iOS | ❌ |
   ///
-  /// Throws [BluetoothUuidException] if [uuid] is not a valid UUID.
-  Future<BluetoothServerSocket> startServer({
+  /// Throws [BtcUuidException] if [uuid] is not a valid UUID.
+  Future<BtcServerSocket> startServer({
     required String uuid,
     required String serviceName,
     bool secure = true,
@@ -331,20 +331,20 @@ class FlutterClassicBluetooth {
   /// Returns the platform capabilities for Bluetooth Classic.
   ///
   /// Use this to check what features are available before calling them.
-  Future<PlatformCapabilities> getPlatformCapabilities() =>
+  Future<BtcPlatformCapabilities> getPlatformCapabilities() =>
       _platform.getPlatformCapabilities();
 
   // ── Validation ───────────────────────────────────────────────────────
 
   void _validateAddress(String address) {
     if (!_macAddressRegex.hasMatch(address)) {
-      throw BluetoothAddressException(address);
+      throw BtcAddressException(address);
     }
   }
 
   void _validateUuid(String uuid) {
     if (!_uuidRegex.hasMatch(uuid)) {
-      throw BluetoothUuidException(uuid);
+      throw BtcUuidException(uuid);
     }
   }
 }

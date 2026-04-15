@@ -17,35 +17,35 @@
 /// | Class | Purpose |
 /// |---|---|
 /// | [FlutterClassicBluetooth] | Main entry point — adapter, discovery, pairing, connection, server |
-/// | [BluetoothDevice] | Represents a remote Bluetooth device |
-/// | [BluetoothConnection] | Active RFCOMM connection with input/output streams |
-/// | [BluetoothServerSocket] | Listens for incoming RFCOMM connections |
-/// | [BluetoothStreamSink] | Ordered write sink for a connection |
-/// | [PlatformCapabilities] | Platform feature support matrix |
+/// | [BtcDevice] | Represents a remote Bluetooth device |
+/// | [BtcConnection] | Active RFCOMM connection with input/output streams |
+/// | [BtcServerSocket] | Listens for incoming RFCOMM connections |
+/// | [BtcStreamSink] | Ordered write sink for a connection |
+/// | [BtcPlatformCapabilities] | Platform feature support matrix |
 ///
 /// ## Enums
 ///
 /// | Enum | Purpose |
 /// |---|---|
-/// | [BluetoothAdapterState] | Adapter on/off/transitioning states |
-/// | [BluetoothBondState] | Device pairing state |
-/// | [BluetoothDeviceType] | Classic, LE, or Dual-mode |
-/// | [BluetoothConnectionState] | Connection lifecycle states |
+/// | [BtcAdapterState] | Adapter on/off/transitioning states |
+/// | [BtcBondState] | Device pairing state |
+/// | [BtcDeviceType] | Classic, LE, or Dual-mode |
+/// | [BtcConnectionState] | Connection lifecycle states |
 ///
 /// ## Exceptions
 ///
-/// All exceptions extend [BluetoothException]:
+/// All exceptions extend [BtcException]:
 ///
 /// | Exception | When |
 /// |---|---|
-/// | [BluetoothUnsupportedException] | Feature not available on platform |
-/// | [BluetoothPermissionException] | Permission denied |
-/// | [BluetoothDisabledException] | Adapter is off |
-/// | [BluetoothConnectionException] | Connection failed |
-/// | [BluetoothWriteException] | Write failed |
-/// | [BluetoothTimeoutException] | Operation timed out |
-/// | [BluetoothAddressException] | Invalid MAC address |
-/// | [BluetoothUuidException] | Invalid UUID |
+/// | [BtcUnsupportedException] | Feature not available on platform |
+/// | [BtcPermissionException] | Permission denied |
+/// | [BtcDisabledException] | Adapter is off |
+/// | [BtcConnectionException] | Connection failed |
+/// | [BtcWriteException] | Write failed |
+/// | [BtcTimeoutException] | Operation timed out |
+/// | [BtcAddressException] | Invalid MAC address |
+/// | [BtcUuidException] | Invalid UUID |
 ///
 /// ## Platform Support
 ///
@@ -89,10 +89,10 @@ library;
 export 'src/flutter_classic_bluetooth.dart';
 export 'src/platform_interface.dart';
 export 'src/method_channel.dart';
-export 'src/models/enums.dart';
-export 'src/models/exceptions.dart';
-export 'src/models/bluetooth_device.dart';
-export 'src/models/bluetooth_connection.dart';
-export 'src/models/bluetooth_stream_sink.dart';
-export 'src/models/bluetooth_server_socket.dart';
-export 'src/models/platform_capabilities.dart';
+export 'src/models/btc_enums.dart';
+export 'src/models/btc_exceptions.dart';
+export 'src/models/btc_device.dart';
+export 'src/models/btc_connection.dart';
+export 'src/models/btc_stream_sink.dart';
+export 'src/models/btc_server_socket.dart';
+export 'src/models/btc_platform_capabilities.dart';

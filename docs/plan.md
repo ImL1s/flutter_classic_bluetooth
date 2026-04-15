@@ -19,13 +19,13 @@
 
 ### 1.2 Models (`lib/src/models/`)
 
-#### 1.2.1 BluetoothDevice
+#### 1.2.1 BtcDevice
 - `address` (String) — MAC address (or UUID on macOS/iOS)
 - `name` (String?) — friendly name
 - `alias` (String?) — locally set alias (Android 30+)
 - `rssi` (int?) — signal strength during discovery
-- `type` (BluetoothDeviceType) — classic, dual, le, unknown
-- `bondState` (BluetoothBondState) — none, bonding, bonded
+- `type` (BtcDeviceType) — classic, dual, le, unknown
+- `bondState` (BtcBondState) — none, bonding, bonded
 - `uuids` (List\<String>) — advertised service UUIDs
 - `isConnected` (bool) — currently connected
 - `fromMap()` factory constructor
@@ -33,11 +33,11 @@
 - `==` and `hashCode` override (based on address)
 - `toString()` override
 
-#### 1.2.2 BluetoothConnection
+#### 1.2.2 BtcConnection
 - `id` (int) — connection identifier (for multi-connection support)
 - `address` (String) — remote device address
 - `input` (Stream\<Uint8List>) — incoming data stream
-- `output` (BluetoothStreamSink) — outgoing data sink
+- `output` (BtcStreamSink) — outgoing data sink
 - `isConnected` (bool) — connection state
 - `writeString(String text)` — helper, UTF-8 encode and send
 - `writeBytes(Uint8List data)` — send raw bytes
@@ -45,27 +45,27 @@
 - `finish()` — close gracefully (wait for pending writes)
 - `dispose()` — alias for finish
 
-#### 1.2.3 BluetoothStreamSink (implements EventSink\<Uint8List>)
+#### 1.2.3 BtcStreamSink (implements EventSink\<Uint8List>)
 - `add(Uint8List data)` — queue data to send
 - `addStream(Stream\<Uint8List>)` — pipe stream
 - `close()` — close the sink
 - `allSent` (Future) — resolves when all queued data sent
 - Chained futures pattern for ordered writes
 
-#### 1.2.4 BluetoothServerSocket
+#### 1.2.4 BtcServerSocket
 - `id` (int) — server socket identifier
-- `onConnected` (Stream\<BluetoothConnection>) — incoming connections
+- `onConnected` (Stream\<BtcConnection>) — incoming connections
 - `close()` — stop listening
 - `serviceName` (String) — SDP service name
 - `uuid` (String) — SDP service UUID
 
 #### 1.2.5 Enums
-- `BluetoothAdapterState` — unknown, turningOn, on, turningOff, off, unauthorized, unsupported
-- `BluetoothBondState` — none, bonding, bonded
-- `BluetoothDeviceType` — classic, dual, le, unknown
-- `BluetoothConnectionState` — disconnected, connecting, connected, disconnecting
+- `BtcAdapterState` — unknown, turningOn, on, turningOff, off, unauthorized, unsupported
+- `BtcBondState` — none, bonding, bonded
+- `BtcDeviceType` — classic, dual, le, unknown
+- `BtcConnectionState` — disconnected, connecting, connected, disconnecting
 
-#### 1.2.6 PlatformCapabilities
+#### 1.2.6 BtcPlatformCapabilities
 - `canEnableBluetooth` (bool)
 - `canDisableBluetooth` (bool)
 - `canDiscoverDevices` (bool)
@@ -80,16 +80,16 @@
 - `requiresMfiCertification` (bool)
 - `platformNote` (String?) — e.g. "iOS only supports MFi-certified accessories"
 
-#### 1.2.7 BluetoothException hierarchy
-- `BluetoothException` (base)
-  - `BluetoothUnsupportedException` — feature not available on platform
-  - `BluetoothPermissionException` — permission denied
-  - `BluetoothDisabledException` — adapter is off
-  - `BluetoothConnectionException` — connection failed
-  - `BluetoothWriteException` — write failed
-  - `BluetoothTimeoutException` — operation timed out
-  - `BluetoothAddressException` — invalid address format
-  - `BluetoothUuidException` — invalid UUID format
+#### 1.2.7 BtcException hierarchy
+- `BtcException` (base)
+  - `BtcUnsupportedException` — feature not available on platform
+  - `BtcPermissionException` — permission denied
+  - `BtcDisabledException` — adapter is off
+  - `BtcConnectionException` — connection failed
+  - `BtcWriteException` — write failed
+  - `BtcTimeoutException` — operation timed out
+  - `BtcAddressException` — invalid address format
+  - `BtcUuidException` — invalid UUID format
 
 ### 1.3 Platform Interface (`lib/src/platform_interface.dart`)
 
@@ -100,8 +100,8 @@ Abstract class extending PlatformInterface with all methods:
 - `isEnabled()` → Future\<bool>
 - `enableBluetooth()` → Future\<bool>
 - `disableBluetooth()` → Future\<bool>
-- `getAdapterState()` → Future\<BluetoothAdapterState>
-- `adapterStateStream()` → Stream\<BluetoothAdapterState>
+- `getAdapterState()` → Future\<BtcAdapterState>
+- `adapterStateStream()` → Stream\<BtcAdapterState>
 - `getAdapterName()` → Future\<String?>
 - `getAdapterAddress()` → Future\<String?>
 
@@ -110,29 +110,29 @@ Abstract class extending PlatformInterface with all methods:
 - `stopDiscovery()` → Future\<void>
 - `isDiscovering()` → Future\<bool>
 - `discoveryStateStream()` → Stream\<bool>
-- `discoveryResultStream()` → Stream\<BluetoothDevice>
+- `discoveryResultStream()` → Stream\<BtcDevice>
 
 #### Paired/Bonded Device Methods
-- `getPairedDevices()` → Future\<List\<BluetoothDevice>>
+- `getPairedDevices()` → Future\<List\<BtcDevice>>
 - `bondDevice(String address)` → Future\<bool>
 - `unbondDevice(String address)` → Future\<bool>
-- `bondStateStream()` → Stream\<BluetoothDevice> (bond state changes)
+- `bondStateStream()` → Stream\<BtcDevice> (bond state changes)
 
 #### Connection Methods
-- `connect(String address, {String? uuid, bool secure = true, int? timeout})` → Future\<BluetoothConnection>
+- `connect(String address, {String? uuid, bool secure = true, int? timeout})` → Future\<BtcConnection>
 - `disconnect(int connectionId)` → Future\<void>
 - `write(int connectionId, Uint8List data)` → Future\<void>
-- `connectionStateStream(int connectionId)` → Stream\<BluetoothConnectionState>
+- `connectionStateStream(int connectionId)` → Stream\<BtcConnectionState>
 
 #### Server Methods
-- `startServer({String? serviceName, String? uuid, bool secure = true})` → Future\<BluetoothServerSocket>
+- `startServer({String? serviceName, String? uuid, bool secure = true})` → Future\<BtcServerSocket>
 - `stopServer(int serverId)` → Future\<void>
 
 #### Discoverability
 - `setDiscoverable(int durationSeconds)` → Future\<bool>
 
 #### Capability
-- `getPlatformCapabilities()` → Future\<PlatformCapabilities>
+- `getPlatformCapabilities()` → Future\<BtcPlatformCapabilities>
 
 ### 1.4 Method Channel Implementation (`lib/src/method_channel.dart`)
 
@@ -151,7 +151,7 @@ Abstract class extending PlatformInterface with all methods:
 
 - Singleton or instance-based (prefer instance with factory)
 - Wraps platform interface with Dart-level convenience
-- Constructs BluetoothConnection objects from connection IDs
+- Constructs BtcConnection objects from connection IDs
 - Manages connection lifecycle
 - usesFineLocation parameter for Android scan
 
@@ -373,7 +373,7 @@ macos/Classes/
 ### 4.3 Methods to Implement
 - `isSupported` — IOBluetoothHostController.default() != nil
 - `isEnabled` — hostController.powerState == kBluetoothHCIPowerStateON
-- `enableBluetooth` — ❌ UNSUPPORTED (throw BluetoothUnsupportedException)
+- `enableBluetooth` — ❌ UNSUPPORTED (throw BtcUnsupportedException)
 - `disableBluetooth` — ❌ UNSUPPORTED
 - `getAdapterState` — hostController.powerState mapping
 - `getAdapterName` — hostController.nameAsString()
@@ -577,7 +577,7 @@ ios/Classes/
 - `EAAccessoryDidDisconnect` — accessory removed / disconnected
 - Register via `EAAccessoryManager.shared().registerForLocalNotifications()`
 
-### 6.5 EAAccessory → BluetoothDevice mapping
+### 6.5 EAAccessory → BtcDevice mapping
 - `address` → accessory.serialNumber or connectionID as string
 - `name` → accessory.name
 - `type` → .classic (always, since MFi = Classic)
@@ -648,10 +648,10 @@ example/lib/
 - Model serialization/deserialization (fromMap/toMap)
 - Platform interface throws UnimplementedError for all methods
 - Method channel correctly sends/receives all method calls
-- BluetoothConnection properly manages streams
-- BluetoothStreamSink chained futures ordering
+- BtcConnection properly manages streams
+- BtcStreamSink chained futures ordering
 - Exception hierarchy
-- PlatformCapabilities truthfulness per platform
+- BtcPlatformCapabilities truthfulness per platform
 
 ### 8.2 Integration Tests
 - Per-platform integration test checking real adapter
@@ -736,8 +736,8 @@ example/lib/
 |---|---|
 | flutter_classic_bluetooth/adapter_state | String (enum name) |
 | flutter_classic_bluetooth/discovery_state | bool |
-| flutter_classic_bluetooth/discovery_results | Map (BluetoothDevice) |
-| flutter_classic_bluetooth/bond_state | Map (BluetoothDevice with updated bondState) |
+| flutter_classic_bluetooth/discovery_results | Map (BtcDevice) |
+| flutter_classic_bluetooth/bond_state | Map (BtcDevice with updated bondState) |
 | flutter_classic_bluetooth/connection/{id} | Uint8List (raw data) |
 | flutter_classic_bluetooth/connection_state/{id} | String (enum name) |
 | flutter_classic_bluetooth/server/{id} | int (new connection ID) |

@@ -125,16 +125,16 @@ Add to `Info.plist`:
 
 ## Error Handling
 
-All errors are typed exceptions extending `BluetoothException`:
+All errors are typed exceptions extending `BtcException`:
 
 ```dart
 try {
   await bluetooth.connect(address: addr, uuid: uuid);
-} on BluetoothUnsupportedException catch (e) {
+} on BtcUnsupportedException catch (e) {
   print('${e.feature} not supported on ${e.platform}');
-} on BluetoothDisabledException {
+} on BtcDisabledException {
   print('Turn on Bluetooth first');
-} on BluetoothConnectionException catch (e) {
+} on BtcConnectionException catch (e) {
   print('Connection failed: ${e.message}');
 }
 ```

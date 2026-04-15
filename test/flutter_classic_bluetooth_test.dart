@@ -21,8 +21,8 @@ class MockFlutterClassicBluetoothPlatform
   Future<bool> disableBluetooth() => Future.value(true);
 
   @override
-  Stream<BluetoothAdapterState> adapterState() =>
-      Stream.value(BluetoothAdapterState.on);
+  Stream<BtcAdapterState> adapterState() =>
+      Stream.value(BtcAdapterState.on);
 
   @override
   Future<String?> getAdapterName() => Future.value('TestAdapter');
@@ -44,15 +44,15 @@ class MockFlutterClassicBluetoothPlatform
   Stream<bool> discoveryState() => Stream.value(false);
 
   @override
-  Stream<BluetoothDevice> discoveryResults() => const Stream.empty();
+  Stream<BtcDevice> discoveryResults() => const Stream.empty();
 
   @override
-  Future<List<BluetoothDevice>> getPairedDevices() =>
+  Future<List<BtcDevice>> getPairedDevices() =>
       Future.value([
-        const BluetoothDevice(
+        const BtcDevice(
           address: 'AA:BB:CC:DD:EE:FF',
           name: 'TestDevice',
-          bondState: BluetoothBondState.bonded,
+          bondState: BtcBondState.bonded,
         ),
       ]);
 
@@ -63,11 +63,11 @@ class MockFlutterClassicBluetoothPlatform
   Future<bool> unbondDevice(String address) => Future.value(true);
 
   @override
-  Stream<BluetoothBondState> bondState(String address) =>
-      Stream.value(BluetoothBondState.bonded);
+  Stream<BtcBondState> bondState(String address) =>
+      Stream.value(BtcBondState.bonded);
 
   @override
-  Future<BluetoothConnection> connect({
+  Future<BtcConnection> connect({
     required String address,
     required String uuid,
     bool secure = true,
@@ -82,7 +82,7 @@ class MockFlutterClassicBluetoothPlatform
   Future<void> write(int id, Uint8List data) => Future.value();
 
   @override
-  Future<BluetoothServerSocket> startServer({
+  Future<BtcServerSocket> startServer({
     required String uuid,
     required String serviceName,
     bool secure = true,
@@ -97,8 +97,8 @@ class MockFlutterClassicBluetoothPlatform
   Future<bool> setDiscoverable(int durationSeconds) => Future.value(true);
 
   @override
-  Future<PlatformCapabilities> getPlatformCapabilities() =>
-      Future.value(const PlatformCapabilities(
+  Future<BtcPlatformCapabilities> getPlatformCapabilities() =>
+      Future.value(const BtcPlatformCapabilities(
         canDiscoverDevices: true,
         canGetPairedDevices: true,
         canBondDevices: true,
@@ -249,7 +249,7 @@ void main() {
 
     test('adapterState stream emits values', () async {
       final state = await bluetooth.adapterState.first;
-      expect(state, BluetoothAdapterState.on);
+      expect(state, BtcAdapterState.on);
     });
 
     test('discoveryState stream emits values', () async {
@@ -272,21 +272,21 @@ void main() {
     test('bondDevice throws on invalid address', () {
       expect(
         () => bluetooth.bondDevice('invalid'),
-        throwsA(isA<BluetoothAddressException>()),
+        throwsA(isA<BtcAddressException>()),
       );
     });
 
     test('bondDevice throws on empty address', () {
       expect(
         () => bluetooth.bondDevice(''),
-        throwsA(isA<BluetoothAddressException>()),
+        throwsA(isA<BtcAddressException>()),
       );
     });
 
     test('unbondDevice throws on invalid address', () {
       expect(
         () => bluetooth.unbondDevice('ZZZZ'),
-        throwsA(isA<BluetoothAddressException>()),
+        throwsA(isA<BtcAddressException>()),
       );
     });
 
@@ -296,7 +296,7 @@ void main() {
           address: 'bad-address',
           uuid: '00001101-0000-1000-8000-00805F9B34FB',
         ),
-        throwsA(isA<BluetoothAddressException>()),
+        throwsA(isA<BtcAddressException>()),
       );
     });
 
@@ -306,7 +306,7 @@ void main() {
           address: 'AA:BB:CC:DD:EE:FF',
           uuid: 'not-a-uuid',
         ),
-        throwsA(isA<BluetoothUuidException>()),
+        throwsA(isA<BtcUuidException>()),
       );
     });
 
@@ -316,14 +316,14 @@ void main() {
           address: 'AA:BB:CC:DD:EE:FF',
           uuid: '0000-1101',
         ),
-        throwsA(isA<BluetoothUuidException>()),
+        throwsA(isA<BtcUuidException>()),
       );
     });
 
     test('startServer throws on invalid UUID', () {
       expect(
         () => bluetooth.startServer(uuid: 'bad', serviceName: 'test'),
-        throwsA(isA<BluetoothUuidException>()),
+        throwsA(isA<BtcUuidException>()),
       );
     });
 
@@ -352,13 +352,13 @@ void main() {
     test('bondState throws on invalid address', () {
       expect(
         () => bluetooth.bondState('not-valid'),
-        throwsA(isA<BluetoothAddressException>()),
+        throwsA(isA<BtcAddressException>()),
       );
     });
 
     test('bondState returns stream for valid address', () async {
       final state = await bluetooth.bondState('AA:BB:CC:DD:EE:FF').first;
-      expect(state, BluetoothBondState.bonded);
+      expect(state, BtcBondState.bonded);
     });
   });
 
@@ -506,7 +506,7 @@ void main() {
       expect(devices, hasLength(1));
       expect(devices.first.address, 'AA:BB:CC:DD:EE:FF');
       expect(devices.first.name, 'Device1');
-      expect(devices.first.bondState, BluetoothBondState.bonded);
+      expect(devices.first.bondState, BtcBondState.bonded);
     });
 
     test('bondDevice sends address argument', () async {
@@ -601,7 +601,7 @@ void main() {
       expect(caps.platformNote, 'Test platform');
     });
 
-    test('PlatformException converted to BluetoothUnsupportedException', () async {
+    test('PlatformException converted to BtcUnsupportedException', () async {
       TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
           .setMockMethodCallHandler(platform.methodChannel, (call) async {
         throw PlatformException(
@@ -613,7 +613,7 @@ void main() {
 
       expect(
         () => platform.isSupported(),
-        throwsA(isA<BluetoothUnsupportedException>().having(
+        throwsA(isA<BtcUnsupportedException>().having(
           (e) => e.feature,
           'feature',
           'discovery',
@@ -621,7 +621,7 @@ void main() {
       );
     });
 
-    test('PlatformException converted to BluetoothPermissionException', () async {
+    test('PlatformException converted to BtcPermissionException', () async {
       TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
           .setMockMethodCallHandler(platform.methodChannel, (call) async {
         throw PlatformException(code: 'permissionDenied', message: 'No BT permission');
@@ -629,11 +629,11 @@ void main() {
 
       expect(
         () => platform.isEnabled(),
-        throwsA(isA<BluetoothPermissionException>()),
+        throwsA(isA<BtcPermissionException>()),
       );
     });
 
-    test('PlatformException converted to BluetoothDisabledException', () async {
+    test('PlatformException converted to BtcDisabledException', () async {
       TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
           .setMockMethodCallHandler(platform.methodChannel, (call) async {
         throw PlatformException(code: 'bluetoothDisabled', message: 'BT off');
@@ -641,11 +641,11 @@ void main() {
 
       expect(
         () => platform.startDiscovery(),
-        throwsA(isA<BluetoothDisabledException>()),
+        throwsA(isA<BtcDisabledException>()),
       );
     });
 
-    test('PlatformException converted to BluetoothConnectionException', () async {
+    test('PlatformException converted to BtcConnectionException', () async {
       TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
           .setMockMethodCallHandler(platform.methodChannel, (call) async {
         throw PlatformException(
@@ -660,7 +660,7 @@ void main() {
           address: 'AA:BB:CC:DD:EE:FF',
           uuid: '00001101-0000-1000-8000-00805F9B34FB',
         ),
-        throwsA(isA<BluetoothConnectionException>().having(
+        throwsA(isA<BtcConnectionException>().having(
           (e) => e.address,
           'address',
           'AA:BB:CC:DD:EE:FF',
@@ -668,7 +668,7 @@ void main() {
       );
     });
 
-    test('PlatformException converted to BluetoothWriteException', () async {
+    test('PlatformException converted to BtcWriteException', () async {
       TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
           .setMockMethodCallHandler(platform.methodChannel, (call) async {
         throw PlatformException(code: 'writeFailed', message: 'Write error');
@@ -676,11 +676,11 @@ void main() {
 
       expect(
         () => platform.write(1, Uint8List(0)),
-        throwsA(isA<BluetoothWriteException>()),
+        throwsA(isA<BtcWriteException>()),
       );
     });
 
-    test('PlatformException converted to BluetoothTimeoutException', () async {
+    test('PlatformException converted to BtcTimeoutException', () async {
       TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
           .setMockMethodCallHandler(platform.methodChannel, (call) async {
         throw PlatformException(
@@ -695,7 +695,7 @@ void main() {
           address: 'AA:BB:CC:DD:EE:FF',
           uuid: '00001101-0000-1000-8000-00805F9B34FB',
         ),
-        throwsA(isA<BluetoothTimeoutException>().having(
+        throwsA(isA<BtcTimeoutException>().having(
           (e) => e.timeoutMs,
           'timeoutMs',
           5000,
@@ -703,7 +703,7 @@ void main() {
       );
     });
 
-    test('Unknown PlatformException converted to BluetoothException', () async {
+    test('Unknown PlatformException converted to BtcException', () async {
       TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
           .setMockMethodCallHandler(platform.methodChannel, (call) async {
         throw PlatformException(code: 'unknown_code', message: 'Something');
@@ -711,7 +711,7 @@ void main() {
 
       expect(
         () => platform.isSupported(),
-        throwsA(isA<BluetoothException>().having(
+        throwsA(isA<BtcException>().having(
           (e) => e.code,
           'code',
           'unknown_code',
@@ -720,11 +720,11 @@ void main() {
     });
   });
 
-  // ── BluetoothDevice Model ─────────────────────────────────────────────
+  // ── BtcDevice Model ──────────────────────────────────────────────────
 
-  group('BluetoothDevice', () {
+  group('BtcDevice', () {
     test('fromMap creates device correctly', () {
-      final device = BluetoothDevice.fromMap({
+      final device = BtcDevice.fromMap({
         'address': '11:22:33:44:55:66',
         'name': 'TestDevice',
         'alias': 'MyDevice',
@@ -738,21 +738,21 @@ void main() {
       expect(device.name, 'TestDevice');
       expect(device.alias, 'MyDevice');
       expect(device.rssi, -50);
-      expect(device.type, BluetoothDeviceType.classic);
-      expect(device.bondState, BluetoothBondState.bonded);
+      expect(device.type, BtcDeviceType.classic);
+      expect(device.bondState, BtcBondState.bonded);
       expect(device.uuids, hasLength(1));
     });
 
     test('toMap round-trip is consistent', () {
-      const original = BluetoothDevice(
+      const original = BtcDevice(
         address: 'AA:BB:CC:DD:EE:FF',
         name: 'Dev',
-        type: BluetoothDeviceType.dual,
-        bondState: BluetoothBondState.bonding,
+        type: BtcDeviceType.dual,
+        bondState: BtcBondState.bonding,
         uuids: ['uuid1'],
       );
       final map = original.toMap();
-      final restored = BluetoothDevice.fromMap(map);
+      final restored = BtcDevice.fromMap(map);
 
       expect(restored.address, original.address);
       expect(restored.name, original.name);
@@ -762,9 +762,9 @@ void main() {
     });
 
     test('equality is based on address', () {
-      const a = BluetoothDevice(address: 'AA:BB:CC:DD:EE:FF', name: 'A');
-      const b = BluetoothDevice(address: 'AA:BB:CC:DD:EE:FF', name: 'B');
-      const c = BluetoothDevice(address: '11:22:33:44:55:66', name: 'A');
+      const a = BtcDevice(address: 'AA:BB:CC:DD:EE:FF', name: 'A');
+      const b = BtcDevice(address: 'AA:BB:CC:DD:EE:FF', name: 'B');
+      const c = BtcDevice(address: '11:22:33:44:55:66', name: 'A');
 
       expect(a, equals(b));
       expect(a, isNot(equals(c)));
@@ -772,16 +772,16 @@ void main() {
     });
 
     test('displayName falls back through alias → name → address', () {
-      const withAlias = BluetoothDevice(
+      const withAlias = BtcDevice(
         address: 'AA:BB:CC:DD:EE:FF',
         name: 'Name',
         alias: 'Alias',
       );
-      const withName = BluetoothDevice(
+      const withName = BtcDevice(
         address: 'AA:BB:CC:DD:EE:FF',
         name: 'Name',
       );
-      const addressOnly = BluetoothDevice(address: 'AA:BB:CC:DD:EE:FF');
+      const addressOnly = BtcDevice(address: 'AA:BB:CC:DD:EE:FF');
 
       expect(withAlias.displayName, 'Alias');
       expect(withName.displayName, 'Name');
@@ -789,29 +789,29 @@ void main() {
     });
 
     test('fromMap handles missing optional fields', () {
-      final device = BluetoothDevice.fromMap({
+      final device = BtcDevice.fromMap({
         'address': 'AA:BB:CC:DD:EE:FF',
       });
       expect(device.name, isNull);
       expect(device.alias, isNull);
       expect(device.rssi, isNull);
-      expect(device.type, BluetoothDeviceType.unknown);
-      expect(device.bondState, BluetoothBondState.none);
+      expect(device.type, BtcDeviceType.unknown);
+      expect(device.bondState, BtcBondState.none);
       expect(device.uuids, isEmpty);
     });
 
     test('fromMap handles unknown enum values', () {
-      final device = BluetoothDevice.fromMap({
+      final device = BtcDevice.fromMap({
         'address': 'AA:BB:CC:DD:EE:FF',
         'type': 'nonexistent_type',
         'bondState': 'weird',
       });
-      expect(device.type, BluetoothDeviceType.unknown);
-      expect(device.bondState, BluetoothBondState.none);
+      expect(device.type, BtcDeviceType.unknown);
+      expect(device.bondState, BtcBondState.none);
     });
 
     test('toString contains address and name', () {
-      const device = BluetoothDevice(address: 'AA:BB:CC:DD:EE:FF', name: 'Dev');
+      const device = BtcDevice(address: 'AA:BB:CC:DD:EE:FF', name: 'Dev');
       expect(device.toString(), contains('AA:BB:CC:DD:EE:FF'));
       expect(device.toString(), contains('Dev'));
     });
@@ -821,7 +821,7 @@ void main() {
 
   group('PlatformCapabilities', () {
     test('fromMap creates capabilities correctly', () {
-      final caps = PlatformCapabilities.fromMap({
+      final caps = BtcPlatformCapabilities.fromMap({
         'canDiscoverDevices': true,
         'canGetPairedDevices': true,
         'canBondDevices': true,
@@ -842,14 +842,14 @@ void main() {
     });
 
     test('toMap round-trip is consistent', () {
-      const original = PlatformCapabilities(
+      const original = BtcPlatformCapabilities(
         canDiscoverDevices: true,
         canEnableBluetooth: true,
         requiresMfiCertification: true,
         platformNote: 'iOS',
       );
       final map = original.toMap();
-      final restored = PlatformCapabilities.fromMap(map);
+      final restored = BtcPlatformCapabilities.fromMap(map);
 
       expect(restored.canDiscoverDevices, original.canDiscoverDevices);
       expect(restored.canEnableBluetooth, original.canEnableBluetooth);
@@ -858,7 +858,7 @@ void main() {
     });
 
     test('defaults are all false/null', () {
-      const caps = PlatformCapabilities();
+      const caps = BtcPlatformCapabilities();
       expect(caps.canEnableBluetooth, isFalse);
       expect(caps.canDisableBluetooth, isFalse);
       expect(caps.canDiscoverDevices, isFalse);
@@ -875,7 +875,7 @@ void main() {
     });
 
     test('fromMap handles missing keys with defaults', () {
-      final caps = PlatformCapabilities.fromMap({});
+      final caps = BtcPlatformCapabilities.fromMap({});
       expect(caps.canEnableBluetooth, isFalse);
       expect(caps.canDiscoverDevices, isFalse);
       expect(caps.platformNote, isNull);
@@ -885,20 +885,20 @@ void main() {
   // ── Exception Hierarchy ───────────────────────────────────────────────
 
   group('Exception hierarchy', () {
-    test('BluetoothException stores message and code', () {
-      const ex = BluetoothException('test error', code: 'testCode');
+    test('BtcException stores message and code', () {
+      const ex = BtcException('test error', code: 'testCode');
       expect(ex.message, 'test error');
       expect(ex.code, 'testCode');
       expect(ex.toString(), contains('testCode'));
     });
 
-    test('BluetoothException without code', () {
-      const ex = BluetoothException('simple error');
+    test('BtcException without code', () {
+      const ex = BtcException('simple error');
       expect(ex.code, isNull);
     });
 
-    test('BluetoothUnsupportedException has feature and platform', () {
-      const ex = BluetoothUnsupportedException(
+    test('BtcUnsupportedException has feature and platform', () {
+      const ex = BtcUnsupportedException(
         feature: 'discovery',
         platform: 'iOS',
       );
@@ -908,8 +908,8 @@ void main() {
       expect(ex.toString(), contains('iOS'));
     });
 
-    test('BluetoothUnsupportedException with custom reason', () {
-      const ex = BluetoothUnsupportedException(
+    test('BtcUnsupportedException with custom reason', () {
+      const ex = BtcUnsupportedException(
         feature: 'server',
         platform: 'iOS',
         reason: 'Custom reason',
@@ -917,8 +917,8 @@ void main() {
       expect(ex.message, 'Custom reason');
     });
 
-    test('BluetoothConnectionException has address', () {
-      const ex = BluetoothConnectionException(
+    test('BtcConnectionException has address', () {
+      const ex = BtcConnectionException(
         'Connection refused',
         address: 'AA:BB:CC:DD:EE:FF',
       );
@@ -927,94 +927,94 @@ void main() {
       expect(ex.code, 'connectionFailed');
     });
 
-    test('BluetoothConnectionException without address', () {
-      const ex = BluetoothConnectionException('Failed');
+    test('BtcConnectionException without address', () {
+      const ex = BtcConnectionException('Failed');
       expect(ex.address, isNull);
     });
 
-    test('BluetoothAddressException has address', () {
-      const ex = BluetoothAddressException('INVALID');
+    test('BtcAddressException has address', () {
+      const ex = BtcAddressException('INVALID');
       expect(ex.address, 'INVALID');
       expect(ex.toString(), contains('INVALID'));
       expect(ex.code, 'invalidAddress');
     });
 
-    test('BluetoothUuidException has uuid', () {
-      const ex = BluetoothUuidException('bad-uuid');
+    test('BtcUuidException has uuid', () {
+      const ex = BtcUuidException('bad-uuid');
       expect(ex.uuid, 'bad-uuid');
       expect(ex.code, 'invalidUuid');
     });
 
-    test('BluetoothTimeoutException has timeoutMs', () {
-      const ex = BluetoothTimeoutException(timeoutMs: 3000);
+    test('BtcTimeoutException has timeoutMs', () {
+      const ex = BtcTimeoutException(timeoutMs: 3000);
       expect(ex.timeoutMs, 3000);
       expect(ex.code, 'timeout');
     });
 
-    test('BluetoothPermissionException defaults', () {
-      const ex = BluetoothPermissionException();
+    test('BtcPermissionException defaults', () {
+      const ex = BtcPermissionException();
       expect(ex.message, 'Bluetooth permission denied');
       expect(ex.code, 'permissionDenied');
     });
 
-    test('BluetoothDisabledException defaults', () {
-      const ex = BluetoothDisabledException();
+    test('BtcDisabledException defaults', () {
+      const ex = BtcDisabledException();
       expect(ex.message, 'Bluetooth adapter is disabled');
       expect(ex.code, 'bluetoothDisabled');
     });
 
-    test('BluetoothWriteException defaults', () {
-      const ex = BluetoothWriteException();
+    test('BtcWriteException defaults', () {
+      const ex = BtcWriteException();
       expect(ex.message, 'Failed to write data');
       expect(ex.code, 'writeFailed');
     });
 
-    test('all exceptions are BluetoothException', () {
+    test('all exceptions are BtcException', () {
       expect(
-        const BluetoothPermissionException(),
-        isA<BluetoothException>(),
+        const BtcPermissionException(),
+        isA<BtcException>(),
       );
       expect(
-        const BluetoothDisabledException(),
-        isA<BluetoothException>(),
+        const BtcDisabledException(),
+        isA<BtcException>(),
       );
       expect(
-        const BluetoothWriteException(),
-        isA<BluetoothException>(),
+        const BtcWriteException(),
+        isA<BtcException>(),
       );
       expect(
-        const BluetoothTimeoutException(),
-        isA<BluetoothException>(),
+        const BtcTimeoutException(),
+        isA<BtcException>(),
       );
       expect(
-        const BluetoothAddressException('test'),
-        isA<BluetoothException>(),
+        const BtcAddressException('test'),
+        isA<BtcException>(),
       );
       expect(
-        const BluetoothUuidException('test'),
-        isA<BluetoothException>(),
+        const BtcUuidException('test'),
+        isA<BtcException>(),
       );
       expect(
-        const BluetoothUnsupportedException(feature: 'f', platform: 'p'),
-        isA<BluetoothException>(),
+        const BtcUnsupportedException(feature: 'f', platform: 'p'),
+        isA<BtcException>(),
       );
       expect(
-        const BluetoothConnectionException('test'),
-        isA<BluetoothException>(),
+        const BtcConnectionException('test'),
+        isA<BtcException>(),
       );
     });
 
     test('all exceptions implement Exception', () {
-      expect(const BluetoothException('test'), isA<Exception>());
-      expect(const BluetoothPermissionException(), isA<Exception>());
+      expect(const BtcException('test'), isA<Exception>());
+      expect(const BtcPermissionException(), isA<Exception>());
     });
   });
 
-  // ── BluetoothStreamSink ───────────────────────────────────────────────
+  // ── BtcStreamSink ────────────────────────────────────────────────────
 
-  group('BluetoothStreamSink', () {
+  group('BtcStreamSink', () {
     test('throws StateError after close', () async {
-      final sink = BluetoothStreamSink(
+      final sink = BtcStreamSink(
         connectionId: 1,
         methodChannel: const MethodChannel('flutter_classic_bluetooth/methods'),
       );
@@ -1028,7 +1028,7 @@ void main() {
     });
 
     test('isClosed is false initially', () {
-      final sink = BluetoothStreamSink(
+      final sink = BtcStreamSink(
         connectionId: 1,
         methodChannel: const MethodChannel('flutter_classic_bluetooth/methods'),
       );
@@ -1036,7 +1036,7 @@ void main() {
     });
 
     test('cancel marks sink as closed', () {
-      final sink = BluetoothStreamSink(
+      final sink = BtcStreamSink(
         connectionId: 1,
         methodChannel: const MethodChannel('flutter_classic_bluetooth/methods'),
       );
@@ -1045,7 +1045,7 @@ void main() {
     });
 
     test('close marks sink as closed', () async {
-      final sink = BluetoothStreamSink(
+      final sink = BtcStreamSink(
         connectionId: 1,
         methodChannel: const MethodChannel('flutter_classic_bluetooth/methods'),
       );
@@ -1054,7 +1054,7 @@ void main() {
     });
 
     test('double close does not throw', () async {
-      final sink = BluetoothStreamSink(
+      final sink = BtcStreamSink(
         connectionId: 1,
         methodChannel: const MethodChannel('flutter_classic_bluetooth/methods'),
       );
@@ -1073,7 +1073,7 @@ void main() {
         return null;
       });
 
-      final sink = BluetoothStreamSink(
+      final sink = BtcStreamSink(
         connectionId: 42,
         methodChannel: methodChannel,
       );
@@ -1100,7 +1100,7 @@ void main() {
         return null;
       });
 
-      final sink = BluetoothStreamSink(
+      final sink = BtcStreamSink(
         connectionId: 1,
         methodChannel: methodChannel,
       );
@@ -1117,11 +1117,11 @@ void main() {
     });
   });
 
-  // ── BluetoothConnection ───────────────────────────────────────────────
+  // ── BtcConnection ────────────────────────────────────────────────────
 
-  group('BluetoothConnection', () {
+  group('BtcConnection', () {
     test('constructor sets properties correctly', () {
-      final conn = BluetoothConnection(
+      final conn = BtcConnection(
         id: 5,
         address: 'AA:BB:CC:DD:EE:FF',
         methodChannel: const MethodChannel('flutter_classic_bluetooth/methods'),
@@ -1130,22 +1130,22 @@ void main() {
       expect(conn.id, 5);
       expect(conn.address, 'AA:BB:CC:DD:EE:FF');
       expect(conn.isConnected, isTrue);
-      expect(conn.state, BluetoothConnectionState.connected);
+      expect(conn.state, BtcConnectionState.connected);
     });
 
-    test('output sink is a BluetoothStreamSink', () {
-      final conn = BluetoothConnection(
+    test('output sink is a BtcStreamSink', () {
+      final conn = BtcConnection(
         id: 1,
         address: 'AA:BB:CC:DD:EE:FF',
         methodChannel: const MethodChannel('flutter_classic_bluetooth/methods'),
       );
 
-      expect(conn.output, isA<BluetoothStreamSink>());
+      expect(conn.output, isA<BtcStreamSink>());
       expect(conn.output.isClosed, isFalse);
     });
 
     test('dispose cancels output sink', () {
-      final conn = BluetoothConnection(
+      final conn = BtcConnection(
         id: 1,
         address: 'AA:BB:CC:DD:EE:FF',
         methodChannel: const MethodChannel('flutter_classic_bluetooth/methods'),
@@ -1156,11 +1156,11 @@ void main() {
     });
   });
 
-  // ── BluetoothServerSocket ─────────────────────────────────────────────
+  // ── BtcServerSocket ──────────────────────────────────────────────────
 
-  group('BluetoothServerSocket', () {
+  group('BtcServerSocket', () {
     test('constructor sets properties correctly', () {
-      final server = BluetoothServerSocket(
+      final server = BtcServerSocket(
         id: 3,
         uuid: '00001101-0000-1000-8000-00805F9B34FB',
         serviceName: 'TestService',
@@ -1182,7 +1182,7 @@ void main() {
         return null;
       });
 
-      final server = BluetoothServerSocket(
+      final server = BtcServerSocket(
         id: 7,
         uuid: '00001101-0000-1000-8000-00805F9B34FB',
         serviceName: 'Test',
@@ -1203,23 +1203,23 @@ void main() {
   // ── Enum Values ───────────────────────────────────────────────────────
 
   group('Enums', () {
-    test('BluetoothAdapterState has all expected values', () {
-      expect(BluetoothAdapterState.values, hasLength(7));
-      expect(BluetoothAdapterState.values, contains(BluetoothAdapterState.on));
-      expect(BluetoothAdapterState.values, contains(BluetoothAdapterState.off));
-      expect(BluetoothAdapterState.values, contains(BluetoothAdapterState.unknown));
+    test('BtcAdapterState has all expected values', () {
+      expect(BtcAdapterState.values, hasLength(7));
+      expect(BtcAdapterState.values, contains(BtcAdapterState.on));
+      expect(BtcAdapterState.values, contains(BtcAdapterState.off));
+      expect(BtcAdapterState.values, contains(BtcAdapterState.unknown));
     });
 
-    test('BluetoothBondState has all expected values', () {
-      expect(BluetoothBondState.values, hasLength(3));
+    test('BtcBondState has all expected values', () {
+      expect(BtcBondState.values, hasLength(3));
     });
 
-    test('BluetoothDeviceType has all expected values', () {
-      expect(BluetoothDeviceType.values, hasLength(4));
+    test('BtcDeviceType has all expected values', () {
+      expect(BtcDeviceType.values, hasLength(4));
     });
 
-    test('BluetoothConnectionState has all expected values', () {
-      expect(BluetoothConnectionState.values, hasLength(4));
+    test('BtcConnectionState has all expected values', () {
+      expect(BtcConnectionState.values, hasLength(4));
     });
   });
 }

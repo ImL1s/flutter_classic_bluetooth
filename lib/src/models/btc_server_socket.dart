@@ -2,13 +2,13 @@ import 'dart:async';
 
 import 'package:flutter/services.dart';
 
-import 'bluetooth_connection.dart';
+import 'btc_connection.dart';
 
 /// A server socket that listens for incoming Bluetooth RFCOMM connections.
 ///
 /// Creates an RFCOMM server on the specified UUID and waits for remote
 /// devices to connect. Each incoming connection is delivered as a
-/// [BluetoothConnection] through the [connections] stream.
+/// [BtcConnection] through the [connections] stream.
 ///
 /// ## Usage
 /// ```dart
@@ -34,7 +34,7 @@ import 'bluetooth_connection.dart';
 /// | macOS | ✅ |
 /// | Linux | ✅ |
 /// | iOS | ❌ (no server mode) |
-class BluetoothServerSocket {
+class BtcServerSocket {
   /// Unique identifier for this server assigned by the native side.
   final int id;
 
@@ -46,13 +46,13 @@ class BluetoothServerSocket {
 
   final MethodChannel _methodChannel;
   late final EventChannel _serverChannel;
-  late final Stream<BluetoothConnection> _connectionsStream;
+  late final Stream<BtcConnection> _connectionsStream;
 
-  /// Creates a [BluetoothServerSocket] wrapping the native server [id].
+  /// Creates a [BtcServerSocket] wrapping the native server [id].
   ///
   /// This constructor is intended to be called by the method channel
   /// implementation, not directly by users.
-  BluetoothServerSocket({
+  BtcServerSocket({
     required this.id,
     required this.uuid,
     required this.serviceName,
@@ -62,7 +62,7 @@ class BluetoothServerSocket {
 
     _connectionsStream = _serverChannel.receiveBroadcastStream().map((event) {
       final map = Map<dynamic, dynamic>.from(event as Map);
-      return BluetoothConnection(
+      return BtcConnection(
         id: map['id'] as int,
         address: map['address'] as String,
         methodChannel: _methodChannel,
@@ -71,7 +71,7 @@ class BluetoothServerSocket {
   }
 
   /// Stream of incoming connections from remote devices.
-  Stream<BluetoothConnection> get connections => _connectionsStream;
+  Stream<BtcConnection> get connections => _connectionsStream;
 
   /// Stops the server and releases the RFCOMM channel.
   ///

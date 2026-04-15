@@ -2,8 +2,8 @@ import 'dart:async';
 
 import 'package:flutter/services.dart';
 
-import 'enums.dart';
-import 'bluetooth_stream_sink.dart';
+import 'btc_enums.dart';
+import 'btc_stream_sink.dart';
 
 /// An active RFCOMM connection to a remote Bluetooth device.
 ///
@@ -27,7 +27,7 @@ import 'bluetooth_stream_sink.dart';
 /// - [dispose] cleans up all resources. Always call this when done.
 ///
 /// {@category Models}
-class BluetoothConnection {
+class BtcConnection {
   /// Unique identifier for this connection assigned by the native side.
   final int id;
 
@@ -39,17 +39,17 @@ class BluetoothConnection {
   late final EventChannel _stateChannel;
 
   late final Stream<Uint8List> _inputStream;
-  late final BluetoothStreamSink _outputSink;
-  late final Stream<BluetoothConnectionState> _stateStream;
+  late final BtcStreamSink _outputSink;
+  late final Stream<BtcConnectionState> _stateStream;
 
-  StreamSubscription<BluetoothConnectionState>? _stateSubscription;
-  BluetoothConnectionState _state = BluetoothConnectionState.connected;
+  StreamSubscription<BtcConnectionState>? _stateSubscription;
+  BtcConnectionState _state = BtcConnectionState.connected;
 
-  /// Creates a [BluetoothConnection] wrapping the native connection [id].
+  /// Creates a [BtcConnection] wrapping the native connection [id].
   ///
   /// This constructor is intended to be called by the method channel
   /// implementation, not directly by users.
-  BluetoothConnection({
+  BtcConnection({
     required this.id,
     required this.address,
     required MethodChannel methodChannel,
@@ -62,15 +62,15 @@ class BluetoothConnection {
         .receiveBroadcastStream()
         .map((event) => event as Uint8List);
 
-    _outputSink = BluetoothStreamSink(
+    _outputSink = BtcStreamSink(
       connectionId: id,
       methodChannel: _methodChannel,
     );
 
     _stateStream = _stateChannel.receiveBroadcastStream().map((event) {
-      return BluetoothConnectionState.values.firstWhere(
+      return BtcConnectionState.values.firstWhere(
         (e) => e.name == event,
-        orElse: () => BluetoothConnectionState.disconnected,
+        orElse: () => BtcConnectionState.disconnected,
       );
     });
 
@@ -84,32 +84,32 @@ class BluetoothConnection {
 
   /// Sink for writing bytes to the remote device.
   ///
-  /// Writes are queued and delivered in order. Use [BluetoothStreamSink.add]
+  /// Writes are queued and delivered in order. Use [BtcStreamSink.add]
   /// to write data.
-  BluetoothStreamSink get output => _outputSink;
+  BtcStreamSink get output => _outputSink;
 
   /// Stream of connection state changes.
-  Stream<BluetoothConnectionState> get stateStream => _stateStream;
+  Stream<BtcConnectionState> get stateStream => _stateStream;
 
   /// The current connection state.
-  BluetoothConnectionState get state => _state;
+  BtcConnectionState get state => _state;
 
   /// Whether this connection is currently active.
-  bool get isConnected => _state == BluetoothConnectionState.connected;
+  bool get isConnected => _state == BtcConnectionState.connected;
 
   /// Gracefully disconnects: waits for all pending writes to complete,
   /// then closes the connection.
   Future<void> finish() async {
     await _outputSink.close();
     await _methodChannel.invokeMethod('disconnect', {'id': id});
-    _state = BluetoothConnectionState.disconnected;
+    _state = BtcConnectionState.disconnected;
   }
 
   /// Immediately disconnects, discarding any pending writes.
   Future<void> close() async {
     _outputSink.cancel();
     await _methodChannel.invokeMethod('disconnect', {'id': id});
-    _state = BluetoothConnectionState.disconnected;
+    _state = BtcConnectionState.disconnected;
   }
 
   /// Releases all resources associated with this connection.

@@ -38,7 +38,7 @@ class _AdapterScreenState extends State<AdapterScreen> {
         _address = address;
         _loading = false;
       });
-    } on BluetoothException catch (e) {
+    } on BtcException catch (e) {
       if (!mounted) return;
       setState(() {
         _error = e.message;
@@ -51,9 +51,9 @@ class _AdapterScreenState extends State<AdapterScreen> {
     try {
       await _bluetooth.enableBluetooth();
       _load();
-    } on BluetoothUnsupportedException {
+    } on BtcUnsupportedException {
       _showSnack('Enable not supported on this platform');
-    } on BluetoothException catch (e) {
+    } on BtcException catch (e) {
       _showSnack(e.message);
     }
   }
@@ -62,9 +62,9 @@ class _AdapterScreenState extends State<AdapterScreen> {
     try {
       await _bluetooth.disableBluetooth();
       _load();
-    } on BluetoothUnsupportedException {
+    } on BtcUnsupportedException {
       _showSnack('Disable not supported on this platform');
-    } on BluetoothException catch (e) {
+    } on BtcException catch (e) {
       _showSnack(e.message);
     }
   }

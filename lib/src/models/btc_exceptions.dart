@@ -1,44 +1,44 @@
 /// Base exception for all Bluetooth Classic operations.
 ///
-/// All plugin exceptions extend this class. Catch [BluetoothException]
+/// All plugin exceptions extend this class. Catch [BtcException]
 /// to handle any Bluetooth error, or catch specific subclasses for
 /// targeted error handling:
 ///
 /// ```dart
 /// try {
 ///   await bluetooth.startDiscovery();
-/// } on BluetoothUnsupportedException catch (e) {
+/// } on BtcUnsupportedException catch (e) {
 ///   print('${e.feature} not supported on ${e.platform}');
-/// } on BluetoothDisabledException {
+/// } on BtcDisabledException {
 ///   print('Please enable Bluetooth');
-/// } on BluetoothException catch (e) {
+/// } on BtcException catch (e) {
 ///   print('Error: ${e.message}');
 /// }
 /// ```
 ///
 /// See also:
-/// - [BluetoothUnsupportedException] — feature not available on platform
-/// - [BluetoothPermissionException] — permission denied
-/// - [BluetoothDisabledException] — adapter is off
-/// - [BluetoothConnectionException] — connection failed
-/// - [BluetoothWriteException] — write failed
-/// - [BluetoothTimeoutException] — operation timed out
-/// - [BluetoothAddressException] — invalid MAC address
-/// - [BluetoothUuidException] — invalid UUID
+/// - [BtcUnsupportedException] — feature not available on platform
+/// - [BtcPermissionException] — permission denied
+/// - [BtcDisabledException] — adapter is off
+/// - [BtcConnectionException] — connection failed
+/// - [BtcWriteException] — write failed
+/// - [BtcTimeoutException] — operation timed out
+/// - [BtcAddressException] — invalid MAC address
+/// - [BtcUuidException] — invalid UUID
 ///
 /// {@category Exceptions}
-class BluetoothException implements Exception {
+class BtcException implements Exception {
   /// Human-readable error message.
   final String message;
 
   /// Optional error code from the native platform.
   final String? code;
 
-  /// Creates a [BluetoothException] with a [message] and optional [code].
-  const BluetoothException(this.message, {this.code});
+  /// Creates a [BtcException] with a [message] and optional [code].
+  const BtcException(this.message, {this.code});
 
   @override
-  String toString() => 'BluetoothException($code): $message';
+  String toString() => 'BtcException($code): $message';
 }
 
 /// Thrown when a feature is not available on the current platform.
@@ -47,14 +47,14 @@ class BluetoothException implements Exception {
 /// iOS does not support device discovery for Bluetooth Classic.
 ///
 /// {@category Exceptions}
-class BluetoothUnsupportedException extends BluetoothException {
+class BtcUnsupportedException extends BtcException {
   /// The feature that is not supported.
   final String feature;
 
   /// The platform where the feature is unsupported.
   final String platform;
 
-  const BluetoothUnsupportedException({
+  const BtcUnsupportedException({
     required this.feature,
     required this.platform,
     String? reason,
@@ -66,22 +66,22 @@ class BluetoothUnsupportedException extends BluetoothException {
 
   @override
   String toString() =>
-      'BluetoothUnsupportedException: $feature is not supported on $platform — $message';
+      'BtcUnsupportedException: $feature is not supported on $platform — $message';
 }
 
 /// Thrown when a required Bluetooth permission is denied.
 ///
 /// {@category Exceptions}
-class BluetoothPermissionException extends BluetoothException {
-  const BluetoothPermissionException([super.message = 'Bluetooth permission denied'])
+class BtcPermissionException extends BtcException {
+  const BtcPermissionException([super.message = 'Bluetooth permission denied'])
       : super(code: 'permissionDenied');
 }
 
 /// Thrown when an operation requires Bluetooth to be enabled but it is off.
 ///
 /// {@category Exceptions}
-class BluetoothDisabledException extends BluetoothException {
-  const BluetoothDisabledException(
+class BtcDisabledException extends BtcException {
+  const BtcDisabledException(
       [super.message = 'Bluetooth adapter is disabled'])
       : super(code: 'bluetoothDisabled');
 }
@@ -89,11 +89,11 @@ class BluetoothDisabledException extends BluetoothException {
 /// Thrown when a connection attempt fails.
 ///
 /// {@category Exceptions}
-class BluetoothConnectionException extends BluetoothException {
+class BtcConnectionException extends BtcException {
   /// The address of the device that failed to connect.
   final String? address;
 
-  const BluetoothConnectionException(
+  const BtcConnectionException(
     super.message, {
     this.address,
   }) : super(code: 'connectionFailed');
@@ -102,19 +102,19 @@ class BluetoothConnectionException extends BluetoothException {
 /// Thrown when a write operation to a connected device fails.
 ///
 /// {@category Exceptions}
-class BluetoothWriteException extends BluetoothException {
-  const BluetoothWriteException([super.message = 'Failed to write data'])
+class BtcWriteException extends BtcException {
+  const BtcWriteException([super.message = 'Failed to write data'])
       : super(code: 'writeFailed');
 }
 
 /// Thrown when an operation times out.
 ///
 /// {@category Exceptions}
-class BluetoothTimeoutException extends BluetoothException {
+class BtcTimeoutException extends BtcException {
   /// The duration in milliseconds that elapsed before timeout.
   final int? timeoutMs;
 
-  const BluetoothTimeoutException({
+  const BtcTimeoutException({
     String message = 'Operation timed out',
     this.timeoutMs,
   }) : super(message, code: 'timeout');
@@ -123,21 +123,21 @@ class BluetoothTimeoutException extends BluetoothException {
 /// Thrown when an invalid Bluetooth MAC address is provided.
 ///
 /// {@category Exceptions}
-class BluetoothAddressException extends BluetoothException {
+class BtcAddressException extends BtcException {
   /// The invalid address that was provided.
   final String address;
 
-  const BluetoothAddressException(this.address)
+  const BtcAddressException(this.address)
       : super('Invalid Bluetooth address: $address', code: 'invalidAddress');
 }
 
 /// Thrown when an invalid UUID is provided.
 ///
 /// {@category Exceptions}
-class BluetoothUuidException extends BluetoothException {
+class BtcUuidException extends BtcException {
   /// The invalid UUID that was provided.
   final String uuid;
 
-  const BluetoothUuidException(this.uuid)
+  const BtcUuidException(this.uuid)
       : super('Invalid UUID: $uuid', code: 'invalidUuid');
 }

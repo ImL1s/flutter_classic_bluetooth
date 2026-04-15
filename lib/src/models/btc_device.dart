@@ -1,4 +1,4 @@
-import 'enums.dart';
+import 'btc_enums.dart';
 
 /// Represents a Bluetooth Classic remote device.
 ///
@@ -15,7 +15,7 @@ import 'enums.dart';
 /// | uuids | ✅ | ✅ | ✅ | ✅ | ⚠️ protocol strings |
 ///
 /// {@category Models}
-class BluetoothDevice {
+class BtcDevice {
   /// The hardware address of the device.
   ///
   /// On most platforms this is the MAC address (e.g. `"AA:BB:CC:DD:EE:FF"`).
@@ -36,40 +36,40 @@ class BluetoothDevice {
   final int? rssi;
 
   /// The type of Bluetooth device.
-  final BluetoothDeviceType type;
+  final BtcDeviceType type;
 
   /// The current bond/pairing state.
-  final BluetoothBondState bondState;
+  final BtcBondState bondState;
 
   /// Service UUIDs advertised by the device.
   ///
   /// On iOS these are MFi protocol strings.
   final List<String> uuids;
 
-  const BluetoothDevice({
+  const BtcDevice({
     required this.address,
     this.name,
     this.alias,
     this.rssi,
-    this.type = BluetoothDeviceType.unknown,
-    this.bondState = BluetoothBondState.none,
+    this.type = BtcDeviceType.unknown,
+    this.bondState = BtcBondState.none,
     this.uuids = const [],
   });
 
-  /// Creates a [BluetoothDevice] from a platform channel map.
-  factory BluetoothDevice.fromMap(Map<dynamic, dynamic> map) {
-    return BluetoothDevice(
+  /// Creates a [BtcDevice] from a platform channel map.
+  factory BtcDevice.fromMap(Map<dynamic, dynamic> map) {
+    return BtcDevice(
       address: map['address'] as String,
       name: map['name'] as String?,
       alias: map['alias'] as String?,
       rssi: map['rssi'] as int?,
-      type: BluetoothDeviceType.values.firstWhere(
+      type: BtcDeviceType.values.firstWhere(
         (e) => e.name == map['type'],
-        orElse: () => BluetoothDeviceType.unknown,
+        orElse: () => BtcDeviceType.unknown,
       ),
-      bondState: BluetoothBondState.values.firstWhere(
+      bondState: BtcBondState.values.firstWhere(
         (e) => e.name == map['bondState'],
-        orElse: () => BluetoothBondState.none,
+        orElse: () => BtcBondState.none,
       ),
       uuids: List<String>.from(map['uuids'] ?? []),
     );
@@ -94,12 +94,12 @@ class BluetoothDevice {
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
-      other is BluetoothDevice && other.address == address;
+      other is BtcDevice && other.address == address;
 
   @override
   int get hashCode => address.hashCode;
 
   @override
   String toString() =>
-      'BluetoothDevice(address: $address, name: $name, bondState: $bondState)';
+      'BtcDevice(address: $address, name: $name, bondState: $bondState)';
 }

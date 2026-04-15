@@ -3,11 +3,11 @@ import 'dart:typed_data';
 import 'package:plugin_platform_interface/plugin_platform_interface.dart';
 
 import 'method_channel.dart';
-import 'models/enums.dart';
-import 'models/bluetooth_connection.dart';
-import 'models/bluetooth_device.dart';
-import 'models/bluetooth_server_socket.dart';
-import 'models/platform_capabilities.dart';
+import 'models/btc_enums.dart';
+import 'models/btc_connection.dart';
+import 'models/btc_device.dart';
+import 'models/btc_server_socket.dart';
+import 'models/btc_platform_capabilities.dart';
 
 /// The interface that platform-specific implementations must implement.
 ///
@@ -64,7 +64,7 @@ abstract class FlutterClassicBluetoothPlatform extends PlatformInterface {
   }
 
   /// Returns the current adapter state as a stream that emits on changes.
-  Stream<BluetoothAdapterState> adapterState() {
+  Stream<BtcAdapterState> adapterState() {
     throw UnimplementedError('adapterState() has not been implemented.');
   }
 
@@ -104,14 +104,14 @@ abstract class FlutterClassicBluetoothPlatform extends PlatformInterface {
   }
 
   /// Stream of devices found during discovery.
-  Stream<BluetoothDevice> discoveryResults() {
+  Stream<BtcDevice> discoveryResults() {
     throw UnimplementedError('discoveryResults() has not been implemented.');
   }
 
   // ── Pairing ──────────────────────────────────────────────────────────
 
   /// Returns the list of currently paired/bonded devices.
-  Future<List<BluetoothDevice>> getPairedDevices() {
+  Future<List<BtcDevice>> getPairedDevices() {
     throw UnimplementedError('getPairedDevices() has not been implemented.');
   }
 
@@ -130,7 +130,7 @@ abstract class FlutterClassicBluetoothPlatform extends PlatformInterface {
   }
 
   /// Stream of bond state changes for a specific device.
-  Stream<BluetoothBondState> bondState(String address) {
+  Stream<BtcBondState> bondState(String address) {
     throw UnimplementedError('bondState() has not been implemented.');
   }
 
@@ -139,8 +139,8 @@ abstract class FlutterClassicBluetoothPlatform extends PlatformInterface {
   /// Connects to the device at [address] using the given [uuid].
   ///
   /// If [secure] is `true` (default), uses authenticated/encrypted RFCOMM.
-  /// Returns a [BluetoothConnection] for reading/writing data.
-  Future<BluetoothConnection> connect({
+  /// Returns a [BtcConnection] for reading/writing data.
+  Future<BtcConnection> connect({
     required String address,
     required String uuid,
     bool secure = true,
@@ -164,7 +164,7 @@ abstract class FlutterClassicBluetoothPlatform extends PlatformInterface {
   ///
   /// [serviceName] is the SDP service name. If [secure] is `true`,
   /// uses authenticated/encrypted RFCOMM.
-  Future<BluetoothServerSocket> startServer({
+  Future<BtcServerSocket> startServer({
     required String uuid,
     required String serviceName,
     bool secure = true,
@@ -189,7 +189,7 @@ abstract class FlutterClassicBluetoothPlatform extends PlatformInterface {
   // ── Capabilities ─────────────────────────────────────────────────────
 
   /// Returns the platform capabilities for Bluetooth Classic.
-  Future<PlatformCapabilities> getPlatformCapabilities() {
+  Future<BtcPlatformCapabilities> getPlatformCapabilities() {
     throw UnimplementedError(
         'getPlatformCapabilities() has not been implemented.');
   }

@@ -14,9 +14,9 @@ class DiscoveryScreen extends StatefulWidget {
 
 class _DiscoveryScreenState extends State<DiscoveryScreen> {
   final _bluetooth = FlutterClassicBluetooth();
-  final _devices = <BluetoothDevice>[];
+  final _devices = <BtcDevice>[];
   bool _discovering = false;
-  StreamSubscription<BluetoothDevice>? _resultsSub;
+  StreamSubscription<BtcDevice>? _resultsSub;
   StreamSubscription<bool>? _stateSub;
 
   @override
@@ -56,9 +56,9 @@ class _DiscoveryScreenState extends State<DiscoveryScreen> {
         await _bluetooth.startDiscovery();
         setState(() => _discovering = true);
       }
-    } on BluetoothUnsupportedException catch (e) {
+    } on BtcUnsupportedException catch (e) {
       _showSnack('${e.feature} not supported on ${e.platform}');
-    } on BluetoothException catch (e) {
+    } on BtcException catch (e) {
       _showSnack(e.message);
     }
   }
@@ -114,7 +114,7 @@ class _DiscoveryScreenState extends State<DiscoveryScreen> {
 }
 
 class _DeviceTile extends StatelessWidget {
-  final BluetoothDevice device;
+  final BtcDevice device;
   final VoidCallback onTap;
 
   const _DeviceTile({required this.device, required this.onTap});
@@ -123,10 +123,10 @@ class _DeviceTile extends StatelessWidget {
   Widget build(BuildContext context) {
     return ListTile(
       leading: Icon(
-        device.bondState == BluetoothBondState.bonded
+        device.bondState == BtcBondState.bonded
             ? Icons.bluetooth_connected
             : Icons.bluetooth,
-        color: device.bondState == BluetoothBondState.bonded
+        color: device.bondState == BtcBondState.bonded
             ? Colors.blue
             : null,
       ),
@@ -134,7 +134,7 @@ class _DeviceTile extends StatelessWidget {
       subtitle: Text(
         '${device.address}'
         '${device.rssi != null ? ' • ${device.rssi} dBm' : ''}'
-        '${device.type != BluetoothDeviceType.unknown ? ' • ${device.type.name}' : ''}',
+        '${device.type != BtcDeviceType.unknown ? ' • ${device.type.name}' : ''}',
       ),
       trailing: const Icon(Icons.chevron_right),
       onTap: onTap,

@@ -18,13 +18,13 @@ lib/
     platform_interface.dart                   → abstract PlatformInterface
     method_channel.dart                       → MethodChannel implementation
     models/
-      bluetooth_device.dart                   → BluetoothDevice model
-      bluetooth_connection.dart               → BluetoothConnection with streams
-      bluetooth_stream_sink.dart              → BluetoothStreamSink for output
-      bluetooth_server_socket.dart            → BluetoothServerSocket for server mode
-      platform_capabilities.dart              → PlatformCapabilities model
-      enums.dart                              → All enums
-      exceptions.dart                         → Exception hierarchy
+      btc_device.dart                       → BtcDevice model
+      btc_connection.dart                   → BtcConnection with streams
+      btc_stream_sink.dart                  → BtcStreamSink for output
+      btc_server_socket.dart                → BtcServerSocket for server mode
+      btc_platform_capabilities.dart        → BtcPlatformCapabilities model
+      btc_enums.dart                        → All enums
+      btc_exceptions.dart                   → Exception hierarchy
 
 android/src/main/kotlin/com/.../
   FlutterClassicBluetoothPlugin.kt            → Main plugin
@@ -92,15 +92,15 @@ ios/Classes/                                 → Swift with ExternalAccessory
 ---
 
 ## 6. Error Handling
-- Throw typed exceptions from `BluetoothException` hierarchy:
-  - `BluetoothUnsupportedException` — feature not available on platform
-  - `BluetoothPermissionException` — permission denied
-  - `BluetoothDisabledException` — adapter is off
-  - `BluetoothConnectionException` — connection failed
-  - `BluetoothWriteException` — write failed
-  - `BluetoothTimeoutException` — operation timed out
-  - `BluetoothAddressException` — invalid address
-  - `BluetoothUuidException` — invalid UUID
+- Throw typed exceptions from `BtcException` hierarchy:
+  - `BtcUnsupportedException` — feature not available on platform
+  - `BtcPermissionException` — permission denied
+  - `BtcDisabledException` — adapter is off
+  - `BtcConnectionException` — connection failed
+  - `BtcWriteException` — write failed
+  - `BtcTimeoutException` — operation timed out
+  - `BtcAddressException` — invalid address
+  - `BtcUuidException` — invalid UUID
 - Convert PlatformException from native side to typed exceptions in method channel layer.
 - Never silently swallow errors.
 - Validate at public API boundaries only (plugin class, connection constructors).
@@ -121,7 +121,7 @@ ios/Classes/                                 → Swift with ExternalAccessory
 - Test model serialization/deserialization (fromMap/toMap).
 - Test platform interface throws UnimplementedError for all methods.
 - Test method channel sends correct method names and arguments.
-- Test BluetoothConnection stream management.
+- Test BtcConnection stream management.
 - Test exception hierarchy and conversion from PlatformException.
 - Run `flutter test` before committing.
 - Run `flutter analyze` after any code change and fix all issues.
@@ -131,7 +131,7 @@ ios/Classes/                                 → Swift with ExternalAccessory
 
 ## 9. Platform Capability Pattern
 - Each platform reports its capabilities via `getPlatformCapabilities()`.
-- Unsupported features throw `BluetoothUnsupportedException` with clear message.
+- Unsupported features throw `BtcUnsupportedException` with clear message.
 - Users can check capabilities before calling: `capabilities.canDiscoverDevices`.
 - Every method dartdoc includes platform support table.
 
@@ -140,8 +140,8 @@ ios/Classes/                                 → Swift with ExternalAccessory
 ## 10. Connection Architecture
 - Multiple simultaneous connections supported (connection ID system).
 - Each connection gets its own EventChannel for data streaming.
-- BluetoothConnection object wraps: input stream (read), output sink (write).
-- BluetoothStreamSink uses chained futures for ordered write delivery.
+- BtcConnection object wraps: input stream (read), output sink (write).
+- BtcStreamSink uses chained futures for ordered write delivery.
 - Graceful disconnect: `finish()` waits for pending writes, `close()` is immediate.
 - Connection objects are disposable — `dispose()` cleans up streams and channels.
 

@@ -12,7 +12,7 @@ class PairedScreen extends StatefulWidget {
 
 class _PairedScreenState extends State<PairedScreen> {
   final _bluetooth = FlutterClassicBluetooth();
-  List<BluetoothDevice>? _devices;
+  List<BtcDevice>? _devices;
   String? _error;
 
   @override
@@ -29,13 +29,13 @@ class _PairedScreenState extends State<PairedScreen> {
         _devices = devices;
         _error = null;
       });
-    } on BluetoothException catch (e) {
+    } on BtcException catch (e) {
       if (!mounted) return;
       setState(() => _error = e.message);
     }
   }
 
-  Future<void> _unbond(BluetoothDevice device) async {
+  Future<void> _unbond(BtcDevice device) async {
     try {
       final success = await _bluetooth.unbondDevice(device.address);
       if (success) {
@@ -44,9 +44,9 @@ class _PairedScreenState extends State<PairedScreen> {
       } else {
         _showSnack('Failed to unpair');
       }
-    } on BluetoothUnsupportedException {
+    } on BtcUnsupportedException {
       _showSnack('Unbond not supported on this platform');
-    } on BluetoothException catch (e) {
+    } on BtcException catch (e) {
       _showSnack(e.message);
     }
   }

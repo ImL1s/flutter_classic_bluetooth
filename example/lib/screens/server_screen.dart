@@ -14,9 +14,9 @@ class _ServerScreenState extends State<ServerScreen> {
   final _bluetooth = FlutterClassicBluetooth();
   final _log = <String>[];
 
-  BluetoothServerSocket? _server;
+  BtcServerSocket? _server;
   bool _starting = false;
-  StreamSubscription<BluetoothConnection>? _serverSub;
+  StreamSubscription<BtcConnection>? _serverSub;
 
   static const _defaultUuid = '00001101-0000-1000-8000-00805F9B34FB';
   static const _serviceName = 'FlutterBTExample';
@@ -48,9 +48,9 @@ class _ServerScreenState extends State<ServerScreen> {
         _server = server;
         _log.add('Server started — listening on $_serviceName');
       });
-    } on BluetoothUnsupportedException catch (e) {
+    } on BtcUnsupportedException catch (e) {
       _addLog('Not supported: ${e.feature} on ${e.platform}');
-    } on BluetoothException catch (e) {
+    } on BtcException catch (e) {
       _addLog('Error: ${e.message}');
     } finally {
       if (mounted) setState(() => _starting = false);

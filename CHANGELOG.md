@@ -9,6 +9,6 @@
 * **iOS**: MFi accessory support via ExternalAccessory framework.
 * Platform capabilities API for runtime feature detection.
 * Multiple simultaneous RFCOMM connections.
-* Stream-based data I/O with `BluetoothConnection`.
-* Typed exception hierarchy (`BluetoothException` and subtypes).
+* Stream-based data I/O with `BtcConnection`.
+* Typed exception hierarchy (`BtcException` and subtypes).
 * Example app with 7 screens demonstrating all features.

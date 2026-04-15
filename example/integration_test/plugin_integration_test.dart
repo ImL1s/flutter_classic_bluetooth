@@ -47,9 +47,9 @@ void main() {
       try {
         final result = await bluetooth.enableBluetooth();
         expect(result, isA<bool>());
-      } on BluetoothUnsupportedException {
+      } on BtcUnsupportedException {
         // Expected on platforms that don't support this
-      } on BluetoothException {
+      } on BtcException {
         // BT error is acceptable
       }
     });
@@ -58,9 +58,9 @@ void main() {
       try {
         final result = await bluetooth.disableBluetooth();
         expect(result, isA<bool>());
-      } on BluetoothUnsupportedException {
+      } on BtcUnsupportedException {
         // Expected on platforms that don't support this
-      } on BluetoothException {
+      } on BtcException {
         // BT error is acceptable
       }
     });
@@ -84,11 +84,11 @@ void main() {
         await bluetooth.startDiscovery();
         // Give it a moment then stop
         await bluetooth.stopDiscovery();
-      } on BluetoothUnsupportedException {
+      } on BtcUnsupportedException {
         // Unsupported on iOS
-      } on BluetoothDisabledException {
+      } on BtcDisabledException {
         // BT may be off
-      } on BluetoothException {
+      } on BtcException {
         // Acceptable
       }
     });
@@ -104,11 +104,11 @@ void main() {
     testWidgets('getPairedDevices returns a list', (tester) async {
       try {
         final devices = await bluetooth.getPairedDevices();
-        expect(devices, isA<List<BluetoothDevice>>());
+        expect(devices, isA<List<BtcDevice>>());
         for (final device in devices) {
           expect(device.address, isNotEmpty);
         }
-      } on BluetoothException {
+      } on BtcException {
         // BT may be disabled
       }
     });
@@ -116,14 +116,14 @@ void main() {
     testWidgets('bondDevice validates MAC address', (tester) async {
       expect(
         () => bluetooth.bondDevice('invalid'),
-        throwsA(isA<BluetoothAddressException>()),
+        throwsA(isA<BtcAddressException>()),
       );
     });
 
     testWidgets('unbondDevice validates MAC address', (tester) async {
       expect(
         () => bluetooth.unbondDevice('not-a-mac'),
-        throwsA(isA<BluetoothAddressException>()),
+        throwsA(isA<BtcAddressException>()),
       );
     });
   });
@@ -141,7 +141,7 @@ void main() {
           address: 'bad-address',
           uuid: '00001101-0000-1000-8000-00805F9B34FB',
         ),
-        throwsA(isA<BluetoothAddressException>()),
+        throwsA(isA<BtcAddressException>()),
       );
     });
 
@@ -151,7 +151,7 @@ void main() {
           address: 'AA:BB:CC:DD:EE:FF',
           uuid: 'not-a-uuid',
         ),
-        throwsA(isA<BluetoothUuidException>()),
+        throwsA(isA<BtcUuidException>()),
       );
     });
 
@@ -161,7 +161,7 @@ void main() {
           uuid: 'bad-uuid',
           serviceName: 'Test',
         ),
-        throwsA(isA<BluetoothUuidException>()),
+        throwsA(isA<BtcUuidException>()),
       );
     });
   });
@@ -176,7 +176,7 @@ void main() {
     testWidgets('getPlatformCapabilities returns all fields',
         (tester) async {
       final caps = await bluetooth.getPlatformCapabilities();
-      expect(caps, isA<PlatformCapabilities>());
+      expect(caps, isA<BtcPlatformCapabilities>());
       expect(caps.canEnableBluetooth, isA<bool>());
       expect(caps.canDisableBluetooth, isA<bool>());
       expect(caps.canDiscoverDevices, isA<bool>());
@@ -200,9 +200,9 @@ void main() {
       try {
         final result = await bluetooth.setDiscoverable(60);
         expect(result, isA<bool>());
-      } on BluetoothUnsupportedException {
+      } on BtcUnsupportedException {
         // Expected on some platforms
-      } on BluetoothException {
+      } on BtcException {
         // Acceptable
       }
     });

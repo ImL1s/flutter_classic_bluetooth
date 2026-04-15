@@ -6,7 +6,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_classic_bluetooth/flutter_classic_bluetooth.dart';
 
 class ConnectScreen extends StatefulWidget {
-  final BluetoothDevice device;
+  final BtcDevice device;
 
   const ConnectScreen({super.key, required this.device});
 
@@ -20,7 +20,7 @@ class _ConnectScreenState extends State<ConnectScreen> {
   final _scrollController = ScrollController();
   final _log = <_LogEntry>[];
 
-  BluetoothConnection? _connection;
+  BtcConnection? _connection;
   bool _connecting = false;
   StreamSubscription<Uint8List>? _dataSub;
 
@@ -73,7 +73,7 @@ class _ConnectScreenState extends State<ConnectScreen> {
           text: 'Connected to ${widget.device.displayName}',
         ));
       });
-    } on BluetoothException catch (e) {
+    } on BtcException catch (e) {
       if (!mounted) return;
       setState(() {
         _log.add(_LogEntry(direction: _Direction.system, text: 'Error: ${e.message}'));
@@ -105,7 +105,7 @@ class _ConnectScreenState extends State<ConnectScreen> {
       });
       _inputController.clear();
       _scrollToBottom();
-    } on BluetoothException catch (e) {
+    } on BtcException catch (e) {
       setState(() {
         _log.add(_LogEntry(direction: _Direction.system, text: 'Send error: ${e.message}'));
       });

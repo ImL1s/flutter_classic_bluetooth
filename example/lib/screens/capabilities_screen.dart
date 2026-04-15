@@ -10,7 +10,7 @@ class CapabilitiesScreen extends StatefulWidget {
 
 class _CapabilitiesScreenState extends State<CapabilitiesScreen> {
   final _bluetooth = FlutterClassicBluetooth();
-  PlatformCapabilities? _caps;
+  BtcPlatformCapabilities? _caps;
   String? _error;
 
   @override
@@ -24,7 +24,7 @@ class _CapabilitiesScreenState extends State<CapabilitiesScreen> {
       final caps = await _bluetooth.getPlatformCapabilities();
       if (!mounted) return;
       setState(() => _caps = caps);
-    } on BluetoothException catch (e) {
+    } on BtcException catch (e) {
       if (!mounted) return;
       setState(() => _error = e.message);
     }

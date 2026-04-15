@@ -16,15 +16,15 @@ import 'package:flutter/services.dart';
 /// ```
 ///
 /// {@category Models}
-class BluetoothStreamSink {
+class BtcStreamSink {
   /// The ID of the connection this sink writes to.
   final int connectionId;
   final MethodChannel _methodChannel;
   Future<void> _lastWrite = Future.value();
   bool _closed = false;
 
-  /// Creates a [BluetoothStreamSink] for the given [connectionId].
-  BluetoothStreamSink({
+  /// Creates a [BtcStreamSink] for the given [connectionId].
+  BtcStreamSink({
     required this.connectionId,
     required MethodChannel methodChannel,
   }) : _methodChannel = methodChannel;
@@ -39,7 +39,7 @@ class BluetoothStreamSink {
   /// Throws [StateError] if the sink has been closed.
   Future<void> add(Uint8List data) {
     if (_closed) {
-      throw StateError('Cannot write to a closed BluetoothStreamSink');
+      throw StateError('Cannot write to a closed BtcStreamSink');
     }
 
     _lastWrite = _lastWrite.then((_) {

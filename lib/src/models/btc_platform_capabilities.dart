@@ -12,7 +12,7 @@
 /// ```
 ///
 /// {@category Models}
-class PlatformCapabilities {
+class BtcPlatformCapabilities {
   /// Whether the platform can programmatically enable Bluetooth.
   final bool canEnableBluetooth;
 
@@ -55,7 +55,7 @@ class PlatformCapabilities {
   /// Optional note describing platform-specific limitations.
   final String? platformNote;
 
-  const PlatformCapabilities({
+  const BtcPlatformCapabilities({
     this.canEnableBluetooth = false,
     this.canDisableBluetooth = false,
     this.canDiscoverDevices = false,
@@ -71,9 +71,9 @@ class PlatformCapabilities {
     this.platformNote,
   });
 
-  /// Creates [PlatformCapabilities] from a platform channel map.
-  factory PlatformCapabilities.fromMap(Map<dynamic, dynamic> map) {
-    return PlatformCapabilities(
+  /// Creates [BtcPlatformCapabilities] from a platform channel map.
+  factory BtcPlatformCapabilities.fromMap(Map<dynamic, dynamic> map) {
+    return BtcPlatformCapabilities(
       canEnableBluetooth: map['canEnableBluetooth'] as bool? ?? false,
       canDisableBluetooth: map['canDisableBluetooth'] as bool? ?? false,
       canDiscoverDevices: map['canDiscoverDevices'] as bool? ?? false,

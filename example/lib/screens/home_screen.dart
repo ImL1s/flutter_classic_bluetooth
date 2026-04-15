@@ -21,7 +21,7 @@ class _HomeScreenState extends State<HomeScreen> {
   bool? _supported;
   bool? _enabled;
   String? _error;
-  StreamSubscription<BluetoothAdapterState>? _adapterSub;
+  StreamSubscription<BtcAdapterState>? _adapterSub;
 
   @override
   void initState() {
@@ -38,7 +38,7 @@ class _HomeScreenState extends State<HomeScreen> {
         _adapterSub = _bluetooth.adapterState.listen((state) {
           if (!mounted) return;
           setState(() {
-            _enabled = state == BluetoothAdapterState.on;
+            _enabled = state == BtcAdapterState.on;
           });
         });
       }
@@ -47,7 +47,7 @@ class _HomeScreenState extends State<HomeScreen> {
         _supported = supported;
         _enabled = enabled;
       });
-    } on BluetoothException catch (e) {
+    } on BtcException catch (e) {
       if (!mounted) return;
       setState(() => _error = e.message);
     }

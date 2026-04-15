@@ -11,7 +11,7 @@
 /// | unsupported | Device does not have Bluetooth hardware |
 ///
 /// {@category Enums}
-enum BluetoothAdapterState {
+enum BtcAdapterState {
   /// Adapter state cannot be determined.
   unknown,
 
@@ -43,7 +43,7 @@ enum BluetoothAdapterState {
 /// | bonded | Device is bonded/paired |
 ///
 /// {@category Enums}
-enum BluetoothBondState {
+enum BtcBondState {
   /// Not bonded with this device.
   none,
 
@@ -64,7 +64,7 @@ enum BluetoothBondState {
 /// | unknown | Device type could not be determined |
 ///
 /// {@category Enums}
-enum BluetoothDeviceType {
+enum BtcDeviceType {
   /// Bluetooth Classic (BR/EDR) device.
   classic,
 
@@ -88,7 +88,7 @@ enum BluetoothDeviceType {
 /// | disconnecting | Graceful disconnect in progress |
 ///
 /// {@category Enums}
-enum BluetoothConnectionState {
+enum BtcConnectionState {
   /// No active connection.
   disconnected,
 
