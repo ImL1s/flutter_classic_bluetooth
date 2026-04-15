@@ -25,6 +25,8 @@ import 'bluetooth_stream_sink.dart';
 /// - [finish] waits for pending writes then disconnects.
 /// - [close] disconnects immediately, discarding pending writes.
 /// - [dispose] cleans up all resources. Always call this when done.
+///
+/// {@category Models}
 class BluetoothConnection {
   /// Unique identifier for this connection assigned by the native side.
   final int id;

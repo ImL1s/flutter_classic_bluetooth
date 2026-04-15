@@ -11,6 +11,8 @@ import 'models/exceptions.dart';
 
 /// An implementation of [FlutterClassicBluetoothPlatform] that uses
 /// method channels and event channels to communicate with native code.
+///
+/// {@category Platform}
 class MethodChannelFlutterClassicBluetooth
     extends FlutterClassicBluetoothPlatform {
   /// The method channel used to interact with the native platform.

@@ -10,6 +10,8 @@
 ///   await bluetooth.startDiscovery();
 /// }
 /// ```
+///
+/// {@category Models}
 class PlatformCapabilities {
   /// Whether the platform can programmatically enable Bluetooth.
   final bool canEnableBluetooth;

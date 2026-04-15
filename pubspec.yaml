@@ -3,6 +3,13 @@ description: "A Flutter plugin for Bluetooth Classic (RFCOMM) communication acro
 version: 0.1.0
 homepage:
 
+topics:
+  - bluetooth
+  - bluetooth-classic
+  - rfcomm
+  - serial
+  - iot
+
 environment:
   sdk: ^3.11.4
   flutter: '>=3.3.0'

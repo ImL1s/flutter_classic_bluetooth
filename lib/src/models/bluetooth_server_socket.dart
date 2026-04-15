@@ -24,6 +24,8 @@ import 'bluetooth_connection.dart';
 /// await server.close();
 /// ```
 ///
+/// {@category Models}
+///
 /// ## Platform Support
 /// | Platform | Supported |
 /// |----------|-----------|

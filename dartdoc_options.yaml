@@ -1,0 +1,18 @@
+dartdoc:
+  categories:
+    "Core":
+      markdown: doc/categories/core.md
+    "Models":
+      markdown: doc/categories/models.md
+    "Enums":
+      markdown: doc/categories/enums.md
+    "Exceptions":
+      markdown: doc/categories/exceptions.md
+    "Platform":
+      markdown: doc/categories/platform.md
+  categoryOrder:
+    - "Core"
+    - "Models"
+    - "Enums"
+    - "Exceptions"
+    - "Platform"

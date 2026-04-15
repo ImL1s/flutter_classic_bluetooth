@@ -14,7 +14,10 @@ import 'package:flutter/services.dart';
 /// await sink.add(utf8.encode('Hello'));
 /// await sink.close(); // waits for all pending writes
 /// ```
+///
+/// {@category Models}
 class BluetoothStreamSink {
+  /// The ID of the connection this sink writes to.
   final int connectionId;
   final MethodChannel _methodChannel;
   Future<void> _lastWrite = Future.value();

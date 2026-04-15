@@ -35,6 +35,8 @@ import 'models/exceptions.dart';
 /// await connection.output.add(Uint8List.fromList([0x01, 0x02]));
 /// await connection.finish();
 /// ```
+///
+/// {@category Core}
 class FlutterClassicBluetooth {
   FlutterClassicBluetooth._();
   static final FlutterClassicBluetooth _instance = FlutterClassicBluetooth._();
@@ -166,6 +168,14 @@ class FlutterClassicBluetooth {
   Future<void> stopDiscovery() => _platform.stopDiscovery();
 
   /// Returns whether a discovery scan is currently in progress.
+  ///
+  /// | Platform | Supported |
+  /// |----------|-----------|
+  /// | Android | ✅ |
+  /// | Windows | ✅ |
+  /// | macOS | ✅ |
+  /// | Linux | ✅ |
+  /// | iOS | ❌ (always returns false) |
   Future<bool> isDiscovering() => _platform.isDiscovering();
 
   /// Stream that emits `true` when discovery starts and `false` when it stops.

@@ -13,6 +13,8 @@ import 'enums.dart';
 /// | type | ✅ | ❌ | ❌ | ❌ | ❌ |
 /// | bondState | ✅ | ✅ | ✅ | ✅ | ✅ (always bonded) |
 /// | uuids | ✅ | ✅ | ✅ | ✅ | ⚠️ protocol strings |
+///
+/// {@category Models}
 class BluetoothDevice {
   /// The hardware address of the device.
   ///

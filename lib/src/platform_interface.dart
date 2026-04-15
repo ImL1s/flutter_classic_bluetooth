@@ -14,6 +14,8 @@ import 'models/platform_capabilities.dart';
 /// Platform implementations should extend this class rather than implement it,
 /// as new methods may be added in the future. Using `extends` ensures
 /// forward compatibility.
+///
+/// {@category Platform}
 abstract class FlutterClassicBluetoothPlatform extends PlatformInterface {
   FlutterClassicBluetoothPlatform() : super(token: _token);
 
