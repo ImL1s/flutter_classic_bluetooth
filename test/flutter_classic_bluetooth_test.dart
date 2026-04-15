@@ -109,6 +109,8 @@ class MockFlutterClassicBluetoothPlatform
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
+  // ── Platform Interface Tests ──────────────────────────────────────────
+
   group('Platform interface', () {
     test('MethodChannelFlutterClassicBluetooth is the default instance', () {
       expect(
@@ -156,7 +158,15 @@ void main() {
       expect(() => platform.setDiscoverable(120), throwsUnimplementedError);
       expect(() => platform.getPlatformCapabilities(), throwsUnimplementedError);
     });
+
+    test('can set platform instance', () {
+      final mock = MockFlutterClassicBluetoothPlatform();
+      FlutterClassicBluetoothPlatform.instance = mock;
+      expect(FlutterClassicBluetoothPlatform.instance, same(mock));
+    });
   });
+
+  // ── FlutterClassicBluetooth (Main Plugin Class) ──────────────────────
 
   group('FlutterClassicBluetooth', () {
     late FlutterClassicBluetooth bluetooth;
@@ -168,6 +178,12 @@ void main() {
       bluetooth = FlutterClassicBluetooth();
     });
 
+    test('singleton returns same instance', () {
+      final a = FlutterClassicBluetooth();
+      final b = FlutterClassicBluetooth();
+      expect(identical(a, b), isTrue);
+    });
+
     test('isSupported returns true from mock', () async {
       expect(await bluetooth.isSupported(), isTrue);
     });
@@ -176,8 +192,32 @@ void main() {
       expect(await bluetooth.isEnabled(), isTrue);
     });
 
+    test('enableBluetooth returns true from mock', () async {
+      expect(await bluetooth.enableBluetooth(), isTrue);
+    });
+
+    test('disableBluetooth returns true from mock', () async {
+      expect(await bluetooth.disableBluetooth(), isTrue);
+    });
+
     test('getAdapterName returns test name', () async {
       expect(await bluetooth.getAdapterName(), 'TestAdapter');
+    });
+
+    test('getAdapterAddress returns test address', () async {
+      expect(await bluetooth.getAdapterAddress(), 'AA:BB:CC:DD:EE:FF');
+    });
+
+    test('startDiscovery completes without error', () async {
+      await bluetooth.startDiscovery();
+    });
+
+    test('stopDiscovery completes without error', () async {
+      await bluetooth.stopDiscovery();
+    });
+
+    test('isDiscovering returns false from mock', () async {
+      expect(await bluetooth.isDiscovering(), isFalse);
     });
 
     test('getPairedDevices returns mock list', () async {
@@ -187,12 +227,38 @@ void main() {
       expect(devices.first.name, 'TestDevice');
     });
 
+    test('bondDevice returns true for valid address', () async {
+      expect(await bluetooth.bondDevice('AA:BB:CC:DD:EE:FF'), isTrue);
+    });
+
+    test('unbondDevice returns true for valid address', () async {
+      expect(await bluetooth.unbondDevice('AA:BB:CC:DD:EE:FF'), isTrue);
+    });
+
+    test('setDiscoverable returns true', () async {
+      expect(await bluetooth.setDiscoverable(120), isTrue);
+    });
+
     test('getPlatformCapabilities returns mock capabilities', () async {
       final caps = await bluetooth.getPlatformCapabilities();
       expect(caps.canDiscoverDevices, isTrue);
       expect(caps.canGetPairedDevices, isTrue);
+      expect(caps.canBondDevices, isTrue);
+      expect(caps.supportsMultipleConnections, isTrue);
+    });
+
+    test('adapterState stream emits values', () async {
+      final state = await bluetooth.adapterState.first;
+      expect(state, BluetoothAdapterState.on);
+    });
+
+    test('discoveryState stream emits values', () async {
+      final state = await bluetooth.discoveryState.first;
+      expect(state, isFalse);
     });
   });
+
+  // ── Input Validation ──────────────────────────────────────────────────
 
   group('Input validation', () {
     late FlutterClassicBluetooth bluetooth;
@@ -206,6 +272,13 @@ void main() {
     test('bondDevice throws on invalid address', () {
       expect(
         () => bluetooth.bondDevice('invalid'),
+        throwsA(isA<BluetoothAddressException>()),
+      );
+    });
+
+    test('bondDevice throws on empty address', () {
+      expect(
+        () => bluetooth.bondDevice(''),
         throwsA(isA<BluetoothAddressException>()),
       );
     });
@@ -237,6 +310,16 @@ void main() {
       );
     });
 
+    test('connect throws on short UUID', () {
+      expect(
+        () => bluetooth.connect(
+          address: 'AA:BB:CC:DD:EE:FF',
+          uuid: '0000-1101',
+        ),
+        throwsA(isA<BluetoothUuidException>()),
+      );
+    });
+
     test('startServer throws on invalid UUID', () {
       expect(
         () => bluetooth.startServer(uuid: 'bad', serviceName: 'test'),
@@ -249,9 +332,14 @@ void main() {
       expect(result, isTrue);
     });
 
+    test('bondDevice accepts lowercase MAC', () async {
+      final result = await bluetooth.bondDevice('aa:bb:cc:dd:ee:ff');
+      expect(result, isTrue);
+    });
+
     test('connect accepts valid address and UUID', () {
       // The mock throws UnimplementedError for connect, which is fine —
-      // we just verify validation passes.
+      // we verify validation passes.
       expect(
         () => bluetooth.connect(
           address: 'AA:BB:CC:DD:EE:FF',
@@ -260,7 +348,379 @@ void main() {
         throwsA(isA<UnimplementedError>()),
       );
     });
+
+    test('bondState throws on invalid address', () {
+      expect(
+        () => bluetooth.bondState('not-valid'),
+        throwsA(isA<BluetoothAddressException>()),
+      );
+    });
+
+    test('bondState returns stream for valid address', () async {
+      final state = await bluetooth.bondState('AA:BB:CC:DD:EE:FF').first;
+      expect(state, BluetoothBondState.bonded);
+    });
   });
+
+  // ── Method Channel Tests ──────────────────────────────────────────────
+
+  group('MethodChannelFlutterClassicBluetooth', () {
+    late MethodChannelFlutterClassicBluetooth platform;
+    late List<MethodCall> log;
+
+    setUp(() {
+      platform = MethodChannelFlutterClassicBluetooth();
+      log = [];
+
+      TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+          .setMockMethodCallHandler(
+        platform.methodChannel,
+        (MethodCall call) async {
+          log.add(call);
+          switch (call.method) {
+            case 'isSupported':
+              return true;
+            case 'isEnabled':
+              return true;
+            case 'enableBluetooth':
+              return true;
+            case 'disableBluetooth':
+              return true;
+            case 'getAdapterName':
+              return 'MockAdapter';
+            case 'getAdapterAddress':
+              return '11:22:33:44:55:66';
+            case 'startDiscovery':
+              return null;
+            case 'stopDiscovery':
+              return null;
+            case 'isDiscovering':
+              return false;
+            case 'getPairedDevices':
+              return [
+                {
+                  'address': 'AA:BB:CC:DD:EE:FF',
+                  'name': 'Device1',
+                  'bondState': 'bonded',
+                }
+              ];
+            case 'bondDevice':
+              return true;
+            case 'unbondDevice':
+              return true;
+            case 'connect':
+              return {'id': 1, 'address': call.arguments['address']};
+            case 'disconnect':
+              return null;
+            case 'write':
+              return null;
+            case 'startServer':
+              return {'id': 1};
+            case 'stopServer':
+              return null;
+            case 'setDiscoverable':
+              return true;
+            case 'getPlatformCapabilities':
+              return {
+                'canEnableBluetooth': true,
+                'canDisableBluetooth': false,
+                'canDiscoverDevices': true,
+                'canGetPairedDevices': true,
+                'canBondDevices': true,
+                'canUnbondDevices': true,
+                'canCreateServer': true,
+                'canSetDiscoverable': false,
+                'supportsMultipleConnections': true,
+                'supportsSecureConnection': true,
+                'supportsInsecureConnection': false,
+                'requiresMfiCertification': false,
+                'platformNote': 'Test platform',
+              };
+            default:
+              return null;
+          }
+        },
+      );
+    });
+
+    tearDown(() {
+      TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+          .setMockMethodCallHandler(platform.methodChannel, null);
+    });
+
+    test('isSupported sends correct method', () async {
+      final result = await platform.isSupported();
+      expect(result, isTrue);
+      expect(log.last.method, 'isSupported');
+    });
+
+    test('isEnabled sends correct method', () async {
+      final result = await platform.isEnabled();
+      expect(result, isTrue);
+      expect(log.last.method, 'isEnabled');
+    });
+
+    test('enableBluetooth sends correct method', () async {
+      final result = await platform.enableBluetooth();
+      expect(result, isTrue);
+      expect(log.last.method, 'enableBluetooth');
+    });
+
+    test('disableBluetooth sends correct method', () async {
+      final result = await platform.disableBluetooth();
+      expect(result, isTrue);
+      expect(log.last.method, 'disableBluetooth');
+    });
+
+    test('getAdapterName sends correct method', () async {
+      final result = await platform.getAdapterName();
+      expect(result, 'MockAdapter');
+      expect(log.last.method, 'getAdapterName');
+    });
+
+    test('getAdapterAddress sends correct method', () async {
+      final result = await platform.getAdapterAddress();
+      expect(result, '11:22:33:44:55:66');
+      expect(log.last.method, 'getAdapterAddress');
+    });
+
+    test('startDiscovery sends correct method', () async {
+      await platform.startDiscovery();
+      expect(log.last.method, 'startDiscovery');
+    });
+
+    test('stopDiscovery sends correct method', () async {
+      await platform.stopDiscovery();
+      expect(log.last.method, 'stopDiscovery');
+    });
+
+    test('isDiscovering sends correct method', () async {
+      final result = await platform.isDiscovering();
+      expect(result, isFalse);
+      expect(log.last.method, 'isDiscovering');
+    });
+
+    test('getPairedDevices sends correct method and parses result', () async {
+      final devices = await platform.getPairedDevices();
+      expect(log.last.method, 'getPairedDevices');
+      expect(devices, hasLength(1));
+      expect(devices.first.address, 'AA:BB:CC:DD:EE:FF');
+      expect(devices.first.name, 'Device1');
+      expect(devices.first.bondState, BluetoothBondState.bonded);
+    });
+
+    test('bondDevice sends address argument', () async {
+      final result = await platform.bondDevice('11:22:33:44:55:66');
+      expect(result, isTrue);
+      expect(log.last.method, 'bondDevice');
+      expect(log.last.arguments, {'address': '11:22:33:44:55:66'});
+    });
+
+    test('unbondDevice sends address argument', () async {
+      final result = await platform.unbondDevice('11:22:33:44:55:66');
+      expect(result, isTrue);
+      expect(log.last.method, 'unbondDevice');
+      expect(log.last.arguments, {'address': '11:22:33:44:55:66'});
+    });
+
+    test('connect sends correct arguments and returns connection', () async {
+      final connection = await platform.connect(
+        address: 'AA:BB:CC:DD:EE:FF',
+        uuid: '00001101-0000-1000-8000-00805F9B34FB',
+        secure: true,
+      );
+      expect(log.last.method, 'connect');
+      expect(log.last.arguments, {
+        'address': 'AA:BB:CC:DD:EE:FF',
+        'uuid': '00001101-0000-1000-8000-00805F9B34FB',
+        'secure': true,
+      });
+      expect(connection.id, 1);
+      expect(connection.address, 'AA:BB:CC:DD:EE:FF');
+    });
+
+    test('disconnect sends id argument', () async {
+      await platform.disconnect(5);
+      expect(log.last.method, 'disconnect');
+      expect(log.last.arguments, {'id': 5});
+    });
+
+    test('write sends id and data arguments', () async {
+      final data = Uint8List.fromList([1, 2, 3]);
+      await platform.write(5, data);
+      expect(log.last.method, 'write');
+      expect(log.last.arguments['id'], 5);
+      expect(log.last.arguments['data'], data);
+    });
+
+    test('startServer sends correct arguments and returns server', () async {
+      final server = await platform.startServer(
+        uuid: '00001101-0000-1000-8000-00805F9B34FB',
+        serviceName: 'TestService',
+        secure: true,
+      );
+      expect(log.last.method, 'startServer');
+      expect(log.last.arguments, {
+        'uuid': '00001101-0000-1000-8000-00805F9B34FB',
+        'serviceName': 'TestService',
+        'secure': true,
+      });
+      expect(server.id, 1);
+      expect(server.uuid, '00001101-0000-1000-8000-00805F9B34FB');
+      expect(server.serviceName, 'TestService');
+    });
+
+    test('stopServer sends id argument', () async {
+      await platform.stopServer(3);
+      expect(log.last.method, 'stopServer');
+      expect(log.last.arguments, {'id': 3});
+    });
+
+    test('setDiscoverable sends duration argument', () async {
+      final result = await platform.setDiscoverable(300);
+      expect(result, isTrue);
+      expect(log.last.method, 'setDiscoverable');
+      expect(log.last.arguments, {'duration': 300});
+    });
+
+    test('getPlatformCapabilities parses all fields', () async {
+      final caps = await platform.getPlatformCapabilities();
+      expect(log.last.method, 'getPlatformCapabilities');
+      expect(caps.canEnableBluetooth, isTrue);
+      expect(caps.canDisableBluetooth, isFalse);
+      expect(caps.canDiscoverDevices, isTrue);
+      expect(caps.canGetPairedDevices, isTrue);
+      expect(caps.canBondDevices, isTrue);
+      expect(caps.canUnbondDevices, isTrue);
+      expect(caps.canCreateServer, isTrue);
+      expect(caps.canSetDiscoverable, isFalse);
+      expect(caps.supportsMultipleConnections, isTrue);
+      expect(caps.supportsSecureConnection, isTrue);
+      expect(caps.supportsInsecureConnection, isFalse);
+      expect(caps.requiresMfiCertification, isFalse);
+      expect(caps.platformNote, 'Test platform');
+    });
+
+    test('PlatformException converted to BluetoothUnsupportedException', () async {
+      TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+          .setMockMethodCallHandler(platform.methodChannel, (call) async {
+        throw PlatformException(
+          code: 'unsupported',
+          message: 'Feature not available',
+          details: {'feature': 'discovery', 'platform': 'iOS'},
+        );
+      });
+
+      expect(
+        () => platform.isSupported(),
+        throwsA(isA<BluetoothUnsupportedException>().having(
+          (e) => e.feature,
+          'feature',
+          'discovery',
+        )),
+      );
+    });
+
+    test('PlatformException converted to BluetoothPermissionException', () async {
+      TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+          .setMockMethodCallHandler(platform.methodChannel, (call) async {
+        throw PlatformException(code: 'permissionDenied', message: 'No BT permission');
+      });
+
+      expect(
+        () => platform.isEnabled(),
+        throwsA(isA<BluetoothPermissionException>()),
+      );
+    });
+
+    test('PlatformException converted to BluetoothDisabledException', () async {
+      TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+          .setMockMethodCallHandler(platform.methodChannel, (call) async {
+        throw PlatformException(code: 'bluetoothDisabled', message: 'BT off');
+      });
+
+      expect(
+        () => platform.startDiscovery(),
+        throwsA(isA<BluetoothDisabledException>()),
+      );
+    });
+
+    test('PlatformException converted to BluetoothConnectionException', () async {
+      TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+          .setMockMethodCallHandler(platform.methodChannel, (call) async {
+        throw PlatformException(
+          code: 'connectionFailed',
+          message: 'Refused',
+          details: {'address': 'AA:BB:CC:DD:EE:FF'},
+        );
+      });
+
+      expect(
+        () => platform.connect(
+          address: 'AA:BB:CC:DD:EE:FF',
+          uuid: '00001101-0000-1000-8000-00805F9B34FB',
+        ),
+        throwsA(isA<BluetoothConnectionException>().having(
+          (e) => e.address,
+          'address',
+          'AA:BB:CC:DD:EE:FF',
+        )),
+      );
+    });
+
+    test('PlatformException converted to BluetoothWriteException', () async {
+      TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+          .setMockMethodCallHandler(platform.methodChannel, (call) async {
+        throw PlatformException(code: 'writeFailed', message: 'Write error');
+      });
+
+      expect(
+        () => platform.write(1, Uint8List(0)),
+        throwsA(isA<BluetoothWriteException>()),
+      );
+    });
+
+    test('PlatformException converted to BluetoothTimeoutException', () async {
+      TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+          .setMockMethodCallHandler(platform.methodChannel, (call) async {
+        throw PlatformException(
+          code: 'timeout',
+          message: 'Timed out',
+          details: {'timeoutMs': 5000},
+        );
+      });
+
+      expect(
+        () => platform.connect(
+          address: 'AA:BB:CC:DD:EE:FF',
+          uuid: '00001101-0000-1000-8000-00805F9B34FB',
+        ),
+        throwsA(isA<BluetoothTimeoutException>().having(
+          (e) => e.timeoutMs,
+          'timeoutMs',
+          5000,
+        )),
+      );
+    });
+
+    test('Unknown PlatformException converted to BluetoothException', () async {
+      TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+          .setMockMethodCallHandler(platform.methodChannel, (call) async {
+        throw PlatformException(code: 'unknown_code', message: 'Something');
+      });
+
+      expect(
+        () => platform.isSupported(),
+        throwsA(isA<BluetoothException>().having(
+          (e) => e.code,
+          'code',
+          'unknown_code',
+        )),
+      );
+    });
+  });
+
+  // ── BluetoothDevice Model ─────────────────────────────────────────────
 
   group('BluetoothDevice', () {
     test('fromMap creates device correctly', () {
@@ -339,7 +799,25 @@ void main() {
       expect(device.bondState, BluetoothBondState.none);
       expect(device.uuids, isEmpty);
     });
+
+    test('fromMap handles unknown enum values', () {
+      final device = BluetoothDevice.fromMap({
+        'address': 'AA:BB:CC:DD:EE:FF',
+        'type': 'nonexistent_type',
+        'bondState': 'weird',
+      });
+      expect(device.type, BluetoothDeviceType.unknown);
+      expect(device.bondState, BluetoothBondState.none);
+    });
+
+    test('toString contains address and name', () {
+      const device = BluetoothDevice(address: 'AA:BB:CC:DD:EE:FF', name: 'Dev');
+      expect(device.toString(), contains('AA:BB:CC:DD:EE:FF'));
+      expect(device.toString(), contains('Dev'));
+    });
   });
+
+  // ── PlatformCapabilities Model ────────────────────────────────────────
 
   group('PlatformCapabilities', () {
     test('fromMap creates capabilities correctly', () {
@@ -385,9 +863,26 @@ void main() {
       expect(caps.canDisableBluetooth, isFalse);
       expect(caps.canDiscoverDevices, isFalse);
       expect(caps.canGetPairedDevices, isFalse);
+      expect(caps.canBondDevices, isFalse);
+      expect(caps.canUnbondDevices, isFalse);
+      expect(caps.canCreateServer, isFalse);
+      expect(caps.canSetDiscoverable, isFalse);
+      expect(caps.supportsMultipleConnections, isFalse);
+      expect(caps.supportsSecureConnection, isFalse);
+      expect(caps.supportsInsecureConnection, isFalse);
+      expect(caps.requiresMfiCertification, isFalse);
+      expect(caps.platformNote, isNull);
+    });
+
+    test('fromMap handles missing keys with defaults', () {
+      final caps = PlatformCapabilities.fromMap({});
+      expect(caps.canEnableBluetooth, isFalse);
+      expect(caps.canDiscoverDevices, isFalse);
       expect(caps.platformNote, isNull);
     });
   });
+
+  // ── Exception Hierarchy ───────────────────────────────────────────────
 
   group('Exception hierarchy', () {
     test('BluetoothException stores message and code', () {
@@ -395,6 +890,11 @@ void main() {
       expect(ex.message, 'test error');
       expect(ex.code, 'testCode');
       expect(ex.toString(), contains('testCode'));
+    });
+
+    test('BluetoothException without code', () {
+      const ex = BluetoothException('simple error');
+      expect(ex.code, isNull);
     });
 
     test('BluetoothUnsupportedException has feature and platform', () {
@@ -408,6 +908,15 @@ void main() {
       expect(ex.toString(), contains('iOS'));
     });
 
+    test('BluetoothUnsupportedException with custom reason', () {
+      const ex = BluetoothUnsupportedException(
+        feature: 'server',
+        platform: 'iOS',
+        reason: 'Custom reason',
+      );
+      expect(ex.message, 'Custom reason');
+    });
+
     test('BluetoothConnectionException has address', () {
       const ex = BluetoothConnectionException(
         'Connection refused',
@@ -415,17 +924,49 @@ void main() {
       );
       expect(ex.address, 'AA:BB:CC:DD:EE:FF');
       expect(ex.message, 'Connection refused');
+      expect(ex.code, 'connectionFailed');
+    });
+
+    test('BluetoothConnectionException without address', () {
+      const ex = BluetoothConnectionException('Failed');
+      expect(ex.address, isNull);
     });
 
     test('BluetoothAddressException has address', () {
       const ex = BluetoothAddressException('INVALID');
       expect(ex.address, 'INVALID');
       expect(ex.toString(), contains('INVALID'));
+      expect(ex.code, 'invalidAddress');
     });
 
     test('BluetoothUuidException has uuid', () {
       const ex = BluetoothUuidException('bad-uuid');
       expect(ex.uuid, 'bad-uuid');
+      expect(ex.code, 'invalidUuid');
+    });
+
+    test('BluetoothTimeoutException has timeoutMs', () {
+      const ex = BluetoothTimeoutException(timeoutMs: 3000);
+      expect(ex.timeoutMs, 3000);
+      expect(ex.code, 'timeout');
+    });
+
+    test('BluetoothPermissionException defaults', () {
+      const ex = BluetoothPermissionException();
+      expect(ex.message, 'Bluetooth permission denied');
+      expect(ex.code, 'permissionDenied');
+    });
+
+    test('BluetoothDisabledException defaults', () {
+      const ex = BluetoothDisabledException();
+      expect(ex.message, 'Bluetooth adapter is disabled');
+      expect(ex.code, 'bluetoothDisabled');
+    });
+
+    test('BluetoothWriteException defaults', () {
+      const ex = BluetoothWriteException();
+      expect(ex.message, 'Failed to write data');
+      expect(ex.code, 'writeFailed');
     });
 
     test('all exceptions are BluetoothException', () {
@@ -445,8 +986,31 @@ void main() {
         const BluetoothTimeoutException(),
         isA<BluetoothException>(),
       );
+      expect(
+        const BluetoothAddressException('test'),
+        isA<BluetoothException>(),
+      );
+      expect(
+        const BluetoothUuidException('test'),
+        isA<BluetoothException>(),
+      );
+      expect(
+        const BluetoothUnsupportedException(feature: 'f', platform: 'p'),
+        isA<BluetoothException>(),
+      );
+      expect(
+        const BluetoothConnectionException('test'),
+        isA<BluetoothException>(),
+      );
+    });
+
+    test('all exceptions implement Exception', () {
+      expect(const BluetoothException('test'), isA<Exception>());
+      expect(const BluetoothPermissionException(), isA<Exception>());
     });
   });
+
+  // ── BluetoothStreamSink ───────────────────────────────────────────────
 
   group('BluetoothStreamSink', () {
     test('throws StateError after close', () async {
@@ -461,6 +1025,201 @@ void main() {
         () => sink.add(Uint8List(1)),
         throwsA(isA<StateError>()),
       );
+    });
+
+    test('isClosed is false initially', () {
+      final sink = BluetoothStreamSink(
+        connectionId: 1,
+        methodChannel: const MethodChannel('flutter_classic_bluetooth/methods'),
+      );
+      expect(sink.isClosed, isFalse);
+    });
+
+    test('cancel marks sink as closed', () {
+      final sink = BluetoothStreamSink(
+        connectionId: 1,
+        methodChannel: const MethodChannel('flutter_classic_bluetooth/methods'),
+      );
+      sink.cancel();
+      expect(sink.isClosed, isTrue);
+    });
+
+    test('close marks sink as closed', () async {
+      final sink = BluetoothStreamSink(
+        connectionId: 1,
+        methodChannel: const MethodChannel('flutter_classic_bluetooth/methods'),
+      );
+      await sink.close();
+      expect(sink.isClosed, isTrue);
+    });
+
+    test('double close does not throw', () async {
+      final sink = BluetoothStreamSink(
+        connectionId: 1,
+        methodChannel: const MethodChannel('flutter_classic_bluetooth/methods'),
+      );
+      await sink.close();
+      await sink.close();
+      expect(sink.isClosed, isTrue);
+    });
+
+    test('add sends write over method channel', () async {
+      final methodChannel = const MethodChannel('flutter_classic_bluetooth/methods');
+      final calls = <MethodCall>[];
+
+      TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+          .setMockMethodCallHandler(methodChannel, (call) async {
+        calls.add(call);
+        return null;
+      });
+
+      final sink = BluetoothStreamSink(
+        connectionId: 42,
+        methodChannel: methodChannel,
+      );
+
+      final data = Uint8List.fromList([1, 2, 3]);
+      await sink.add(data);
+
+      expect(calls, hasLength(1));
+      expect(calls.first.method, 'write');
+      expect(calls.first.arguments['id'], 42);
+      expect(calls.first.arguments['data'], data);
+
+      TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+          .setMockMethodCallHandler(methodChannel, null);
+    });
+
+    test('writes are chained in order', () async {
+      final methodChannel = const MethodChannel('flutter_classic_bluetooth/methods');
+      final calls = <int>[];
+
+      TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+          .setMockMethodCallHandler(methodChannel, (call) async {
+        calls.add(call.arguments['data'][0] as int);
+        return null;
+      });
+
+      final sink = BluetoothStreamSink(
+        connectionId: 1,
+        methodChannel: methodChannel,
+      );
+
+      // Fire-and-forget multiple writes
+      sink.add(Uint8List.fromList([1]));
+      sink.add(Uint8List.fromList([2]));
+      await sink.add(Uint8List.fromList([3]));
+
+      expect(calls, [1, 2, 3]);
+
+      TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+          .setMockMethodCallHandler(methodChannel, null);
+    });
+  });
+
+  // ── BluetoothConnection ───────────────────────────────────────────────
+
+  group('BluetoothConnection', () {
+    test('constructor sets properties correctly', () {
+      final conn = BluetoothConnection(
+        id: 5,
+        address: 'AA:BB:CC:DD:EE:FF',
+        methodChannel: const MethodChannel('flutter_classic_bluetooth/methods'),
+      );
+
+      expect(conn.id, 5);
+      expect(conn.address, 'AA:BB:CC:DD:EE:FF');
+      expect(conn.isConnected, isTrue);
+      expect(conn.state, BluetoothConnectionState.connected);
+    });
+
+    test('output sink is a BluetoothStreamSink', () {
+      final conn = BluetoothConnection(
+        id: 1,
+        address: 'AA:BB:CC:DD:EE:FF',
+        methodChannel: const MethodChannel('flutter_classic_bluetooth/methods'),
+      );
+
+      expect(conn.output, isA<BluetoothStreamSink>());
+      expect(conn.output.isClosed, isFalse);
+    });
+
+    test('dispose cancels output sink', () {
+      final conn = BluetoothConnection(
+        id: 1,
+        address: 'AA:BB:CC:DD:EE:FF',
+        methodChannel: const MethodChannel('flutter_classic_bluetooth/methods'),
+      );
+
+      conn.dispose();
+      expect(conn.output.isClosed, isTrue);
+    });
+  });
+
+  // ── BluetoothServerSocket ─────────────────────────────────────────────
+
+  group('BluetoothServerSocket', () {
+    test('constructor sets properties correctly', () {
+      final server = BluetoothServerSocket(
+        id: 3,
+        uuid: '00001101-0000-1000-8000-00805F9B34FB',
+        serviceName: 'TestService',
+        methodChannel: const MethodChannel('flutter_classic_bluetooth/methods'),
+      );
+
+      expect(server.id, 3);
+      expect(server.uuid, '00001101-0000-1000-8000-00805F9B34FB');
+      expect(server.serviceName, 'TestService');
+    });
+
+    test('close sends stopServer method call', () async {
+      final methodChannel = const MethodChannel('flutter_classic_bluetooth/methods');
+      final calls = <MethodCall>[];
+
+      TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+          .setMockMethodCallHandler(methodChannel, (call) async {
+        calls.add(call);
+        return null;
+      });
+
+      final server = BluetoothServerSocket(
+        id: 7,
+        uuid: '00001101-0000-1000-8000-00805F9B34FB',
+        serviceName: 'Test',
+        methodChannel: methodChannel,
+      );
+
+      await server.close();
+
+      expect(calls, hasLength(1));
+      expect(calls.first.method, 'stopServer');
+      expect(calls.first.arguments, {'id': 7});
+
+      TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+          .setMockMethodCallHandler(methodChannel, null);
+    });
+  });
+
+  // ── Enum Values ───────────────────────────────────────────────────────
+
+  group('Enums', () {
+    test('BluetoothAdapterState has all expected values', () {
+      expect(BluetoothAdapterState.values, hasLength(7));
+      expect(BluetoothAdapterState.values, contains(BluetoothAdapterState.on));
+      expect(BluetoothAdapterState.values, contains(BluetoothAdapterState.off));
+      expect(BluetoothAdapterState.values, contains(BluetoothAdapterState.unknown));
+    });
+
+    test('BluetoothBondState has all expected values', () {
+      expect(BluetoothBondState.values, hasLength(3));
+    });
+
+    test('BluetoothDeviceType has all expected values', () {
+      expect(BluetoothDeviceType.values, hasLength(4));
+    });
+
+    test('BluetoothConnectionState has all expected values', () {
+      expect(BluetoothConnectionState.values, hasLength(4));
     });
   });
 }
