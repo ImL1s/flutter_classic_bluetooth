@@ -1,16 +1,29 @@
-# flutter_classic_bluetooth
+<p align="center">
+  <img src="https://raw.githubusercontent.com/Masum-MSNR/flutter_classic_bluetooth/main/images/logo.png" alt="Flutter Classic Bluetooth" width="120"/>
+</p>
 
-A Flutter plugin for **Bluetooth Classic (RFCOMM)** communication across Android, iOS (MFi), Windows, macOS, and Linux.
+<p align="center">
+  <a href="https://pub.dev/packages/flutter_classic_bluetooth"><img src="https://img.shields.io/pub/v/flutter_classic_bluetooth.svg" alt="pub package"></a>
+  <a href="https://opensource.org/licenses/MIT"><img src="https://img.shields.io/badge/License-MIT-blue.svg" alt="License: MIT"></a>
+  <a href="https://flutter.dev"><img src="https://img.shields.io/badge/Flutter-3.22+-02569B?logo=flutter" alt="Flutter"></a>
+  <a href="https://dart.dev"><img src="https://img.shields.io/badge/Dart-3.3+-0175C2?logo=dart" alt="Dart"></a>
+</p>
+
+<p align="center">
+A Flutter plugin for <strong>Bluetooth Classic (RFCOMM)</strong> communication.<br/>
+Discover, pair, connect, and exchange data across Android, iOS (MFi), Windows, macOS, and Linux.
+</p>
 
 ## Features
 
-- Discover nearby Bluetooth Classic devices
-- Pair/unpair devices
-- Connect and exchange data over RFCOMM
-- Server mode — accept incoming connections
-- Multiple simultaneous connections
-- Stream-based data I/O
-- Platform capabilities API for runtime feature detection
+- 🔍 **Device Discovery** — Scan for nearby Bluetooth Classic devices
+- 🔗 **Pair / Unpair** — Bond and unbond devices programmatically
+- 📡 **RFCOMM Connect** — Establish serial connections with data streaming
+- 🖥️ **Server Mode** — Accept incoming RFCOMM connections
+- 🔄 **Multiple Connections** — Manage several simultaneous connections
+- 📊 **Stream-Based I/O** — Read/write with Dart streams and ordered sinks
+- 🧩 **Platform Capabilities** — Query feature support at runtime per platform
+- ⚡ **Typed Exceptions** — Structured error hierarchy for clean error handling
 
 ## Platform Support
 
@@ -21,26 +34,37 @@ A Flutter plugin for **Bluetooth Classic (RFCOMM)** communication across Android
 | Pair / Unpair | ✅ | ✅ | ✅ | ❌² | ❌ |
 | Connect (RFCOMM) | ✅ | ✅ | ✅ | ✅ | ✅¹ |
 | Server mode | ✅ | ✅ | ✅ | ✅ | ❌ |
-| Enable/Disable BT | ✅ | ❌ | ❌ | ❌ | ❌ |
+| Enable / Disable | ✅ | ❌ | ❌ | ❌ | ❌ |
 | Set discoverable | ✅ | ❌ | ❌ | ✅ | ❌ |
 
-¹ iOS uses the ExternalAccessory framework — only MFi-certified accessories are supported.
+¹ iOS uses the ExternalAccessory framework — only MFi-certified accessories are supported.<br/>
 ² Linux pairing requires BlueZ D-Bus agent (use `bluetoothctl` or system settings).
 
-## Getting Started
+## Installation
+
+```yaml
+dependencies:
+  flutter_classic_bluetooth: ^0.1.0
+```
+
+## Quick Start
 
 ```dart
 import 'package:flutter_classic_bluetooth/flutter_classic_bluetooth.dart';
+
+final bluetooth = FlutterClassicBluetooth();
 ```
 
 ### Check Support & Capabilities
 
 ```dart
-final bluetooth = FlutterClassicBluetooth();
-
 final supported = await bluetooth.isSupported();
 final enabled = await bluetooth.isEnabled();
 final caps = await bluetooth.getPlatformCapabilities();
+
+if (caps.canDiscoverDevices) {
+  await bluetooth.startDiscovery();
+}
 ```
 
 ### Discover Devices
@@ -98,6 +122,57 @@ for (final device in devices) {
 }
 ```
 
+## API Overview
+
+### Core Classes
+
+| Class | Purpose |
+|-------|---------|
+| `FlutterClassicBluetooth` | Main entry point — adapter, discovery, pairing, connection, server |
+| `BtcDevice` | Represents a remote Bluetooth device |
+| `BtcConnection` | Active RFCOMM connection with input/output streams |
+| `BtcServerSocket` | Listens for incoming RFCOMM connections |
+| `BtcStreamSink` | Ordered write sink for a connection |
+| `BtcPlatformCapabilities` | Platform feature support matrix |
+
+### Enums
+
+| Enum | Purpose |
+|------|---------|
+| `BtcAdapterState` | Adapter on/off/transitioning states |
+| `BtcBondState` | Device pairing state |
+| `BtcDeviceType` | Classic, LE, or Dual-mode |
+| `BtcConnectionState` | Connection lifecycle states |
+
+### Exceptions
+
+All exceptions extend `BtcException`:
+
+| Exception | When |
+|-----------|------|
+| `BtcUnsupportedException` | Feature not available on platform |
+| `BtcPermissionException` | Permission denied |
+| `BtcDisabledException` | Adapter is off |
+| `BtcConnectionException` | Connection failed |
+| `BtcWriteException` | Write failed |
+| `BtcTimeoutException` | Operation timed out |
+| `BtcAddressException` | Invalid MAC address |
+| `BtcUuidException` | Invalid UUID |
+
+## Error Handling
+
+```dart
+try {
+  await bluetooth.connect(address: addr, uuid: uuid);
+} on BtcUnsupportedException catch (e) {
+  print('${e.feature} not supported on ${e.platform}');
+} on BtcDisabledException {
+  print('Turn on Bluetooth first');
+} on BtcConnectionException catch (e) {
+  print('Connection failed: ${e.message}');
+}
+```
+
 ## Android Setup
 
 Add Bluetooth permissions to `AndroidManifest.xml`:
@@ -123,23 +198,17 @@ Add to `Info.plist`:
 
 > **Note:** iOS only supports MFi-certified Bluetooth accessories via the ExternalAccessory framework. The `uuid` parameter in `connect()` is used as the MFi protocol string on iOS.
 
-## Error Handling
+## Examples
 
-All errors are typed exceptions extending `BtcException`:
-
-```dart
-try {
-  await bluetooth.connect(address: addr, uuid: uuid);
-} on BtcUnsupportedException catch (e) {
-  print('${e.feature} not supported on ${e.platform}');
-} on BtcDisabledException {
-  print('Turn on Bluetooth first');
-} on BtcConnectionException catch (e) {
-  print('Connection failed: ${e.message}');
-}
-```
+Check out the [example](example/) directory for a complete demo app with 7 screens showcasing all features.
 
 ## License
 
-See [LICENSE](LICENSE) for details.
+MIT License — see [LICENSE](LICENSE) for details.
+
+---
+
+<p align="center">
+  Made with ❤️ by <a href="https://github.com/Masum-MSNR">Masum</a>
+</p>
 
