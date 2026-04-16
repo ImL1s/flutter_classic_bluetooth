@@ -29,11 +29,11 @@ import 'btc_connection.dart';
 /// ## Platform Support
 /// | Platform | Supported |
 /// |----------|-----------|
-/// | Android | ✅ |
-/// | Windows | ✅ |
-/// | macOS | ✅ |
-/// | Linux | ✅ |
-/// | iOS | ❌ (no server mode) |
+/// | Android | Yes |
+/// | Windows | Yes |
+/// | macOS | Yes |
+/// | Linux | Yes |
+/// | iOS | No (no server mode) |
 class BtcServerSocket {
   /// Unique identifier for this server assigned by the native side.
   final int id;

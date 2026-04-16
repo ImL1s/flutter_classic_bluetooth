@@ -6,13 +6,13 @@ import 'btc_enums.dart';
 ///
 /// | Property | Android | Windows | macOS | Linux | iOS |
 /// |----------|---------|---------|-------|-------|-----|
-/// | address | ✅ MAC | ✅ MAC | ✅ MAC | ✅ MAC | ⚠️ serial/ID |
-/// | name | ✅ | ✅ | ✅ | ✅ | ✅ |
-/// | alias | ✅ API 30+ | ❌ | ❌ | ✅ | ❌ |
-/// | rssi | ✅ | ❌ | ✅ | ✅ | ❌ |
-/// | type | ✅ | ❌ | ❌ | ❌ | ❌ |
-/// | bondState | ✅ | ✅ | ✅ | ✅ | ✅ (always bonded) |
-/// | uuids | ✅ | ✅ | ✅ | ✅ | ⚠️ protocol strings |
+/// | address | Yes MAC | Yes MAC | Yes MAC | Yes MAC | ⚠️ serial/ID |
+/// | name | Yes | Yes | Yes | Yes | Yes |
+/// | alias | Yes API 30+ | No | No | Yes | No |
+/// | rssi | Yes | No | Yes | Yes | No |
+/// | type | Yes | No | No | No | No |
+/// | bondState | Yes | Yes | Yes | Yes | Yes (always bonded) |
+/// | uuids | Yes | Yes | Yes | Yes | ⚠️ protocol strings |
 ///
 /// {@category Models}
 class BtcDevice {

@@ -63,22 +63,22 @@ class FlutterClassicBluetooth {
   ///
   /// | Platform | Supported |
   /// |----------|-----------|
-  /// | Android | ✅ |
-  /// | Windows | ✅ |
-  /// | macOS | ✅ |
-  /// | Linux | ✅ |
-  /// | iOS | ✅ |
+  /// | Android | Yes |
+  /// | Windows | Yes |
+  /// | macOS | Yes |
+  /// | Linux | Yes |
+  /// | iOS | Yes |
   Future<bool> isSupported() => _platform.isSupported();
 
   /// Returns whether the Bluetooth adapter is currently enabled.
   ///
   /// | Platform | Supported |
   /// |----------|-----------|
-  /// | Android | ✅ |
-  /// | Windows | ✅ |
-  /// | macOS | ✅ |
-  /// | Linux | ✅ |
-  /// | iOS | ✅ |
+  /// | Android | Yes |
+  /// | Windows | Yes |
+  /// | macOS | Yes |
+  /// | Linux | Yes |
+  /// | iOS | Yes |
   Future<bool> isEnabled() => _platform.isEnabled();
 
   /// Requests the system to enable the Bluetooth adapter.
@@ -87,11 +87,11 @@ class FlutterClassicBluetooth {
   ///
   /// | Platform | Supported |
   /// |----------|-----------|
-  /// | Android | ✅ (system dialog) |
-  /// | Windows | ❌ |
-  /// | macOS | ❌ |
-  /// | Linux | ✅ (rfkill) |
-  /// | iOS | ❌ |
+  /// | Android | Yes (system dialog) |
+  /// | Windows | No |
+  /// | macOS | No |
+  /// | Linux | Yes (rfkill) |
+  /// | iOS | No |
   Future<bool> enableBluetooth() => _platform.enableBluetooth();
 
   /// Requests the system to disable the Bluetooth adapter.
@@ -100,33 +100,33 @@ class FlutterClassicBluetooth {
   ///
   /// | Platform | Supported |
   /// |----------|-----------|
-  /// | Android | ✅ (API < 33 only) |
-  /// | Windows | ❌ |
-  /// | macOS | ❌ |
-  /// | Linux | ✅ (rfkill) |
-  /// | iOS | ❌ |
+  /// | Android | Yes (API < 33 only) |
+  /// | Windows | No |
+  /// | macOS | No |
+  /// | Linux | Yes (rfkill) |
+  /// | iOS | No |
   Future<bool> disableBluetooth() => _platform.disableBluetooth();
 
   /// Stream of adapter state changes.
   ///
   /// | Platform | Supported |
   /// |----------|-----------|
-  /// | Android | ✅ |
-  /// | Windows | ✅ |
-  /// | macOS | ✅ |
-  /// | Linux | ✅ |
-  /// | iOS | ✅ |
+  /// | Android | Yes |
+  /// | Windows | Yes |
+  /// | macOS | Yes |
+  /// | Linux | Yes |
+  /// | iOS | Yes |
   Stream<BtcAdapterState> get adapterState => _platform.adapterState();
 
   /// Returns the local adapter's friendly name.
   ///
   /// | Platform | Supported |
   /// |----------|-----------|
-  /// | Android | ✅ |
-  /// | Windows | ✅ |
-  /// | macOS | ✅ |
-  /// | Linux | ✅ |
-  /// | iOS | ❌ |
+  /// | Android | Yes |
+  /// | Windows | Yes |
+  /// | macOS | Yes |
+  /// | Linux | Yes |
+  /// | iOS | No |
   Future<String?> getAdapterName() => _platform.getAdapterName();
 
   /// Returns the local adapter's hardware address (MAC).
@@ -134,10 +134,10 @@ class FlutterClassicBluetooth {
   /// | Platform | Supported |
   /// |----------|-----------|
   /// | Android | ⚠️ (returns "02:00:00:00:00:00" on API 23+) |
-  /// | Windows | ✅ |
-  /// | macOS | ✅ |
-  /// | Linux | ✅ |
-  /// | iOS | ❌ |
+  /// | Windows | Yes |
+  /// | macOS | Yes |
+  /// | Linux | Yes |
+  /// | iOS | No |
   Future<String?> getAdapterAddress() => _platform.getAdapterAddress();
 
   // ── Discovery ────────────────────────────────────────────────────────
@@ -149,33 +149,33 @@ class FlutterClassicBluetooth {
   ///
   /// | Platform | Supported |
   /// |----------|-----------|
-  /// | Android | ✅ |
-  /// | Windows | ✅ |
-  /// | macOS | ✅ |
-  /// | Linux | ✅ |
-  /// | iOS | ❌ |
+  /// | Android | Yes |
+  /// | Windows | Yes |
+  /// | macOS | Yes |
+  /// | Linux | Yes |
+  /// | iOS | No |
   Future<void> startDiscovery() => _platform.startDiscovery();
 
   /// Stops an ongoing device discovery.
   ///
   /// | Platform | Supported |
   /// |----------|-----------|
-  /// | Android | ✅ |
-  /// | Windows | ✅ |
-  /// | macOS | ✅ |
-  /// | Linux | ✅ |
-  /// | iOS | ❌ |
+  /// | Android | Yes |
+  /// | Windows | Yes |
+  /// | macOS | Yes |
+  /// | Linux | Yes |
+  /// | iOS | No |
   Future<void> stopDiscovery() => _platform.stopDiscovery();
 
   /// Returns whether a discovery scan is currently in progress.
   ///
   /// | Platform | Supported |
   /// |----------|-----------|
-  /// | Android | ✅ |
-  /// | Windows | ✅ |
-  /// | macOS | ✅ |
-  /// | Linux | ✅ |
-  /// | iOS | ❌ (always returns false) |
+  /// | Android | Yes |
+  /// | Windows | Yes |
+  /// | macOS | Yes |
+  /// | Linux | Yes |
+  /// | iOS | No (always returns false) |
   Future<bool> isDiscovering() => _platform.isDiscovering();
 
   /// Stream that emits `true` when discovery starts and `false` when it stops.
@@ -190,11 +190,11 @@ class FlutterClassicBluetooth {
   ///
   /// | Platform | Supported |
   /// |----------|-----------|
-  /// | Android | ✅ |
-  /// | Windows | ✅ |
-  /// | macOS | ✅ |
-  /// | Linux | ✅ |
-  /// | iOS | ✅ (connected MFi accessories) |
+  /// | Android | Yes |
+  /// | Windows | Yes |
+  /// | macOS | Yes |
+  /// | Linux | Yes |
+  /// | iOS | Yes (connected MFi accessories) |
   Future<List<BtcDevice>> getPairedDevices() =>
       _platform.getPairedDevices();
 
@@ -204,11 +204,11 @@ class FlutterClassicBluetooth {
   ///
   /// | Platform | Supported |
   /// |----------|-----------|
-  /// | Android | ✅ |
-  /// | Windows | ✅ (system dialog) |
-  /// | macOS | ✅ |
-  /// | Linux | ✅ |
-  /// | iOS | ❌ |
+  /// | Android | Yes |
+  /// | Windows | Yes (system dialog) |
+  /// | macOS | Yes |
+  /// | Linux | Yes |
+  /// | iOS | No |
   ///
   /// Throws [BtcAddressException] if [address] is not a valid MAC.
   Future<bool> bondDevice(String address) {
@@ -222,11 +222,11 @@ class FlutterClassicBluetooth {
   ///
   /// | Platform | Supported |
   /// |----------|-----------|
-  /// | Android | ✅ |
-  /// | Windows | ✅ |
-  /// | macOS | ✅ |
-  /// | Linux | ✅ |
-  /// | iOS | ❌ |
+  /// | Android | Yes |
+  /// | Windows | Yes |
+  /// | macOS | Yes |
+  /// | Linux | Yes |
+  /// | iOS | No |
   ///
   /// Throws [BtcAddressException] if [address] is not a valid MAC.
   Future<bool> unbondDevice(String address) {
@@ -251,10 +251,10 @@ class FlutterClassicBluetooth {
   ///
   /// | Platform | Supported |
   /// |----------|-----------|
-  /// | Android | ✅ |
-  /// | Windows | ✅ |
-  /// | macOS | ✅ |
-  /// | Linux | ✅ |
+  /// | Android | Yes |
+  /// | Windows | Yes |
+  /// | macOS | Yes |
+  /// | Linux | Yes |
   /// | iOS | ⚠️ (MFi accessories via protocol string) |
   ///
   /// Throws [BtcAddressException] if [address] is not a valid MAC.
@@ -277,11 +277,11 @@ class FlutterClassicBluetooth {
   ///
   /// | Platform | Supported |
   /// |----------|-----------|
-  /// | Android | ✅ |
-  /// | Windows | ✅ |
-  /// | macOS | ✅ |
-  /// | Linux | ✅ |
-  /// | iOS | ✅ |
+  /// | Android | Yes |
+  /// | Windows | Yes |
+  /// | macOS | Yes |
+  /// | Linux | Yes |
+  /// | iOS | Yes |
   Future<void> disconnect(int id) => _platform.disconnect(id);
 
   // ── Server ───────────────────────────────────────────────────────────
@@ -293,11 +293,11 @@ class FlutterClassicBluetooth {
   ///
   /// | Platform | Supported |
   /// |----------|-----------|
-  /// | Android | ✅ |
-  /// | Windows | ✅ |
-  /// | macOS | ✅ |
-  /// | Linux | ✅ |
-  /// | iOS | ❌ |
+  /// | Android | Yes |
+  /// | Windows | Yes |
+  /// | macOS | Yes |
+  /// | Linux | Yes |
+  /// | iOS | No |
   ///
   /// Throws [BtcUuidException] if [uuid] is not a valid UUID.
   Future<BtcServerSocket> startServer({
@@ -318,11 +318,11 @@ class FlutterClassicBluetooth {
   ///
   /// | Platform | Supported |
   /// |----------|-----------|
-  /// | Android | ✅ (system dialog) |
-  /// | Windows | ❌ |
-  /// | macOS | ❌ |
-  /// | Linux | ✅ |
-  /// | iOS | ❌ |
+  /// | Android | Yes (system dialog) |
+  /// | Windows | No |
+  /// | macOS | No |
+  /// | Linux | Yes |
+  /// | iOS | No |
   Future<bool> setDiscoverable(int durationSeconds) =>
       _platform.setDiscoverable(durationSeconds);
 

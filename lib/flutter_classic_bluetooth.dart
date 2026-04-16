@@ -51,17 +51,17 @@
 ///
 /// | Feature | Android | iOS | Windows | macOS | Linux |
 /// |---------|---------|-----|---------|-------|-------|
-/// | Adapter state | ✅ | ✅ | ✅ | ✅ | ✅ |
-/// | Discovery | ✅ | ❌ | ✅ | ✅ | ✅ |
-/// | Paired devices | ✅ | ✅¹ | ✅ | ✅ | ✅ |
-/// | Bond/Unbond | ✅ | ❌ | ✅ | ✅ | ❌² |
-/// | RFCOMM connect | ✅ | ✅¹ | ✅ | ✅ | ✅ |
-/// | RFCOMM server | ✅ | ❌ | ✅ | ✅ | ✅ |
-/// | Enable/Disable | ✅ | ❌ | ❌ | ❌ | ✅ |
-/// | Set discoverable | ✅ | ❌ | ❌ | ❌ | ✅ |
+/// | Adapter state | Yes | Yes | Yes | Yes | Yes |
+/// | Discovery | Yes | No | Yes | Yes | Yes |
+/// | Paired devices | Yes | Yes(1) | Yes | Yes | Yes |
+/// | Bond/Unbond | Yes | No | Yes | Yes | No(2) |
+/// | RFCOMM connect | Yes | Yes(1) | Yes | Yes | Yes |
+/// | RFCOMM server | Yes | No | Yes | Yes | Yes |
+/// | Enable/Disable | Yes | No | No | No | Yes |
+/// | Set discoverable | Yes | No | No | No | Yes |
 ///
-/// ¹ iOS requires MFi-certified accessories via ExternalAccessory framework.
-/// ² Linux returns an error for bond/unbond operations.
+/// (1) iOS requires MFi-certified accessories via ExternalAccessory framework.
+/// (2) Linux returns an error for bond/unbond operations.
 ///
 /// ## Example
 ///

@@ -2,7 +2,7 @@
 ///
 /// Use [FlutterClassicBluetooth.getPlatformCapabilities] to obtain this.
 /// Check capabilities before calling platform-specific features to avoid
-/// [BluetoothUnsupportedException].
+/// [BtcUnsupportedException].
 ///
 /// ```dart
 /// final caps = await bluetooth.getPlatformCapabilities();
