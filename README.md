@@ -44,7 +44,7 @@ Discover, pair, connect, and exchange data across Android, iOS (MFi), Windows, m
 
 ```yaml
 dependencies:
-  flutter_classic_bluetooth: ^latest
+  flutter_classic_bluetooth: ^0.1.0
 ```
 
 ## Quick Start
