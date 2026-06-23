@@ -119,8 +119,8 @@ inline sdp_session_t* register_rfcomm_service(uint8_t channel, const char* servi
 
     sdp_set_info_attr(record, service_name, "", "");
 
-    bdaddr_t any = {{0, 0, 0, 0, 0, 0}};
-    bdaddr_t local = {{0, 0, 0, 0, 0, 0xff}};
+    bdaddr_t any = {{0, 0, 0, 0, 0, 0}};          // BDADDR_ANY
+    bdaddr_t local = {{0, 0, 0, 0xff, 0xff, 0xff}};  // BDADDR_LOCAL (local SDP daemon)
     sdp_session_t* session = sdp_connect(&any, &local, SDP_RETRY_IF_BUSY);
     if (session) {
         sdp_record_register(session, record, 0);
