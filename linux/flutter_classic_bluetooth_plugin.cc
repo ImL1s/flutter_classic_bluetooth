@@ -387,18 +387,21 @@ static FlMethodResponse* handle_get_platform_capabilities(FlutterClassicBluetoot
     g_autoptr(FlValue) caps = fl_value_new_map();
     fl_value_set_string_take(caps, "canEnableBluetooth", fl_value_new_bool(false));
     fl_value_set_string_take(caps, "canDisableBluetooth", fl_value_new_bool(false));
-    fl_value_set_string_take(caps, "canDiscoverDevices", fl_value_new_bool(true));
-    fl_value_set_string_take(caps, "canGetPairedDevices", fl_value_new_bool(true));
+    // The Linux implementation registers no event channels yet, so discovery
+    // results, incoming connection data and server-accepted connections are not
+    // delivered. Report those as unsupported so apps don't rely on dead streams.
+    fl_value_set_string_take(caps, "canDiscoverDevices", fl_value_new_bool(false));
+    fl_value_set_string_take(caps, "canGetPairedDevices", fl_value_new_bool(false));
     fl_value_set_string_take(caps, "canBondDevices", fl_value_new_bool(false));
     fl_value_set_string_take(caps, "canUnbondDevices", fl_value_new_bool(false));
-    fl_value_set_string_take(caps, "canCreateServer", fl_value_new_bool(true));
+    fl_value_set_string_take(caps, "canCreateServer", fl_value_new_bool(false));
     fl_value_set_string_take(caps, "canSetDiscoverable", fl_value_new_bool(true));
     fl_value_set_string_take(caps, "supportsMultipleConnections", fl_value_new_bool(true));
     fl_value_set_string_take(caps, "supportsSecureConnection", fl_value_new_bool(true));
     fl_value_set_string_take(caps, "supportsInsecureConnection", fl_value_new_bool(true));
     fl_value_set_string_take(caps, "requiresMfiCertification", fl_value_new_bool(false));
     fl_value_set_string_take(caps, "platformNote",
-        fl_value_new_string("Linux — Bluetooth Classic via BlueZ/AF_BLUETOOTH RFCOMM. Pairing requires BlueZ agent (not yet implemented)."));
+        fl_value_new_string("Linux — Bluetooth Classic via BlueZ/AF_BLUETOOTH RFCOMM. Adapter info and setDiscoverable work; discovery, paired-device listing, bonding, server mode and incoming connection data are not yet implemented (no event channels)."));
     return FL_METHOD_RESPONSE(fl_method_success_response_new(caps));
 }
 

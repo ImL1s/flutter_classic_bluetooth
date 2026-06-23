@@ -4,14 +4,15 @@
 #
 Pod::Spec.new do |s|
   s.name             = 'flutter_classic_bluetooth'
-  s.version          = '0.0.1'
-  s.summary          = 'A new Flutter plugin project.'
+  s.version          = '0.1.0'
+  s.summary          = 'Bluetooth Classic (RFCOMM) for Flutter.'
   s.description      = <<-DESC
-A new Flutter plugin project.
+Flutter plugin for Bluetooth Classic (RFCOMM) across Android, iOS (MFi), Windows,
+macOS, and Linux. macOS uses the IOBluetooth framework.
                        DESC
-  s.homepage         = 'http://example.com'
+  s.homepage         = 'https://github.com/Masum-MSNR/flutter_classic_bluetooth'
   s.license          = { :file => '../LICENSE' }
-  s.author           = { 'Your Company' => 'email@example.com' }
+  s.author           = { 'Masum-MSNR' => 'dev.almasum@gmail.com' }
 
   s.source           = { :path => '.' }
   s.source_files = 'flutter_classic_bluetooth/Sources/**/*'

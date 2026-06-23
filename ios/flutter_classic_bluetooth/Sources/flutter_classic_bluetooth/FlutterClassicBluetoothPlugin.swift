@@ -144,8 +144,10 @@ public class FlutterClassicBluetoothPlugin: NSObject, FlutterPlugin {
                 "address": String(accessory.connectionID),
                 "name": accessory.name,
                 "alias": accessory.manufacturer,
-                "type": "classic",
+                "type": "unknown",
                 "bondState": "bonded",
+                // Documented as the accessory's MFi protocol strings.
+                "uuids": accessory.protocolStrings,
                 "isConnected": accessory.isConnected
             ]
         }

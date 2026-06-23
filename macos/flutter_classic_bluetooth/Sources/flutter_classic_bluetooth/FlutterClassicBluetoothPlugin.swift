@@ -251,29 +251,41 @@ public class FlutterClassicBluetoothPlugin: NSObject, FlutterPlugin {
         result([
             "canEnableBluetooth": false,
             "canDisableBluetooth": false,
-            "canDiscoverDevices": true,
+            // Discovery, bonding and server mode are not yet implemented on
+            // macOS (IOBluetooth inquiry/pairing/channel-open notifications are
+            // not wired up); report them honestly so apps don't call into
+            // non-functional paths. Connect/read/write and paired-device
+            // enumeration do work.
+            "canDiscoverDevices": false,
             "canGetPairedDevices": true,
-            "canBondDevices": true,
+            "canBondDevices": false,
             "canUnbondDevices": false,
-            "canCreateServer": true,
+            "canCreateServer": false,
             "canSetDiscoverable": false,
             "supportsMultipleConnections": true,
             "supportsSecureConnection": true,
             "supportsInsecureConnection": false,
             "requiresMfiCertification": false,
-            "platformNote": "macOS — Bluetooth Classic via IOBluetooth framework. Cannot programmatically enable/disable Bluetooth."
+            "platformNote": "macOS — Bluetooth Classic via IOBluetooth. Connect/read/write and paired-device listing are supported; discovery, bonding and server mode are not yet implemented."
         ])
     }
 
     // MARK: - Helpers
 
     private func deviceToMap(_ device: IOBluetoothDevice) -> [String: Any?] {
+        let uuids = (device.services as? [IOBluetoothSDPServiceRecord])?.compactMap {
+            $0.getServiceName()
+        } ?? []
+        let raw = device.rawRSSI()
+        let rssi: Int? = raw != 127 ? Int(raw) : nil  // 127 == not available
         return [
             "address": device.addressString?.replacingOccurrences(of: "-", with: ":").uppercased(),
             "name": device.name,
             "alias": nil,
+            "rssi": rssi,
             "type": "classic",
             "bondState": device.isPaired() ? "bonded" : "none",
+            "uuids": uuids,
             "isConnected": device.isConnected()
         ]
     }
@@ -391,14 +403,20 @@ class BluetoothConnectionWrapper: NSObject, IOBluetoothRFCOMMChannelDelegate {
     }
 
     // IOBluetoothRFCOMMChannelDelegate
+    // These fire on IOBluetooth's run loop; Flutter event sinks must be invoked
+    // on the main thread.
     public func rfcommChannelData(_ rfcommChannel: IOBluetoothRFCOMMChannel!, data dataPointer: UnsafeMutableRawPointer!, length dataLength: Int) {
         let data = Data(bytes: dataPointer, count: dataLength)
-        dataStreamHandler?.eventSink?(FlutterStandardTypedData(bytes: data))
+        DispatchQueue.main.async { [weak self] in
+            self?.dataStreamHandler?.eventSink?(FlutterStandardTypedData(bytes: data))
+        }
     }
 
     public func rfcommChannelClosed(_ rfcommChannel: IOBluetoothRFCOMMChannel!) {
         channel = nil
-        stateStreamHandler?.eventSink?("disconnected")
+        DispatchQueue.main.async { [weak self] in
+            self?.stateStreamHandler?.eventSink?("disconnected")
+        }
     }
 }
 
