@@ -49,8 +49,6 @@ through broadcast streams.
 - Pair/unpair devices, toggle the adapter, and make the device discoverable (where the platform allows).
 - Query per-platform capabilities at runtime so your UI only offers what works.
 
-<!-- Add images/preview.png (a screenshot or GIF of the example app discovering + exchanging data) and reference it here for the best pub.dev presentation. -->
-
 ## Table of contents
 
 - [Key features](#key-features)
