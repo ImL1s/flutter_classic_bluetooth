@@ -43,6 +43,13 @@ class PermissionManager : PluginRegistry.RequestPermissionsResultListener {
             return
         }
 
+        // Only one OS permission dialog can be outstanding; reject re-entrant
+        // requests instead of overwriting (and orphaning) the previous result.
+        if (pendingResult != null) {
+            result.error("pendingOperation",
+                "A permission request is already in progress", null)
+            return
+        }
         pendingResult = result
 
         val permissions = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
@@ -86,7 +93,11 @@ class PermissionManager : PluginRegistry.RequestPermissionsResultListener {
         grantResults: IntArray
     ): Boolean {
         if (requestCode != REQUEST_CODE) return false
-        val granted = grantResults.isNotEmpty() && grantResults.all { it == PackageManager.PERMISSION_GRANTED }
+        // Re-check the permissions we actually require (SCAN+CONNECT, or location
+        // pre-S) rather than requiring every requested grant — denying the
+        // optional ADVERTISE permission must not fail otherwise-granted calls.
+        val act = activity
+        val granted = act != null && hasPermissions(act)
         pendingResult?.success(granted)
         pendingResult = null
         return true

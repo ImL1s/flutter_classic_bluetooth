@@ -20,6 +20,12 @@ class ActivityResultManager : PluginRegistry.ActivityResultListener {
             result.error("bluetoothDisabled", "No activity available", null)
             return
         }
+        // Only one system dialog can be outstanding; reject re-entrant requests
+        // instead of orphaning the previous result's Future.
+        if (pendingResult != null) {
+            result.error("pendingOperation", "Another request is already in progress", null)
+            return
+        }
         pendingResult = result
         act.startActivityForResult(intent, requestCode)
     }

@@ -1,10 +1,13 @@
 package com.flutter_classic_bluetooth.flutter_classic_bluetooth
 
 import android.bluetooth.BluetoothSocket
+import android.os.Handler
+import android.os.Looper
 import io.flutter.plugin.common.EventChannel
 import java.io.IOException
 import java.io.InputStream
 import java.io.OutputStream
+import java.util.concurrent.atomic.AtomicBoolean
 
 class BluetoothConnectionWrapper(
     val id: Int,
@@ -14,6 +17,10 @@ class BluetoothConnectionWrapper(
     private var readThread: Thread? = null
     private var dataEventSink: EventChannel.EventSink? = null
     private var stateEventSink: EventChannel.EventSink? = null
+
+    // EventSink calls must happen on the main (platform) thread.
+    private val mainHandler = Handler(Looper.getMainLooper())
+    private val disconnectedEmitted = AtomicBoolean(false)
 
     @Volatile
     private var requestedClosing = false
@@ -53,20 +60,26 @@ class BluetoothConnectionWrapper(
                     val bytesRead = input.read(buffer)
                     if (bytesRead == -1) break
                     val data = buffer.copyOf(bytesRead)
-                    dataEventSink?.success(data)
+                    mainHandler.post { dataEventSink?.success(data) }
                 } catch (_: IOException) {
                     break
                 }
             }
 
-            if (!requestedClosing) {
-                stateEventSink?.success("disconnected")
-                dataEventSink?.endOfStream()
-            }
+            if (!requestedClosing) emitDisconnected()
         }.apply {
             isDaemon = true
             name = "bt-read-$id"
             start()
+        }
+    }
+
+    /** Emits the terminal "disconnected" state exactly once, on the main thread. */
+    private fun emitDisconnected() {
+        if (!disconnectedEmitted.compareAndSet(false, true)) return
+        mainHandler.post {
+            stateEventSink?.success("disconnected")
+            dataEventSink?.endOfStream()
         }
     }
 
@@ -81,12 +94,9 @@ class BluetoothConnectionWrapper(
 
     fun close() {
         requestedClosing = true
-        stateEventSink?.success("disconnected")
-        dataEventSink?.endOfStream()
+        emitDisconnected()
         try { socket.close() } catch (_: IOException) {}
         readThread?.interrupt()
         readThread = null
-        dataEventSink = null
-        stateEventSink = null
     }
 }

@@ -8,7 +8,10 @@ import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.os.Build
+import android.os.Handler
+import android.os.Looper
 import android.util.SparseArray
+import java.util.concurrent.atomic.AtomicInteger
 import com.flutter_classic_bluetooth.flutter_classic_bluetooth.receivers.*
 import io.flutter.embedding.engine.plugins.FlutterPlugin
 import io.flutter.embedding.engine.plugins.activity.ActivityAware
@@ -36,8 +39,14 @@ class FlutterClassicBluetoothPlugin :
 
     private val connections = SparseArray<BluetoothConnectionWrapper>()
     private val servers = SparseArray<BluetoothServerSocketWrapper>()
-    private var nextConnectionId = 1
-    private var nextServerId = 1
+    // Single source of truth for ids shared by client connects and server
+    // accepts, so the two can never collide.
+    private val nextConnectionId = AtomicInteger(1)
+    private val nextServerId = AtomicInteger(1)
+
+    // MethodChannel.Result and EventChannel registration must run on the main
+    // (platform) thread; Bluetooth I/O runs on background threads.
+    private val mainHandler = Handler(Looper.getMainLooper())
 
     // Event channels
     private lateinit var adapterStateChannel: EventChannel
@@ -272,8 +281,10 @@ class FlutterClassicBluetoothPlugin :
                 try {
                     val device = adapter?.getRemoteDevice(address)
                     if (device == null) {
-                        result.error("connectionFailed", "Device not found: $address",
-                            mapOf("address" to address))
+                        mainHandler.post {
+                            result.error("connectionFailed", "Device not found: $address",
+                                mapOf("address" to address))
+                        }
                         return@Thread
                     }
 
@@ -289,7 +300,7 @@ class FlutterClassicBluetoothPlugin :
 
                     socket.connect()
 
-                    val connId = nextConnectionId++
+                    val connId = nextConnectionId.getAndIncrement()
                     val connection = BluetoothConnectionWrapper(
                         id = connId,
                         socket = socket,
@@ -300,20 +311,26 @@ class FlutterClassicBluetoothPlugin :
                         connections.put(connId, connection)
                     }
 
-                    // Register per-connection event channels
-                    val dataChannel = EventChannel(messenger, BluetoothHelper.connectionChannel(connId))
-                    dataChannel.setStreamHandler(connection.dataStreamHandler)
-
-                    val stateChannel = EventChannel(messenger, BluetoothHelper.connectionStateChannel(connId))
-                    stateChannel.setStreamHandler(connection.stateStreamHandler)
-
-                    result.success(mapOf("id" to connId, "address" to address))
+                    // Channel registration + result delivery must be on the main
+                    // thread; do it before completing the Future so Dart can
+                    // listen as soon as it has the id.
+                    mainHandler.post {
+                        EventChannel(messenger, BluetoothHelper.connectionChannel(connId))
+                            .setStreamHandler(connection.dataStreamHandler)
+                        EventChannel(messenger, BluetoothHelper.connectionStateChannel(connId))
+                            .setStreamHandler(connection.stateStreamHandler)
+                        result.success(mapOf("id" to connId, "address" to address))
+                    }
                 } catch (e: IOException) {
-                    result.error("connectionFailed", "Connection failed: ${e.message}",
-                        mapOf("address" to address))
+                    mainHandler.post {
+                        result.error("connectionFailed", "Connection failed: ${e.message}",
+                            mapOf("address" to address))
+                    }
                 } catch (e: Exception) {
-                    result.error("connectionFailed", "Connection failed: ${e.message}",
-                        mapOf("address" to address))
+                    mainHandler.post {
+                        result.error("connectionFailed", "Connection failed: ${e.message}",
+                            mapOf("address" to address))
+                    }
                 }
             }.apply {
                 isDaemon = true
@@ -375,21 +392,23 @@ class FlutterClassicBluetoothPlugin :
 
         permissionManager.ensurePermissions(context, result) {
             try {
-                val serverId = nextServerId++
+                val serverId = nextServerId.getAndIncrement()
                 val server = BluetoothServerSocketWrapper(
                     id = serverId,
                     adapter = bt,
                     uuid = uuidStr,
                     serviceName = serviceName,
                     secure = secure,
+                    connectionIdSource = nextConnectionId,
+                    // Invoked on the main thread by the wrapper.
                     onConnectionAccepted = { connection ->
                         synchronized(connections) {
                             connections.put(connection.id, connection)
                         }
-                        val dataChannel = EventChannel(messenger, BluetoothHelper.connectionChannel(connection.id))
-                        dataChannel.setStreamHandler(connection.dataStreamHandler)
-                        val stateChannel = EventChannel(messenger, BluetoothHelper.connectionStateChannel(connection.id))
-                        stateChannel.setStreamHandler(connection.stateStreamHandler)
+                        EventChannel(messenger, BluetoothHelper.connectionChannel(connection.id))
+                            .setStreamHandler(connection.dataStreamHandler)
+                        EventChannel(messenger, BluetoothHelper.connectionStateChannel(connection.id))
+                            .setStreamHandler(connection.stateStreamHandler)
                     }
                 )
 
@@ -400,7 +419,7 @@ class FlutterClassicBluetoothPlugin :
                     servers.put(serverId, server)
                 }
 
-                server.start(nextConnectionId)
+                server.start()
                 result.success(mapOf("id" to serverId))
             } catch (e: IOException) {
                 result.error("connectionFailed", "Failed to start server: ${e.message}", null)

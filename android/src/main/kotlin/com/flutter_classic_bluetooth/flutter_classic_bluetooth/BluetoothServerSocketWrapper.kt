@@ -2,9 +2,12 @@ package com.flutter_classic_bluetooth.flutter_classic_bluetooth
 
 import android.bluetooth.BluetoothAdapter
 import android.bluetooth.BluetoothServerSocket as AndroidServerSocket
+import android.os.Handler
+import android.os.Looper
 import io.flutter.plugin.common.EventChannel
 import java.io.IOException
 import java.util.UUID
+import java.util.concurrent.atomic.AtomicInteger
 
 class BluetoothServerSocketWrapper(
     val id: Int,
@@ -12,15 +15,19 @@ class BluetoothServerSocketWrapper(
     private val uuid: String,
     private val serviceName: String,
     private val secure: Boolean,
+    // Shared with the plugin (and client connects) so connection ids never collide.
+    private val connectionIdSource: AtomicInteger,
     private val onConnectionAccepted: (BluetoothConnectionWrapper) -> Unit,
 ) {
     private var serverSocket: AndroidServerSocket? = null
     private var acceptThread: Thread? = null
     private var eventSink: EventChannel.EventSink? = null
 
+    // EventSink calls and channel registration must run on the main thread.
+    private val mainHandler = Handler(Looper.getMainLooper())
+
     @Volatile
     private var running = false
-    private var nextConnectionId = 0
 
     val streamHandler = object : EventChannel.StreamHandler {
         override fun onListen(arguments: Any?, events: EventChannel.EventSink) {
@@ -32,8 +39,7 @@ class BluetoothServerSocketWrapper(
     }
 
     @Suppress("MissingPermission")
-    fun start(startConnectionId: Int) {
-        nextConnectionId = startConnectionId
+    fun start() {
         val parsedUuid = UUID.fromString(uuid)
 
         serverSocket = if (secure) {
@@ -47,19 +53,18 @@ class BluetoothServerSocketWrapper(
             while (running) {
                 try {
                     val socket = serverSocket?.accept() ?: break
-                    val connId = nextConnectionId++
+                    val connId = connectionIdSource.getAndIncrement()
+                    val deviceAddress = socket.remoteDevice.address
                     val connection = BluetoothConnectionWrapper(
                         id = connId,
                         socket = socket,
-                        address = socket.remoteDevice.address,
+                        address = deviceAddress,
                     )
-                    onConnectionAccepted(connection)
-                    eventSink?.success(
-                        mapOf(
-                            "id" to connId,
-                            "address" to socket.remoteDevice.address,
-                        )
-                    )
+                    // Register the client's channels and notify Dart on the main thread.
+                    mainHandler.post {
+                        onConnectionAccepted(connection)
+                        eventSink?.success(mapOf("id" to connId, "address" to deviceAddress))
+                    }
                 } catch (_: IOException) {
                     break
                 }
