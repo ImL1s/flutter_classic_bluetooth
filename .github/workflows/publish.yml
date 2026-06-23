@@ -17,7 +17,7 @@ jobs:
       contents: read
       id-token: write # pub.dev OIDC automated publishing
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
       # This is a Flutter plugin and pub resolves example/ too, which needs
       # flutter_test from the Flutter SDK — a Dart-only setup fails here.
