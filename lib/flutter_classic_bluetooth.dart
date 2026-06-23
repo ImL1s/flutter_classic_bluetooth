@@ -91,6 +91,7 @@
 /// ```
 library;
 
+export 'src/btc_uuid.dart';
 export 'src/flutter_classic_bluetooth.dart';
 export 'src/platform_interface.dart';
 export 'src/method_channel.dart';

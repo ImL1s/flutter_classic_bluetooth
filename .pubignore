@@ -8,6 +8,9 @@ docs/
 # AI assistant instructions — local only.
 CLAUDE.md
 
+# Reference clones for comparison — never ship.
+reference/
+
 # Local hardware test harness (ESP firmware, scratch apps) — never ship.
 local_test/
 

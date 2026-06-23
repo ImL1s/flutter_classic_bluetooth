@@ -2,6 +2,7 @@ import 'dart:typed_data';
 
 import 'package:plugin_platform_interface/plugin_platform_interface.dart';
 
+import 'btc_uuid.dart';
 import 'method_channel.dart';
 import 'models/btc_enums.dart';
 import 'models/btc_connection.dart';
@@ -142,7 +143,7 @@ abstract class FlutterClassicBluetoothPlatform extends PlatformInterface {
   /// Returns a [BtcConnection] for reading/writing data.
   Future<BtcConnection> connect({
     required String address,
-    required String uuid,
+    String uuid = BtcUuid.spp,
     bool secure = true,
   }) {
     throw UnimplementedError('connect() has not been implemented.');
@@ -165,8 +166,8 @@ abstract class FlutterClassicBluetoothPlatform extends PlatformInterface {
   /// [serviceName] is the SDP service name. If [secure] is `true`,
   /// uses authenticated/encrypted RFCOMM.
   Future<BtcServerSocket> startServer({
-    required String uuid,
     required String serviceName,
+    String uuid = BtcUuid.spp,
     bool secure = true,
   }) {
     throw UnimplementedError('startServer() has not been implemented.');

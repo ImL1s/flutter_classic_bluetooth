@@ -1,3 +1,4 @@
+import 'btc_uuid.dart';
 import 'platform_interface.dart';
 import 'models/btc_enums.dart';
 import 'models/btc_connection.dart';
@@ -245,6 +246,10 @@ class FlutterClassicBluetooth {
 
   /// Connects to the device at [address] using the given [uuid].
   ///
+  /// [uuid] defaults to [BtcUuid.spp] (the Serial Port Profile), which is what
+  /// HC-05/HC-06, ESP32/ESP8266, Arduino, and most serial devices use — so for
+  /// the common case you only need `connect(address: ...)`.
+  ///
   /// If [secure] is `true` (default), uses authenticated/encrypted RFCOMM.
   /// Returns a [BtcConnection] for reading/writing data.
   ///
@@ -266,7 +271,7 @@ class FlutterClassicBluetooth {
   /// Throws [BtcTimeoutException] if [timeout] elapses first.
   Future<BtcConnection> connect({
     required String address,
-    required String uuid,
+    String uuid = BtcUuid.spp,
     bool secure = true,
     Duration? timeout,
   }) {
@@ -303,8 +308,9 @@ class FlutterClassicBluetooth {
 
   /// Creates an RFCOMM server socket listening on the given [uuid].
   ///
-  /// [serviceName] is the SDP service name. If [secure] is `true`,
-  /// uses authenticated/encrypted RFCOMM.
+  /// [uuid] defaults to [BtcUuid.spp] (the Serial Port Profile). [serviceName]
+  /// is the SDP service name. If [secure] is `true`, uses
+  /// authenticated/encrypted RFCOMM.
   ///
   /// | Platform | Supported |
   /// |----------|-----------|
@@ -316,8 +322,8 @@ class FlutterClassicBluetooth {
   ///
   /// Throws [BtcUuidException] if [uuid] is not a valid UUID.
   Future<BtcServerSocket> startServer({
-    required String uuid,
     required String serviceName,
+    String uuid = BtcUuid.spp,
     bool secure = true,
   }) {
     _validateUuid(uuid);

@@ -3,10 +3,6 @@ import 'package:flutter_classic_bluetooth/flutter_classic_bluetooth.dart';
 
 import 'pages/connection_page.dart';
 
-/// The well-known Serial Port Profile UUID — the default for ESP32, HC-05/06,
-/// and most serial peripherals.
-const sppUuid = '00001101-0000-1000-8000-00805F9B34FB';
-
 /// Opens a bottom sheet to configure and start an outbound RFCOMM connection to
 /// [device]. On success it pushes the live [ConnectionPage] terminal.
 Future<void> connectTo(
@@ -70,7 +66,9 @@ class _ConnectSheet extends StatefulWidget {
 
 class _ConnectSheetState extends State<_ConnectSheet> {
   late final TextEditingController _uuid = TextEditingController(
-    text: widget.device.uuids.isNotEmpty ? widget.device.uuids.first : sppUuid,
+    text: widget.device.uuids.isNotEmpty
+        ? widget.device.uuids.first
+        : BtcUuid.spp,
   );
   bool _secure = true;
 

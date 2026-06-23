@@ -259,13 +259,17 @@ for (final device in devices) {
 ### Connect to a device
 
 ```dart
-final connection = await bluetooth.connect(
+// SPP is the default — for HC-05/06, ESP32, Arduino, etc. this is all you need:
+final connection = await bluetooth.connect(address: 'AA:BB:CC:DD:EE:FF');
+print('Connected: id=${connection.id}');
+
+// Override the UUID and tune the attempt only when you need to:
+final custom = await bluetooth.connect(
   address: 'AA:BB:CC:DD:EE:FF',
-  uuid: '00001101-0000-1000-8000-00805F9B34FB', // SPP
+  uuid: BtcUuid.spp, // or any service UUID string
   secure: true,
   timeout: const Duration(seconds: 15), // optional
 );
-print('Connected: id=${connection.id}');
 ```
 
 ### Receive data
@@ -314,8 +318,8 @@ connection.dispose(); // always release resources when done
 
 ```dart
 final server = await bluetooth.startServer(
-  uuid: '00001101-0000-1000-8000-00805F9B34FB',
   serviceName: 'MyService',
+  uuid: BtcUuid.spp, // optional — SPP is the default
   secure: true,
 );
 
@@ -394,7 +398,7 @@ Yes. Any device that exposes a Bluetooth Classic **RFCOMM/SPP serial** profile
 works: an **ESP32** using `BluetoothSerial`, an **Arduino** or **ESP8266** wired
 to an **HC-05**/**HC-06** module, and other UART-over-Bluetooth peripherals
 (thermal printers, barcode scanners, OBD-II adapters). Pair the device, then
-`connect()` with the SPP UUID `00001101-0000-1000-8000-00805F9B34FB`.
+just `connect(address: ...)` — the SPP UUID (`BtcUuid.spp`) is used by default.
 
 **Which platforms are supported?**
 Android, Windows, macOS, and Linux for full client/server RFCOMM; iOS supports

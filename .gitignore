@@ -31,6 +31,9 @@ migrate_working_dir/
 # AI assistant instructions — local only, not tracked or published.
 /CLAUDE.md
 
+# Reference clones of other packages for comparison — local only.
+/reference/
+
 # Local hardware test harness (ESP firmware, scratch test apps) — not published
 /local_test/
 example/integration_test/esp32_live_test.dart

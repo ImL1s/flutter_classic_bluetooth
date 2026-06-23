@@ -30,6 +30,9 @@ Reliability and completeness pass across all five platforms.
   state with an MFi-accessory fallback.
 
 ### Added
+* `BtcUuid.spp` constant for the Serial Port Profile UUID, and `connect()` /
+  `startServer()` now default `uuid` to it — so the common case is just
+  `connect(address: ...)` (HC-05/06, ESP32, Arduino, etc.).
 * `connect()` gains an optional `timeout` (throws `BtcTimeoutException`).
 * `BtcConnection.stateStream` emits `disconnecting` → `disconnected` on `finish()`/`close()`.
 * `BtcStreamSink` gains `writeString`, `writeBytes`, `addStream` and `allSent`.

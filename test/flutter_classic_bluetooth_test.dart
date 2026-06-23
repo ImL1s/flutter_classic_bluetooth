@@ -66,7 +66,7 @@ class MockFlutterClassicBluetoothPlatform
   @override
   Future<BtcConnection> connect({
     required String address,
-    required String uuid,
+    String uuid = BtcUuid.spp,
     bool secure = true,
   }) {
     throw UnimplementedError('connect() mock not implemented');
@@ -80,8 +80,8 @@ class MockFlutterClassicBluetoothPlatform
 
   @override
   Future<BtcServerSocket> startServer({
-    required String uuid,
     required String serviceName,
+    String uuid = BtcUuid.spp,
     bool secure = true,
   }) {
     throw UnimplementedError('startServer() mock not implemented');
@@ -350,6 +350,22 @@ void main() {
       );
     });
 
+    test('connect with no uuid passes validation (defaults to SPP)', () {
+      // Validation passes (no BtcUuidException) and reaches the mock,
+      // which throws UnimplementedError — proving the SPP default is valid.
+      expect(
+        () => bluetooth.connect(address: 'AA:BB:CC:DD:EE:FF'),
+        throwsA(isA<UnimplementedError>()),
+      );
+    });
+
+    test('startServer with no uuid passes validation (defaults to SPP)', () {
+      expect(
+        () => bluetooth.startServer(serviceName: 'svc'),
+        throwsA(isA<UnimplementedError>()),
+      );
+    });
+
     test('bondState throws on invalid address', () {
       expect(
         () => bluetooth.bondState('not-valid'),
@@ -538,6 +554,20 @@ void main() {
       });
       expect(connection.id, 1);
       expect(connection.address, 'AA:BB:CC:DD:EE:FF');
+    });
+
+    test('connect defaults uuid to SPP when omitted', () async {
+      await platform.connect(address: 'AA:BB:CC:DD:EE:FF');
+      expect(log.last.method, 'connect');
+      expect(log.last.arguments['uuid'], BtcUuid.spp);
+      expect(log.last.arguments['secure'], true);
+    });
+
+    test('startServer defaults uuid to SPP when omitted', () async {
+      await platform.startServer(serviceName: 'TestService');
+      expect(log.last.method, 'startServer');
+      expect(log.last.arguments['uuid'], BtcUuid.spp);
+      expect(log.last.arguments['serviceName'], 'TestService');
     });
 
     test('disconnect sends id argument', () async {
@@ -1226,6 +1256,14 @@ void main() {
 
     test('BtcConnectionState has all expected values', () {
       expect(BtcConnectionState.values, hasLength(4));
+    });
+  });
+
+  // ── BtcUuid Constants ─────────────────────────────────────────────────
+
+  group('BtcUuid', () {
+    test('spp is the canonical Serial Port Profile UUID', () {
+      expect(BtcUuid.spp, '00001101-0000-1000-8000-00805F9B34FB');
     });
   });
 }

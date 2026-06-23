@@ -3,7 +3,6 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_classic_bluetooth/flutter_classic_bluetooth.dart';
 
-import '../connect_flow.dart' show sppUuid;
 import '../controller.dart';
 import '../pages/connection_page.dart';
 import '../widgets.dart';
@@ -25,7 +24,7 @@ class _ServerPageState extends State<ServerPage> {
   String? _error;
 
   final _name = TextEditingController(text: 'Flutter SPP');
-  final _uuid = TextEditingController(text: sppUuid);
+  final _uuid = TextEditingController(text: BtcUuid.spp);
   bool _secure = true;
 
   bool get _running => _server != null;

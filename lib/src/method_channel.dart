@@ -1,6 +1,7 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 
+import 'btc_uuid.dart';
 import 'platform_interface.dart';
 import 'models/btc_enums.dart';
 import 'models/btc_connection.dart';
@@ -150,7 +151,7 @@ class MethodChannelFlutterClassicBluetooth
   @override
   Future<BtcConnection> connect({
     required String address,
-    required String uuid,
+    String uuid = BtcUuid.spp,
     bool secure = true,
   }) async {
     final result = await _invoke<Map>('connect', {
@@ -180,8 +181,8 @@ class MethodChannelFlutterClassicBluetooth
 
   @override
   Future<BtcServerSocket> startServer({
-    required String uuid,
     required String serviceName,
+    String uuid = BtcUuid.spp,
     bool secure = true,
   }) async {
     final result = await _invoke<Map>('startServer', {
