@@ -1,11 +1,13 @@
 import Flutter
 import UIKit
 import ExternalAccessory
+import CoreBluetooth
 
 public class FlutterClassicBluetoothPlugin: NSObject, FlutterPlugin {
     private var messenger: FlutterBinaryMessenger!
     private var connections: [Int: EASessionWrapper] = [:]
     private var nextConnectionId = 0
+    private let adapterStateHandler = AdapterStateStreamHandler()
 
     public static func register(with registrar: FlutterPluginRegistrar) {
         let channel = FlutterMethodChannel(
@@ -14,6 +16,14 @@ public class FlutterClassicBluetoothPlugin: NSObject, FlutterPlugin {
         )
         let instance = FlutterClassicBluetoothPlugin()
         instance.messenger = registrar.messenger()
+
+        // Adapter state via CoreBluetooth (radio power state).
+        let adapterChannel = FlutterEventChannel(
+            name: "flutter_classic_bluetooth/adapter_state",
+            binaryMessenger: registrar.messenger()
+        )
+        adapterChannel.setStreamHandler(instance.adapterStateHandler)
+
         registrar.addMethodCallDelegate(instance, channel: channel)
     }
 
@@ -26,9 +36,15 @@ public class FlutterClassicBluetoothPlugin: NSObject, FlutterPlugin {
             result(true)
 
         case "isEnabled":
-            // No API to check Bluetooth state via ExternalAccessory
-            // We can check if there are any connected accessories
-            result(!EAAccessoryManager.shared().connectedAccessories.isEmpty)
+            // Prefer the CoreBluetooth radio state once it is known; fall back to
+            // the ExternalAccessory heuristic (a connected accessory implies on)
+            // until the first state callback arrives.
+            adapterStateHandler.ensureManager()
+            if let on = adapterStateHandler.isPoweredOn {
+                result(on)
+            } else {
+                result(!EAAccessoryManager.shared().connectedAccessories.isEmpty)
+            }
 
         case "enableBluetooth", "disableBluetooth":
             result(FlutterError(
@@ -325,5 +341,61 @@ private class IOSStreamHandler: NSObject, FlutterStreamHandler {
     func onCancel(withArguments arguments: Any?) -> FlutterError? {
         eventSink = nil
         return nil
+    }
+}
+
+// MARK: - Adapter State (CoreBluetooth)
+
+/// Bridges CoreBluetooth's central-manager power state to the adapter_state
+/// event channel. The manager is created lazily so the Bluetooth permission
+/// prompt only appears when the app actually queries adapter state.
+private class AdapterStateStreamHandler: NSObject, FlutterStreamHandler, CBCentralManagerDelegate {
+    private var eventSink: FlutterEventSink?
+    private var centralManager: CBCentralManager?
+    private var lastState: CBManagerState = .unknown
+
+    func ensureManager() {
+        if centralManager == nil {
+            centralManager = CBCentralManager(delegate: self, queue: nil)
+        }
+    }
+
+    /// `nil` until CoreBluetooth reports a definitive state.
+    var isPoweredOn: Bool? {
+        switch lastState {
+        case .unknown, .resetting: return nil
+        case .poweredOn: return true
+        default: return false
+        }
+    }
+
+    func onListen(withArguments arguments: Any?, eventSink events: @escaping FlutterEventSink) -> FlutterError? {
+        eventSink = events
+        ensureManager()
+        if lastState != .unknown {
+            events(AdapterStateStreamHandler.stateString(lastState))
+        }
+        return nil
+    }
+
+    func onCancel(withArguments arguments: Any?) -> FlutterError? {
+        eventSink = nil
+        return nil
+    }
+
+    func centralManagerDidUpdateState(_ central: CBCentralManager) {
+        lastState = central.state
+        eventSink?(AdapterStateStreamHandler.stateString(central.state))
+    }
+
+    static func stateString(_ state: CBManagerState) -> String {
+        switch state {
+        case .poweredOn: return "on"
+        case .poweredOff: return "off"
+        case .unauthorized: return "unauthorized"
+        case .unsupported: return "unsupported"
+        case .resetting: return "turningOn"
+        default: return "unknown"
+        }
     }
 }

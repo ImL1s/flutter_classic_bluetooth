@@ -17,8 +17,9 @@
 
 class BluetoothServer {
 public:
-    BluetoothServer(int id, const std::string& uuid, const std::string& service_name)
-        : id_(id), uuid_(uuid), service_name_(service_name),
+    BluetoothServer(int id, const std::string& uuid, const std::string& service_name,
+                    bool secure = true)
+        : id_(id), uuid_(uuid), service_name_(service_name), secure_(secure),
           socket_(-1), running_(false), sdp_session_(nullptr) {}
 
     ~BluetoothServer() { Stop(); }
@@ -28,6 +29,13 @@ public:
     bool Start(uint8_t channel, std::function<void(int, const std::string&)> on_connection) {
         socket_ = socket(AF_BLUETOOTH, SOCK_STREAM, BTPROTO_RFCOMM);
         if (socket_ < 0) return false;
+
+        // Honor the secure flag: require authentication + encryption on accepted
+        // links. Best-effort — ignored if the kernel rejects the option.
+        if (secure_) {
+            int lm = RFCOMM_LM_AUTH | RFCOMM_LM_ENCRYPT;
+            setsockopt(socket_, SOL_RFCOMM, RFCOMM_LM, &lm, sizeof(lm));
+        }
 
         struct sockaddr_rc addr = {};
         addr.rc_family = AF_BLUETOOTH;
@@ -85,6 +93,7 @@ private:
     int id_;
     std::string uuid_;
     std::string service_name_;
+    bool secure_;
     int socket_;
     std::atomic<bool> running_;
     sdp_session_t* sdp_session_;

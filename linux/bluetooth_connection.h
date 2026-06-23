@@ -26,7 +26,9 @@ public:
         std::thread([this, on_data, on_disconnect]() {
             uint8_t buffer[1024];
             while (running_.load()) {
-                ssize_t bytes_read = read(socket_, buffer, sizeof(buffer));
+                int fd = socket_.load();
+                if (fd < 0) break;
+                ssize_t bytes_read = read(fd, buffer, sizeof(buffer));
                 if (bytes_read > 0) {
                     if (on_data) {
                         on_data(std::vector<uint8_t>(buffer, buffer + bytes_read));
@@ -41,23 +43,26 @@ public:
     }
 
     bool Write(const std::vector<uint8_t>& data) {
-        if (socket_ < 0) return false;
-        ssize_t sent = write(socket_, data.data(), data.size());
+        int fd = socket_.load();
+        if (fd < 0) return false;
+        ssize_t sent = write(fd, data.data(), data.size());
         return sent == static_cast<ssize_t>(data.size());
     }
 
     void Close() {
         running_.store(false);
-        if (socket_ >= 0) {
-            shutdown(socket_, SHUT_RDWR);
-            close(socket_);
-            socket_ = -1;
+        // Atomically take ownership of the fd so a concurrent reader/writer
+        // can't close or use a stale descriptor.
+        int fd = socket_.exchange(-1);
+        if (fd >= 0) {
+            shutdown(fd, SHUT_RDWR);
+            close(fd);
         }
     }
 
 private:
     int id_;
-    int socket_;
+    std::atomic<int> socket_;
     std::string address_;
     std::atomic<bool> running_;
 };
