@@ -2,6 +2,9 @@ package com.flutter_classic_bluetooth.flutter_classic_bluetooth
 
 import android.bluetooth.BluetoothAdapter
 import android.bluetooth.BluetoothDevice
+import android.content.BroadcastReceiver
+import android.content.Context
+import android.content.IntentFilter
 import android.os.Build
 
 object BluetoothHelper {
@@ -16,6 +19,25 @@ object BluetoothHelper {
     fun serverChannel(id: Int) = "$NAMESPACE/server/$id"
 
     const val DEFAULT_UUID = "00001101-0000-1000-8000-00805F9B34FB"
+
+    /**
+     * Registers a receiver for system (protected) Bluetooth broadcasts, passing
+     * the export flag required since Android 14 (API 34). The Bluetooth adapter,
+     * bond and discovery actions are system broadcasts, so [Context.RECEIVER_EXPORTED]
+     * is the correct flag.
+     */
+    fun registerExportedReceiver(
+        context: Context,
+        receiver: BroadcastReceiver,
+        filter: IntentFilter,
+    ) {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            context.registerReceiver(receiver, filter, Context.RECEIVER_EXPORTED)
+        } else {
+            @Suppress("UnspecifiedRegisterReceiverFlag")
+            context.registerReceiver(receiver, filter)
+        }
+    }
 
     fun adapterStateToString(state: Int): String = when (state) {
         BluetoothAdapter.STATE_OFF -> "off"

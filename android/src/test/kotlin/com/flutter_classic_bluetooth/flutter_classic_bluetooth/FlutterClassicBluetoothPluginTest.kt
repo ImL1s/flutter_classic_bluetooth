@@ -2,26 +2,33 @@ package com.flutter_classic_bluetooth.flutter_classic_bluetooth
 
 import io.flutter.plugin.common.MethodCall
 import io.flutter.plugin.common.MethodChannel
+import org.mockito.ArgumentCaptor
 import org.mockito.Mockito
 import kotlin.test.Test
+import kotlin.test.assertEquals
 
 /*
- * This demonstrates a simple unit test of the Kotlin portion of this plugin's implementation.
+ * Unit tests for the Kotlin portion of the plugin. getPlatformCapabilities is
+ * context-independent, so it can be exercised without attaching to an engine.
  *
- * Once you have built the plugin's example app, you can run these tests from the command
- * line by running `./gradlew testDebugUnitTest` in the `example/android/` directory, or
- * you can run them directly from IDEs that support JUnit such as Android Studio.
+ * Run with `./gradlew testDebugUnitTest` in `example/android/`, or from an IDE
+ * that supports JUnit such as Android Studio.
  */
-
 internal class FlutterClassicBluetoothPluginTest {
     @Test
-    fun onMethodCall_getPlatformVersion_returnsExpectedValue() {
+    fun onMethodCall_getPlatformCapabilities_reportsClassicSupport() {
         val plugin = FlutterClassicBluetoothPlugin()
 
-        val call = MethodCall("getPlatformVersion", null)
+        val call = MethodCall("getPlatformCapabilities", null)
         val mockResult: MethodChannel.Result = Mockito.mock(MethodChannel.Result::class.java)
         plugin.onMethodCall(call, mockResult)
 
-        Mockito.verify(mockResult).success("Android " + android.os.Build.VERSION.RELEASE)
+        val captor = ArgumentCaptor.forClass(Map::class.java)
+        Mockito.verify(mockResult).success(captor.capture())
+
+        val caps = captor.value
+        assertEquals(true, caps["canDiscoverDevices"])
+        assertEquals(true, caps["canCreateServer"])
+        assertEquals(false, caps["requiresMfiCertification"])
     }
 }

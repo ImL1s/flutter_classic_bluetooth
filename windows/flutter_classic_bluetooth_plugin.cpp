@@ -10,6 +10,7 @@
 #include <flutter/plugin_registrar_windows.h>
 #include <flutter/standard_method_codec.h>
 
+#include <cstdio>
 #include <memory>
 #include <sstream>
 #include <thread>
@@ -193,8 +194,17 @@ FlutterClassicBluetoothPlugin::~FlutterClassicBluetoothPlugin() {
 
 void FlutterClassicBluetoothPlugin::InitWinsock() {
   WSADATA wsa_data;
-  if (WSAStartup(MAKEWORD(2, 2), &wsa_data) == 0) {
+  int err = WSAStartup(MAKEWORD(2, 2), &wsa_data);
+  if (err == 0) {
     wsa_initialized_ = true;
+  } else {
+    // Without Winsock, every socket operation will fail. Surface it in the
+    // debug log so the cause is diagnosable rather than silently swallowed;
+    // connect()/startServer() also report it to Dart as connectionFailed.
+    char msg[96];
+    std::snprintf(msg, sizeof(msg),
+                  "flutter_classic_bluetooth: WSAStartup failed (error %d)\n", err);
+    OutputDebugStringA(msg);
   }
 }
 
@@ -459,8 +469,16 @@ void FlutterClassicBluetoothPlugin::HandleUnbondDevice(
 void FlutterClassicBluetoothPlugin::HandleConnect(
     const EncodableMap& args,
     std::unique_ptr<flutter::MethodResult<EncodableValue>> result) {
+  if (!wsa_initialized_) {
+    result->Error("connectionFailed",
+                  "Winsock is not initialized; Bluetooth sockets are unavailable",
+                  EncodableValue());
+    return;
+  }
+
   auto addr_it = args.find(EncodableValue("address"));
   auto uuid_it = args.find(EncodableValue("uuid"));
+  auto secure_it = args.find(EncodableValue("secure"));
 
   if (addr_it == args.end()) {
     result->Error("connectionFailed", "Address is required", EncodableValue());
@@ -472,6 +490,10 @@ void FlutterClassicBluetoothPlugin::HandleConnect(
   if (uuid_it != args.end()) {
     uuid = std::get<std::string>(uuid_it->second);
   }
+  bool secure = true;
+  if (secure_it != args.end()) {
+    if (const auto* b = std::get_if<bool>(&secure_it->second)) secure = *b;
+  }
 
   BTH_ADDR bth_addr = StringToAddress(address);
 
@@ -479,7 +501,7 @@ void FlutterClassicBluetoothPlugin::HandleConnect(
   // and channel registration back to the platform thread via the dispatcher.
   auto result_ptr = std::shared_ptr<flutter::MethodResult<EncodableValue>>(std::move(result));
   std::weak_ptr<UiThreadDispatcher> weak_dispatcher = dispatcher_;
-  std::thread([this, bth_addr, uuid, address, result_ptr, weak_dispatcher]() {
+  std::thread([this, bth_addr, uuid, address, secure, result_ptr, weak_dispatcher]() {
     SOCKET sock = socket(AF_BTH, SOCK_STREAM, BTHPROTO_RFCOMM);
     if (sock == INVALID_SOCKET) {
       auto d = weak_dispatcher.lock();
@@ -489,6 +511,14 @@ void FlutterClassicBluetoothPlugin::HandleConnect(
                               {EncodableValue("address"), EncodableValue(address)}}));
       });
       return;
+    }
+
+    // Honor the secure flag: request an authenticated (and thus encrypted)
+    // RFCOMM link before connecting. Best-effort — ignored if unsupported.
+    if (secure) {
+      ULONG auth = TRUE;
+      setsockopt(sock, SOL_RFCOMM, SO_BTH_AUTHENTICATE,
+                 reinterpret_cast<const char*>(&auth), sizeof(auth));
     }
 
     SOCKADDR_BTH addr = {};
@@ -642,6 +672,13 @@ void FlutterClassicBluetoothPlugin::HandleWrite(
 void FlutterClassicBluetoothPlugin::HandleStartServer(
     const EncodableMap& args,
     std::unique_ptr<flutter::MethodResult<EncodableValue>> result) {
+  if (!wsa_initialized_) {
+    result->Error("connectionFailed",
+                  "Winsock is not initialized; Bluetooth sockets are unavailable",
+                  EncodableValue());
+    return;
+  }
+
   std::string uuid = "00001101-0000-1000-8000-00805F9B34FB";
   std::string service_name = "FlutterBluetooth";
   bool secure = true;

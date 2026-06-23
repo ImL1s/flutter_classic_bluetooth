@@ -25,7 +25,9 @@ class ScanResultReceiver(private val context: Context) : EventChannel.StreamHand
                 }
             }
         }
-        context.registerReceiver(receiver, IntentFilter(BluetoothDevice.ACTION_FOUND))
+        BluetoothHelper.registerExportedReceiver(
+            context, receiver!!, IntentFilter(BluetoothDevice.ACTION_FOUND)
+        )
     }
 
     override fun onCancel(arguments: Any?) {

@@ -7,9 +7,11 @@
 #include <BluetoothAPIs.h>
 
 #include <flutter/encodable_value.h>
+#include <cstdio>
 #include <string>
 #include <sstream>
 #include <iomanip>
+#include <vector>
 
 namespace flutter_classic_bluetooth {
 
@@ -51,6 +53,37 @@ inline BTH_ADDR StringToAddress(const std::string& str) {
     return addr;
 }
 
+inline std::string GuidToString(const GUID& guid) {
+    char buf[37];
+    std::snprintf(
+        buf, sizeof(buf),
+        "%08lX-%04hX-%04hX-%02hhX%02hhX-%02hhX%02hhX%02hhX%02hhX%02hhX%02hhX",
+        static_cast<unsigned long>(guid.Data1),
+        static_cast<unsigned short>(guid.Data2),
+        static_cast<unsigned short>(guid.Data3),
+        guid.Data4[0], guid.Data4[1], guid.Data4[2], guid.Data4[3],
+        guid.Data4[4], guid.Data4[5], guid.Data4[6], guid.Data4[7]);
+    return std::string(buf);
+}
+
+// Enumerates the installed RFCOMM/SDP service UUIDs for a (paired) device.
+// Returns an empty list for unknown/unpaired devices — Windows only exposes
+// services for authenticated/remembered peers.
+inline flutter::EncodableList DeviceServiceUuids(const BLUETOOTH_DEVICE_INFO& info) {
+    flutter::EncodableList uuids;
+    BLUETOOTH_DEVICE_INFO dev = info;  // BluetoothEnumerateInstalledServices wants non-const
+    DWORD count = 0;
+    BluetoothEnumerateInstalledServices(nullptr, &dev, &count, nullptr);
+    if (count == 0) return uuids;
+    std::vector<GUID> guids(count);
+    if (BluetoothEnumerateInstalledServices(nullptr, &dev, &count, guids.data()) == ERROR_SUCCESS) {
+        for (DWORD i = 0; i < count; ++i) {
+            uuids.push_back(flutter::EncodableValue(GuidToString(guids[i])));
+        }
+    }
+    return uuids;
+}
+
 inline GUID StringToGuid(const std::string& uuid) {
     GUID guid = {};
     unsigned int d[11];
@@ -73,18 +106,23 @@ inline GUID StringToGuid(const std::string& uuid) {
     return guid;
 }
 
-inline flutter::EncodableMap DeviceToMap(const BLUETOOTH_DEVICE_INFO& info, int rssi = 0) {
+inline flutter::EncodableMap DeviceToMap(const BLUETOOTH_DEVICE_INFO& info) {
     flutter::EncodableMap map;
     BLUETOOTH_ADDRESS addr;
     addr.ullLong = info.Address.ullLong;
     map[flutter::EncodableValue("address")] = flutter::EncodableValue(AddressToString(addr));
     map[flutter::EncodableValue("name")] = flutter::EncodableValue(WideToUtf8(info.szName));
     map[flutter::EncodableValue("type")] = flutter::EncodableValue("unknown");
+    // Windows has no separate alias; the friendly name is all that is exposed.
+    map[flutter::EncodableValue("alias")] = flutter::EncodableValue();
 
     std::string bondState = info.fAuthenticated ? "bonded" : "none";
     map[flutter::EncodableValue("bondState")] = flutter::EncodableValue(bondState);
-    map[flutter::EncodableValue("rssi")] = flutter::EncodableValue(rssi);
-    map[flutter::EncodableValue("uuids")] = flutter::EncodableValue(flutter::EncodableList());
+    // The classic inquiry API does not surface RSSI; report null rather than a
+    // misleading 0 dBm.
+    map[flutter::EncodableValue("rssi")] = flutter::EncodableValue();
+    map[flutter::EncodableValue("uuids")] =
+        flutter::EncodableValue(DeviceServiceUuids(info));
     return map;
 }
 
