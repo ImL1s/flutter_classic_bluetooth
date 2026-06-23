@@ -95,8 +95,9 @@ class BluetoothController extends ChangeNotifier {
 
         _resultsSub = bt.discoveryResults.listen((device) {
           final prev = _discovered[device.address];
-          _discovered[device.address] =
-              prev == null ? device : _mergeDevice(prev, device);
+          _discovered[device.address] = prev == null
+              ? device
+              : _mergeDevice(prev, device);
           notifyListeners();
         });
 
