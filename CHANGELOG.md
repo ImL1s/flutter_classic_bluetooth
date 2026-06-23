@@ -33,6 +33,13 @@ Reliability and completeness pass across all five platforms.
 * `BtcUuid.spp` constant for the Serial Port Profile UUID, and `connect()` /
   `startServer()` now default `uuid` to it — so the common case is just
   `connect(address: ...)` (HC-05/06, ESP32, Arduino, etc.).
+* **Linux**: discovery, adapter state/power, discoverability, paired-device
+  listing and pairing now run over the **BlueZ D-Bus API** (`org.bluez`) as the
+  primary path, so they work for an **unprivileged** desktop user (no root /
+  CAP_NET_RAW). Device discovery is event-driven via BlueZ `InterfacesAdded` /
+  `PropertiesChanged` signals (filtered to BR/EDR), and adapter on/off changes
+  now stream live. Raw HCI remains an automatic fallback when no system bus is
+  present. (Connect, server and data I/O continue to use AF_BLUETOOTH RFCOMM.)
 * `connect()` gains an optional `timeout` (throws `BtcTimeoutException`).
 * `BtcConnection.stateStream` emits `disconnecting` → `disconnected` on `finish()`/`close()`.
 * `BtcStreamSink` gains `writeString`, `writeBytes`, `addStream` and `allSent`.

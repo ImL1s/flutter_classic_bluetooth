@@ -52,6 +52,15 @@ struct _FlutterClassicBluetoothPlugin {
     int next_connection_id;
     int next_server_id;
     std::atomic<bool>* discovering;
+    // Discovery scan generation, so a stale auto-stop timer can't cancel a
+    // newer scan. Touched only on the platform (main-loop) thread.
+    int discovery_session;
+    // Persistent system-bus connection to BlueZ (org.bluez) and the live signal
+    // subscriptions it carries. Owned; null when no system bus is available.
+    GDBusConnection* system_bus;
+    guint sub_iface_added;
+    guint sub_device_props;
+    guint sub_adapter_props;
 };
 
 G_DEFINE_TYPE(FlutterClassicBluetoothPlugin, flutter_classic_bluetooth_plugin, g_object_get_type())
@@ -97,7 +106,13 @@ static FlMethodErrorResponse* event_cancel_noop(FlEventChannel*, FlValue*, gpoin
     return nullptr;
 }
 
-static const char* current_adapter_state_string() {
+static const char* current_adapter_state_string(FlutterClassicBluetoothPlugin* self) {
+    // BlueZ D-Bus is the source of truth and works for an unprivileged user.
+    bool powered = false;
+    if (self->system_bus && dbus_try_powered(self->system_bus, &powered)) {
+        return powered ? "on" : "off";
+    }
+    // Fallback: raw HCI (needs CAP_NET_RAW / root).
     int dev_id = get_hci_device_id();
     if (dev_id < 0) return "unsupported";
     int sock = hci_open_dev(dev_id);
@@ -113,21 +128,107 @@ static const char* current_adapter_state_string() {
     return state;
 }
 
-// Adapter state: emit the current state once on subscribe. Linux offers no
-// simple change-notification without BlueZ D-Bus, so this is a snapshot.
+// Adapter state: emit the current state on subscribe. Live changes are pushed
+// by on_adapter_properties_changed (BlueZ Adapter1 Powered signal).
 static FlMethodErrorResponse* adapter_state_listen(FlEventChannel* channel,
-                                                   FlValue*, gpointer) {
-    post_event(channel, fl_value_new_string(current_adapter_state_string()));
+                                                   FlValue*, gpointer user_data) {
+    FlutterClassicBluetoothPlugin* self =
+        FLUTTER_CLASSIC_BLUETOOTH_PLUGIN(user_data);
+    post_event(channel, fl_value_new_string(current_adapter_state_string(self)));
     return nullptr;
 }
 
-// Bond state: Linux cannot reliably query bond state over raw HCI, so emit a
-// best-effort "none" snapshot. The channel exists so listeners don't hit a
-// MissingPluginException.
+// Bond state: emit the device's real Paired snapshot (via BlueZ D-Bus) for the
+// address the listener subscribed with, falling back to "none".
 static FlMethodErrorResponse* bond_state_listen(FlEventChannel* channel,
-                                                FlValue*, gpointer) {
-    post_event(channel, fl_value_new_string("none"));
+                                                FlValue* args, gpointer user_data) {
+    FlutterClassicBluetoothPlugin* self =
+        FLUTTER_CLASSIC_BLUETOOTH_PLUGIN(user_data);
+    const char* state = "none";
+    if (self->system_bus && args &&
+        fl_value_get_type(args) == FL_VALUE_TYPE_MAP) {
+        FlValue* addr = fl_value_lookup_string(args, "address");
+        if (addr && fl_value_get_type(addr) == FL_VALUE_TYPE_STRING) {
+            bool paired = false;
+            if (dbus_try_device_paired(self->system_bus,
+                                       fl_value_get_string(addr), &paired)) {
+                state = paired ? "bonded" : "none";
+            }
+        }
+    }
+    post_event(channel, fl_value_new_string(state));
     return nullptr;
+}
+
+// ── BlueZ live signal handlers (run on the GLib main loop) ─────────────────
+
+// org.freedesktop.DBus.ObjectManager.InterfacesAdded — a new device appeared.
+static void on_interfaces_added(GDBusConnection*, const gchar*, const gchar*,
+                                const gchar*, const gchar*, GVariant* params,
+                                gpointer user_data) {
+    FlutterClassicBluetoothPlugin* self =
+        FLUTTER_CLASSIC_BLUETOOTH_PLUGIN(user_data);
+    if (!self->discovering->load()) return;
+
+    const gchar* obj_path = nullptr;
+    GVariant* ifaces = nullptr;
+    g_variant_get(params, "(&o@a{sa{sv}})", &obj_path, &ifaces);
+    GVariant* dev_props =
+        g_variant_lookup_value(ifaces, "org.bluez.Device1",
+                               G_VARIANT_TYPE("a{sv}"));
+    if (dev_props) {
+        FlValue* map = dbus_device_map_from_props(
+            dev_props, dbus_address_from_path(obj_path));
+        if (map) post_event(self->discovery_results_channel, map);
+        g_variant_unref(dev_props);
+    }
+    g_variant_unref(ifaces);
+}
+
+// org.bluez.Device1 PropertiesChanged — a known device updated (e.g. RSSI) as
+// it is rediscovered. Forward it as a discovery result while scanning.
+static void on_device_properties_changed(GDBusConnection*, const gchar*,
+                                         const gchar* object_path, const gchar*,
+                                         const gchar*, GVariant* params,
+                                         gpointer user_data) {
+    FlutterClassicBluetoothPlugin* self =
+        FLUTTER_CLASSIC_BLUETOOTH_PLUGIN(user_data);
+    if (!self->discovering->load()) return;
+
+    GVariant* changed = g_variant_get_child_value(params, 1);  // a{sv}
+    // Only forward changes that carry discovery-relevant data (a freshly seen
+    // signal strength or name), not unrelated churn like Connected/Paired.
+    auto has_key = [changed](const char* key) {
+        GVariant* v = g_variant_lookup_value(changed, key, nullptr);
+        if (v) { g_variant_unref(v); return true; }
+        return false;
+    };
+    bool relevant = has_key("RSSI") || has_key("Name") || has_key("Alias");
+    if (relevant) {
+        FlValue* map = dbus_device_map_from_props(
+            changed, dbus_address_from_path(object_path));
+        if (map) post_event(self->discovery_results_channel, map);
+    }
+    g_variant_unref(changed);
+}
+
+// org.bluez.Adapter1 PropertiesChanged — push live adapter power changes.
+static void on_adapter_properties_changed(GDBusConnection*, const gchar*,
+                                          const gchar*, const gchar*,
+                                          const gchar*, GVariant* params,
+                                          gpointer user_data) {
+    FlutterClassicBluetoothPlugin* self =
+        FLUTTER_CLASSIC_BLUETOOTH_PLUGIN(user_data);
+    GVariant* changed = g_variant_get_child_value(params, 1);  // a{sv}
+    GVariant* powered =
+        g_variant_lookup_value(changed, "Powered", G_VARIANT_TYPE_BOOLEAN);
+    if (powered) {
+        post_event(self->adapter_state_channel,
+                   fl_value_new_string(g_variant_get_boolean(powered) ? "on"
+                                                                      : "off"));
+        g_variant_unref(powered);
+    }
+    g_variant_unref(changed);
 }
 
 // ── Per-connection channel wiring ──────────────────────────────────────────
@@ -167,82 +268,110 @@ static void setup_connection_channels(FlutterClassicBluetoothPlugin* self,
 // ── Method handlers ────────────────────────────────────────────────────────
 
 static FlMethodResponse* handle_is_supported(FlutterClassicBluetoothPlugin* self) {
-    int dev_id = get_hci_device_id();
-    g_autoptr(FlValue) result = fl_value_new_bool(dev_id >= 0);
+    bool supported =
+        (self->system_bus && dbus_adapter_present(self->system_bus)) ||
+        get_hci_device_id() >= 0;
+    g_autoptr(FlValue) result = fl_value_new_bool(supported);
     return FL_METHOD_RESPONSE(fl_method_success_response_new(result));
 }
 
 static FlMethodResponse* handle_is_enabled(FlutterClassicBluetoothPlugin* self) {
-    int dev_id = get_hci_device_id();
-    if (dev_id < 0) {
-        g_autoptr(FlValue) result = fl_value_new_bool(false);
-        return FL_METHOD_RESPONSE(fl_method_success_response_new(result));
-    }
-    int sock = hci_open_dev(dev_id);
     bool enabled = false;
-    if (sock >= 0) {
-        struct hci_dev_info di;
-        memset(&di, 0, sizeof(di));
-        di.dev_id = dev_id;
-        if (ioctl(sock, HCIGETDEVINFO, &di) >= 0) {
-            enabled = hci_test_bit(HCI_UP, &di.flags);
+    if (!(self->system_bus && dbus_try_powered(self->system_bus, &enabled))) {
+        // Fallback: raw HCI.
+        int dev_id = get_hci_device_id();
+        if (dev_id >= 0) {
+            int sock = hci_open_dev(dev_id);
+            if (sock >= 0) {
+                struct hci_dev_info di;
+                memset(&di, 0, sizeof(di));
+                di.dev_id = dev_id;
+                if (ioctl(sock, HCIGETDEVINFO, &di) >= 0) {
+                    enabled = hci_test_bit(HCI_UP, &di.flags);
+                }
+                close(sock);
+            }
         }
-        close(sock);
     }
     g_autoptr(FlValue) result = fl_value_new_bool(enabled);
     return FL_METHOD_RESPONSE(fl_method_success_response_new(result));
 }
 
 static FlMethodResponse* handle_get_adapter_name(FlutterClassicBluetoothPlugin* self) {
+    std::string name;
+    if (self->system_bus &&
+        (dbus_try_adapter_string(self->system_bus, "Alias", &name) ||
+         dbus_try_adapter_string(self->system_bus, "Name", &name)) &&
+        !name.empty()) {
+        g_autoptr(FlValue) result = fl_value_new_string(name.c_str());
+        return FL_METHOD_RESPONSE(fl_method_success_response_new(result));
+    }
+    // Fallback: raw HCI.
     int dev_id = get_hci_device_id();
-    if (dev_id < 0) {
-        g_autoptr(FlValue) result = fl_value_new_null();
-        return FL_METHOD_RESPONSE(fl_method_success_response_new(result));
-    }
-    int sock = hci_open_dev(dev_id);
-    if (sock < 0) {
-        g_autoptr(FlValue) result = fl_value_new_null();
-        return FL_METHOD_RESPONSE(fl_method_success_response_new(result));
-    }
-    char name[249];
-    memset(name, 0, sizeof(name));
-    if (hci_read_local_name(sock, sizeof(name), name, 0) < 0) {
+    int sock = dev_id >= 0 ? hci_open_dev(dev_id) : -1;
+    if (sock >= 0) {
+        char buf[249];
+        memset(buf, 0, sizeof(buf));
+        if (hci_read_local_name(sock, sizeof(buf), buf, 0) >= 0) {
+            close(sock);
+            g_autoptr(FlValue) result = fl_value_new_string(buf);
+            return FL_METHOD_RESPONSE(fl_method_success_response_new(result));
+        }
         close(sock);
-        g_autoptr(FlValue) result = fl_value_new_null();
-        return FL_METHOD_RESPONSE(fl_method_success_response_new(result));
     }
-    close(sock);
-    g_autoptr(FlValue) result = fl_value_new_string(name);
+    g_autoptr(FlValue) result = fl_value_new_null();
     return FL_METHOD_RESPONSE(fl_method_success_response_new(result));
 }
 
 static FlMethodResponse* handle_get_adapter_address(FlutterClassicBluetoothPlugin* self) {
+    std::string addr;
+    if (self->system_bus &&
+        dbus_try_adapter_string(self->system_bus, "Address", &addr) &&
+        !addr.empty()) {
+        for (auto& c : addr) if (c >= 'a' && c <= 'f') c = c - 'a' + 'A';
+        g_autoptr(FlValue) result = fl_value_new_string(addr.c_str());
+        return FL_METHOD_RESPONSE(fl_method_success_response_new(result));
+    }
+    // Fallback: raw HCI.
     int dev_id = get_hci_device_id();
-    if (dev_id < 0) {
-        g_autoptr(FlValue) result = fl_value_new_null();
-        return FL_METHOD_RESPONSE(fl_method_success_response_new(result));
-    }
-    struct hci_dev_info di;
-    memset(&di, 0, sizeof(di));
-    di.dev_id = dev_id;
-    int sock = hci_open_dev(dev_id);
-    if (sock < 0) {
-        g_autoptr(FlValue) result = fl_value_new_null();
-        return FL_METHOD_RESPONSE(fl_method_success_response_new(result));
-    }
-    if (ioctl(sock, HCIGETDEVINFO, &di) < 0) {
+    int sock = dev_id >= 0 ? hci_open_dev(dev_id) : -1;
+    if (sock >= 0) {
+        struct hci_dev_info di;
+        memset(&di, 0, sizeof(di));
+        di.dev_id = dev_id;
+        if (ioctl(sock, HCIGETDEVINFO, &di) >= 0) {
+            close(sock);
+            char buf[18];
+            ba2str(&di.bdaddr, buf);
+            for (int i = 0; buf[i]; i++) {
+                if (buf[i] >= 'a' && buf[i] <= 'f') buf[i] -= 32;
+            }
+            g_autoptr(FlValue) result = fl_value_new_string(buf);
+            return FL_METHOD_RESPONSE(fl_method_success_response_new(result));
+        }
         close(sock);
-        g_autoptr(FlValue) result = fl_value_new_null();
-        return FL_METHOD_RESPONSE(fl_method_success_response_new(result));
     }
-    close(sock);
-    char addr[18];
-    ba2str(&di.bdaddr, addr);
-    for (int i = 0; addr[i]; i++) {
-        if (addr[i] >= 'a' && addr[i] <= 'f') addr[i] -= 32;
-    }
-    g_autoptr(FlValue) result = fl_value_new_string(addr);
+    g_autoptr(FlValue) result = fl_value_new_null();
     return FL_METHOD_RESPONSE(fl_method_success_response_new(result));
+}
+
+// Ends a BlueZ discovery scan once the bounded window elapses, unless a newer
+// scan has since started (guarded by discovery_session). Runs on the main loop.
+struct DiscoveryAutoStop {
+    FlutterClassicBluetoothPlugin* self;
+    int session;
+};
+
+static gboolean discovery_autostop_cb(gpointer data) {
+    DiscoveryAutoStop* d = static_cast<DiscoveryAutoStop*>(data);
+    FlutterClassicBluetoothPlugin* self = d->self;
+    if (self->discovering->load() && self->discovery_session == d->session) {
+        if (self->system_bus) dbus_stop_discovery(self->system_bus);
+        self->discovering->store(false);
+        post_event(self->discovery_state_channel, fl_value_new_bool(false));
+    }
+    delete d;
+    return G_SOURCE_REMOVE;
 }
 
 static FlMethodResponse* handle_start_discovery(FlutterClassicBluetoothPlugin* self) {
@@ -250,6 +379,31 @@ static FlMethodResponse* handle_start_discovery(FlutterClassicBluetoothPlugin* s
         g_autoptr(FlValue) result = fl_value_new_null();
         return FL_METHOD_RESPONSE(fl_method_success_response_new(result));
     }
+
+    // Primary path: BlueZ D-Bus discovery (works unprivileged). Results stream
+    // in via on_interfaces_added / on_device_properties_changed.
+    if (self->system_bus && dbus_start_discovery(self->system_bus)) {
+        self->discovering->store(true);
+        self->discovery_session++;
+        post_event(self->discovery_state_channel, fl_value_new_bool(true));
+
+        // Surface devices BlueZ already knows about immediately.
+        dbus_for_each_device(
+            self->system_bus, [self](const char* path, GVariant* props) {
+                FlValue* map = dbus_device_map_from_props(
+                    props, dbus_address_from_path(path));
+                if (map) post_event(self->discovery_results_channel, map);
+            });
+
+        // Bounded scan window (~12s) to mirror the other platforms.
+        DiscoveryAutoStop* d = new DiscoveryAutoStop{self, self->discovery_session};
+        g_timeout_add_seconds(12, discovery_autostop_cb, d);
+
+        g_autoptr(FlValue) result = fl_value_new_null();
+        return FL_METHOD_RESPONSE(fl_method_success_response_new(result));
+    }
+
+    // Fallback: raw HCI inquiry (needs CAP_NET_RAW / root).
     self->discovering->store(true);
     post_event(self->discovery_state_channel, fl_value_new_bool(true));
 
@@ -295,7 +449,13 @@ static FlMethodResponse* handle_start_discovery(FlutterClassicBluetoothPlugin* s
 }
 
 static FlMethodResponse* handle_stop_discovery(FlutterClassicBluetoothPlugin* self) {
-    self->discovering->store(false);
+    if (self->discovering->load()) {
+        if (self->system_bus) dbus_stop_discovery(self->system_bus);
+        self->discovering->store(false);
+        // The D-Bus path has no worker thread, so emit the stop here. (The HCI
+        // fallback thread also emits a stop when its inquiry returns.)
+        post_event(self->discovery_state_channel, fl_value_new_bool(false));
+    }
     g_autoptr(FlValue) result = fl_value_new_null();
     return FL_METHOD_RESPONSE(fl_method_success_response_new(result));
 }
@@ -303,7 +463,7 @@ static FlMethodResponse* handle_stop_discovery(FlutterClassicBluetoothPlugin* se
 static FlMethodResponse* handle_get_paired_devices(FlutterClassicBluetoothPlugin* self) {
     // Enumerate bonded devices via the BlueZ D-Bus ObjectManager.
     g_autoptr(FlValue) devices = fl_value_new_list();
-    dbus_append_paired_devices(devices);
+    dbus_append_paired_devices(self->system_bus, devices);
     return FL_METHOD_RESPONSE(fl_method_success_response_new(devices));
 }
 
@@ -431,7 +591,7 @@ static FlMethodResponse* handle_bond_device(FlutterClassicBluetoothPlugin* self,
             "invalidAddress", "Address is required", nullptr));
     }
     // Pair via BlueZ D-Bus (org.bluez.Device1.Pair).
-    bool ok = dbus_pair_device(get_hci_device_id(), fl_value_get_string(addr_val));
+    bool ok = dbus_pair_device(self->system_bus, fl_value_get_string(addr_val));
     g_autoptr(FlValue) result = fl_value_new_bool(ok);
     return FL_METHOD_RESPONSE(fl_method_success_response_new(result));
 }
@@ -443,7 +603,7 @@ static FlMethodResponse* handle_unbond_device(FlutterClassicBluetoothPlugin* sel
             "invalidAddress", "Address is required", nullptr));
     }
     // Unpair via BlueZ D-Bus (org.bluez.Adapter1.RemoveDevice).
-    bool ok = dbus_remove_device(get_hci_device_id(), fl_value_get_string(addr_val));
+    bool ok = dbus_remove_device(self->system_bus, fl_value_get_string(addr_val));
     g_autoptr(FlValue) result = fl_value_new_bool(ok);
     return FL_METHOD_RESPONSE(fl_method_success_response_new(result));
 }
@@ -555,21 +715,28 @@ static FlMethodResponse* handle_set_discoverable(FlutterClassicBluetoothPlugin* 
         duration = (int)fl_value_get_int(dur_val);
     }
 
-    bool ok = false;
-    int dev_id = get_hci_device_id();
-    if (dev_id >= 0) {
-        int sock = hci_open_dev(dev_id);
-        if (sock >= 0) {
-            struct hci_dev_req dr;
-            dr.dev_id = dev_id;
-            dr.dev_opt = SCAN_PAGE | SCAN_INQUIRY;
-            ok = ioctl(sock, HCISETSCAN, &dr) >= 0;
-            close(sock);
+    // Primary path: BlueZ D-Bus. BlueZ auto-reverts after DiscoverableTimeout,
+    // so no manual reset timer is needed.
+    bool ok = self->system_bus &&
+              dbus_set_discoverable(self->system_bus, true, duration);
+
+    if (!ok) {
+        // Fallback: raw HCI scan mode (needs CAP_NET_RAW / root).
+        int dev_id = get_hci_device_id();
+        if (dev_id >= 0) {
+            int sock = hci_open_dev(dev_id);
+            if (sock >= 0) {
+                struct hci_dev_req dr;
+                dr.dev_id = dev_id;
+                dr.dev_opt = SCAN_PAGE | SCAN_INQUIRY;
+                ok = ioctl(sock, HCISETSCAN, &dr) >= 0;
+                close(sock);
+            }
         }
-    }
-    // Honor the requested duration by reverting to connectable-only afterwards.
-    if (ok && duration > 0) {
-        g_timeout_add_seconds(duration, reset_discoverable_cb, nullptr);
+        // Revert to connectable-only after the requested duration.
+        if (ok && duration > 0) {
+            g_timeout_add_seconds(duration, reset_discoverable_cb, nullptr);
+        }
     }
 
     g_autoptr(FlValue) result = fl_value_new_bool(ok);
@@ -591,7 +758,7 @@ static FlMethodResponse* handle_get_platform_capabilities(FlutterClassicBluetoot
     fl_value_set_string_take(caps, "supportsInsecureConnection", fl_value_new_bool(true));
     fl_value_set_string_take(caps, "requiresMfiCertification", fl_value_new_bool(false));
     fl_value_set_string_take(caps, "platformNote",
-        fl_value_new_string("Linux — Bluetooth Classic via BlueZ. Discovery, connect, server and data streaming use AF_BLUETOOTH RFCOMM; adapter power, paired-device listing and pairing/unpairing use the BlueZ D-Bus API (org.bluez). Pairing devices that need a PIN/passkey requires a system agent."));
+        fl_value_new_string("Linux — Bluetooth Classic via BlueZ. Adapter state/power, discovery, discoverability, paired-device listing and pairing/unpairing use the BlueZ D-Bus API (org.bluez), so they work for an unprivileged desktop user; connect, server and data streaming use AF_BLUETOOTH RFCOMM sockets. Raw HCI is used only as a fallback when no system bus is available. Pairing devices that need a PIN/passkey requires a system agent."));
     return FL_METHOD_RESPONSE(fl_method_success_response_new(caps));
 }
 
@@ -609,7 +776,7 @@ static void flutter_classic_bluetooth_plugin_handle_method_call(
     } else if (strcmp(method, "enableBluetooth") == 0 || strcmp(method, "disableBluetooth") == 0) {
         // Toggle the adapter Powered property via BlueZ D-Bus.
         bool enable = strcmp(method, "enableBluetooth") == 0;
-        bool ok = dbus_set_adapter_powered(get_hci_device_id(), enable);
+        bool ok = dbus_set_adapter_powered(self->system_bus, enable);
         g_autoptr(FlValue) result = fl_value_new_bool(ok);
         response = FL_METHOD_RESPONSE(fl_method_success_response_new(result));
     } else if (strcmp(method, "getAdapterName") == 0) {
@@ -689,6 +856,20 @@ static void flutter_classic_bluetooth_plugin_dispose(GObject* object) {
     g_clear_object(&self->discovery_results_channel);
     g_clear_object(&self->bond_state_channel);
 
+    if (self->system_bus) {
+        if (self->sub_iface_added)
+            g_dbus_connection_signal_unsubscribe(self->system_bus,
+                                                 self->sub_iface_added);
+        if (self->sub_device_props)
+            g_dbus_connection_signal_unsubscribe(self->system_bus,
+                                                 self->sub_device_props);
+        if (self->sub_adapter_props)
+            g_dbus_connection_signal_unsubscribe(self->system_bus,
+                                                 self->sub_adapter_props);
+        g_object_unref(self->system_bus);
+        self->system_bus = nullptr;
+    }
+
     delete self->connections_mutex;
     delete self->servers_mutex;
     delete self->discovering;
@@ -710,6 +891,11 @@ static void flutter_classic_bluetooth_plugin_init(FlutterClassicBluetoothPlugin*
     self->next_connection_id = 0;
     self->next_server_id = 0;
     self->discovering = new std::atomic<bool>(false);
+    self->discovery_session = 0;
+    self->system_bus = nullptr;
+    self->sub_iface_added = 0;
+    self->sub_device_props = 0;
+    self->sub_adapter_props = 0;
 }
 
 static void method_call_cb(FlMethodChannel* channel, FlMethodCall* method_call,
@@ -724,6 +910,28 @@ void flutter_classic_bluetooth_plugin_register_with_registrar(FlPluginRegistrar*
 
     FlBinaryMessenger* messenger = fl_plugin_registrar_get_messenger(registrar);
     plugin->messenger = messenger;
+
+    // Acquire the system bus and subscribe to BlueZ signals so adapter-power and
+    // discovery events stream live. Best-effort: if there is no system bus the
+    // plugin transparently falls back to the raw-HCI code paths.
+    plugin->system_bus = g_bus_get_sync(G_BUS_TYPE_SYSTEM, nullptr, nullptr);
+    if (plugin->system_bus) {
+        plugin->sub_iface_added = g_dbus_connection_signal_subscribe(
+            plugin->system_bus, "org.bluez",
+            "org.freedesktop.DBus.ObjectManager", "InterfacesAdded",
+            nullptr, nullptr, G_DBUS_SIGNAL_FLAGS_NONE,
+            on_interfaces_added, plugin, nullptr);
+        plugin->sub_device_props = g_dbus_connection_signal_subscribe(
+            plugin->system_bus, "org.bluez",
+            "org.freedesktop.DBus.Properties", "PropertiesChanged",
+            nullptr, "org.bluez.Device1", G_DBUS_SIGNAL_FLAGS_NONE,
+            on_device_properties_changed, plugin, nullptr);
+        plugin->sub_adapter_props = g_dbus_connection_signal_subscribe(
+            plugin->system_bus, "org.bluez",
+            "org.freedesktop.DBus.Properties", "PropertiesChanged",
+            nullptr, "org.bluez.Adapter1", G_DBUS_SIGNAL_FLAGS_NONE,
+            on_adapter_properties_changed, plugin, nullptr);
+    }
 
     g_autoptr(FlStandardMethodCodec) codec = fl_standard_method_codec_new();
     // The method channel is kept alive by the messenger; the handler holds a ref
