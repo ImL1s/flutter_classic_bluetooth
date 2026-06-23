@@ -399,7 +399,7 @@ public class FlutterClassicBluetoothPlugin: NSObject, FlutterPlugin {
             }
             index = nextIndex
         }
-        return IOBluetoothSDPUUID(bytes: &bytes, length: UInt32(bytes.count))
+        return IOBluetoothSDPUUID(bytes: &bytes, length: bytes.count)
     }
 }
 
@@ -432,7 +432,7 @@ private class PairingDelegate: NSObject, IOBluetoothDevicePairDelegate {
         self.onFinished = onFinished
     }
 
-    func devicePairingFinished(_ sender: IOBluetoothDevicePair!, error: IOReturn) {
+    func devicePairingFinished(_ sender: Any!, error: IOReturn) {
         onFinished(error == kIOReturnSuccess)
     }
 }
@@ -508,7 +508,7 @@ class BluetoothConnectionWrapper: NSObject, IOBluetoothRFCOMMChannelDelegate {
     }
 
     func close() {
-        channel?.closeChannel()
+        channel?.close()
         channel = nil
         DispatchQueue.main.async { [weak self] in
             self?.stateStreamHandler?.eventSink?("disconnected")
@@ -626,7 +626,7 @@ class BluetoothServerWrapper: NSObject {
     func stop() {
         openNotification?.unregister()
         openNotification = nil
-        sdpRecord?.removeServiceRecord()
+        sdpRecord?.remove()
         sdpRecord = nil
     }
 
@@ -641,7 +641,7 @@ class BluetoothServerWrapper: NSObject {
             }
             index = nextIndex
         }
-        return IOBluetoothSDPUUID(bytes: &bytes, length: UInt32(bytes.count))
+        return IOBluetoothSDPUUID(bytes: &bytes, length: bytes.count)
     }
 }
 
