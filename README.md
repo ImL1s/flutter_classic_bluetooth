@@ -1,9 +1,4 @@
 <p align="center">
-  <img src="https://raw.githubusercontent.com/Masum-MSNR/flutter_classic_bluetooth/main/images/logo.png"
-       alt="flutter_classic_bluetooth — Bluetooth Classic (RFCOMM) serial communication plugin for Flutter" width="160"/>
-</p>
-
-<p align="center">
   <a href="https://pub.dev/packages/flutter_classic_bluetooth"><img src="https://img.shields.io/pub/v/flutter_classic_bluetooth.svg" alt="pub version"></a>
   <a href="https://pub.dev/packages/flutter_classic_bluetooth/score"><img src="https://img.shields.io/pub/points/flutter_classic_bluetooth" alt="pub points"></a>
   <a href="https://pub.dev/packages/flutter_classic_bluetooth"><img src="https://img.shields.io/pub/likes/flutter_classic_bluetooth" alt="pub likes"></a>
@@ -426,13 +421,10 @@ flutter_classic_bluetooth is created and owned by **Nurullah Al Masum**.
 
 ### Contributors
 
-Every contributor is listed here:
+flutter_classic_bluetooth grows with its community — every contributor is listed here:
 
 <a href="https://github.com/Masum-MSNR/flutter_classic_bluetooth/graphs/contributors">
   <img src="https://contrib.rocks/image?repo=Masum-MSNR/flutter_classic_bluetooth" alt="flutter_classic_bluetooth contributors"/>
 </a>
 
-If flutter_classic_bluetooth helps you, please ⭐ the
-[repository](https://github.com/Masum-MSNR/flutter_classic_bluetooth) and 👍 it on
-[pub.dev](https://pub.dev/packages/flutter_classic_bluetooth) — it genuinely helps
-others find it.
+Want to help? Pull requests are welcome — see [Support and feedback](#support-and-feedback).

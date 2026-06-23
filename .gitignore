@@ -23,8 +23,10 @@ migrate_working_dir/
 # is commented out by default.
 #.vscode/
 
-# Internal audit / working docs (not published)
-/docs/
+# Internal audit / working docs (not published) — but keep the README guide
+# tracked on GitHub (it documents how to author this package's README).
+/docs/*
+!/docs/README_STRUCTURE_GUIDE.md
 
 # Local hardware test harness (ESP firmware, scratch test apps) — not published
 /local_test/

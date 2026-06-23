@@ -1,0 +1,25 @@
+# Files to keep in the GitHub repo but OUT of the published pub.dev archive.
+# NOTE: when a .pubignore exists it REPLACES .gitignore for `pub publish`, so this
+# must re-list every build/working artifact .gitignore excludes, plus docs/.
+
+# Maintainer docs — useful on GitHub, not needed by package consumers.
+docs/
+
+# Local hardware test harness (ESP firmware, scratch apps) — never ship.
+local_test/
+
+# Build artifacts and tooling state (mirrors .gitignore).
+build/
+coverage/
+.dart_tool/
+**/.dart_tool/
+**/build/
+**/doc/api/
+.flutter-plugins-dependencies
+pubspec.lock
+example/integration_test/esp32_live_test.dart
+
+# IDE / OS noise.
+.idea/
+*.iml
+.DS_Store
