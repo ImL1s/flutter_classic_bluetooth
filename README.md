@@ -17,10 +17,11 @@
 **flutter_classic_bluetooth** is a Flutter plugin for **Bluetooth Classic
 serial communication over RFCOMM (the Serial Port Profile, SPP)**. It lets you
 **discover, pair, connect to, and exchange data with** Bluetooth Classic devices
-— ESP32, HC-05/HC-06 modules, barcode scanners, printers, OBD-II adapters, and
-other serial peripherals — from a single Dart API on **Android, Windows, macOS,
-Linux, and iOS (MFi)**. Connections are exposed as Dart streams, so reading and
-writing bytes feels like any other `Stream`/`Sink`.
+— **ESP32**, **ESP8266**, **Arduino** boards, **HC-05** / **HC-06** modules,
+barcode scanners, thermal printers, OBD-II adapters, and other serial / UART
+peripherals — from a single Dart API on **Android, Windows, macOS, Linux, and
+iOS (MFi)**. Connections are exposed as Dart streams, so reading and writing
+bytes feels like any other `Stream`/`Sink`.
 
 > ⭐ **Find this useful?** [Star it on GitHub](https://github.com/almasumdev/flutter_classic_bluetooth)
 > and 👍 [like it on pub.dev](https://pub.dev/packages/flutter_classic_bluetooth) —
@@ -376,6 +377,13 @@ Every failure throws a typed `BtcException` (or a subtype): `BtcUnsupportedExcep
 Bluetooth **Classic** — RFCOMM/SPP serial communication. For BLE, use a
 BLE-specific package; this plugin targets classic serial peripherals like
 ESP32, HC-05/HC-06, printers, and scanners.
+
+**Does it work with ESP32, ESP8266, Arduino, and HC-05/HC-06 modules?**
+Yes. Any device that exposes a Bluetooth Classic **RFCOMM/SPP serial** profile
+works: an **ESP32** using `BluetoothSerial`, an **Arduino** or **ESP8266** wired
+to an **HC-05**/**HC-06** module, and other UART-over-Bluetooth peripherals
+(thermal printers, barcode scanners, OBD-II adapters). Pair the device, then
+`connect()` with the SPP UUID `00001101-0000-1000-8000-00805F9B34FB`.
 
 **Which platforms are supported?**
 Android, Windows, macOS, and Linux for full client/server RFCOMM; iOS supports
