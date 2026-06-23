@@ -54,6 +54,8 @@ class BtcUnsupportedException extends BtcException {
   /// The platform where the feature is unsupported.
   final String platform;
 
+  /// Creates an exception for [feature] on [platform], with an optional
+  /// custom [reason] used as the message.
   const BtcUnsupportedException({
     required this.feature,
     required this.platform,
@@ -72,6 +74,7 @@ class BtcUnsupportedException extends BtcException {
 ///
 /// {@category Exceptions}
 class BtcPermissionException extends BtcException {
+  /// Creates a [BtcPermissionException] with an optional [message].
   const BtcPermissionException([super.message = 'Bluetooth permission denied'])
       : super(code: 'permissionDenied');
 }
@@ -80,6 +83,7 @@ class BtcPermissionException extends BtcException {
 ///
 /// {@category Exceptions}
 class BtcDisabledException extends BtcException {
+  /// Creates a [BtcDisabledException] with an optional [message].
   const BtcDisabledException([super.message = 'Bluetooth adapter is disabled'])
       : super(code: 'bluetoothDisabled');
 }
@@ -91,6 +95,7 @@ class BtcConnectionException extends BtcException {
   /// The address of the device that failed to connect.
   final String? address;
 
+  /// Creates a [BtcConnectionException] with a [message] and optional [address].
   const BtcConnectionException(
     super.message, {
     this.address,
@@ -101,6 +106,7 @@ class BtcConnectionException extends BtcException {
 ///
 /// {@category Exceptions}
 class BtcWriteException extends BtcException {
+  /// Creates a [BtcWriteException] with an optional [message].
   const BtcWriteException([super.message = 'Failed to write data'])
       : super(code: 'writeFailed');
 }
@@ -112,6 +118,8 @@ class BtcTimeoutException extends BtcException {
   /// The duration in milliseconds that elapsed before timeout.
   final int? timeoutMs;
 
+  /// Creates a [BtcTimeoutException] with an optional [message] and the
+  /// elapsed [timeoutMs].
   const BtcTimeoutException({
     String message = 'Operation timed out',
     this.timeoutMs,
@@ -122,6 +130,7 @@ class BtcTimeoutException extends BtcException {
 ///
 /// {@category Exceptions}
 class BtcDiscoveryException extends BtcException {
+  /// Creates a [BtcDiscoveryException] with an optional [message].
   const BtcDiscoveryException([super.message = 'Failed to start discovery'])
       : super(code: 'discoveryFailed');
 }
@@ -133,6 +142,7 @@ class BtcAddressException extends BtcException {
   /// The invalid address that was provided.
   final String address;
 
+  /// Creates a [BtcAddressException] for the invalid [address].
   const BtcAddressException(this.address)
       : super('Invalid Bluetooth address: $address', code: 'invalidAddress');
 }
@@ -144,6 +154,7 @@ class BtcUuidException extends BtcException {
   /// The invalid UUID that was provided.
   final String uuid;
 
+  /// Creates a [BtcUuidException] for the invalid [uuid].
   const BtcUuidException(this.uuid)
       : super('Invalid UUID: $uuid', code: 'invalidUuid');
 }

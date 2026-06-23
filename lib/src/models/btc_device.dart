@@ -46,6 +46,7 @@ class BtcDevice {
   /// On iOS these are MFi protocol strings.
   final List<String> uuids;
 
+  /// Creates a [BtcDevice] for [address] with optional discovery metadata.
   const BtcDevice({
     required this.address,
     this.name,

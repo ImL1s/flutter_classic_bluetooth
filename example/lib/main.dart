@@ -60,7 +60,7 @@ class HomeShell extends StatefulWidget {
   State<HomeShell> createState() => _HomeShellState();
 }
 
-class _HomeShellState extends State<HomeShell> {
+class _HomeShellState extends State<HomeShell> with WidgetsBindingObserver {
   final _controller = BluetoothController();
   int _index = 0;
 
@@ -75,8 +75,18 @@ class _HomeShellState extends State<HomeShell> {
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     _controller.addListener(_onControllerChanged);
     _controller.init();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    // Re-sync the adapter state when returning to the app, in case the user
+    // toggled Bluetooth from the system while we were backgrounded.
+    if (state == AppLifecycleState.resumed) {
+      _controller.refreshAdapterState();
+    }
   }
 
   void _onControllerChanged() {
@@ -91,6 +101,7 @@ class _HomeShellState extends State<HomeShell> {
 
   @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
     _controller.removeListener(_onControllerChanged);
     _controller.dispose();
     super.dispose();

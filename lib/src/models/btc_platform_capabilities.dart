@@ -55,6 +55,7 @@ class BtcPlatformCapabilities {
   /// Optional note describing platform-specific limitations.
   final String? platformNote;
 
+  /// Creates a capability set; every flag defaults to `false` (unsupported).
   const BtcPlatformCapabilities({
     this.canEnableBluetooth = false,
     this.canDisableBluetooth = false,

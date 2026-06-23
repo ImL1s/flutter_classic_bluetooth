@@ -85,10 +85,8 @@ class BluetoothController extends ChangeNotifier {
           notifyListeners();
         });
 
-        final enabled = await bt.isEnabled();
-        _adapterState = enabled ? BtcAdapterState.on : BtcAdapterState.off;
         await _refreshAdapterInfo();
-        if (isOn) await refreshPaired();
+        await refreshAdapterState();
       }
     } catch (e) {
       lastError = _describe(e);
@@ -104,6 +102,30 @@ class BluetoothController extends ChangeNotifier {
       adapterAddress = await bt.getAdapterAddress();
     } catch (_) {
       // Adapter name/address are best-effort (not available on every platform).
+    }
+  }
+
+  /// Re-reads the adapter on/off state from the platform and updates the UI.
+  ///
+  /// Several platforms only emit an [FlutterClassicBluetooth.adapterState]
+  /// snapshot when you subscribe, with no live push on change. Polling here
+  /// after a toggle and on app resume keeps every page consistent regardless.
+  Future<void> refreshAdapterState() async {
+    if (!_supported) return;
+    try {
+      final wasOn = isOn;
+      final enabled = await bt.isEnabled();
+      final next = enabled ? BtcAdapterState.on : BtcAdapterState.off;
+      if (next == _adapterState) return;
+      _adapterState = next;
+      if (isOn && !wasOn) {
+        await _refreshAdapterInfo();
+        await refreshPaired();
+      }
+      notifyListeners();
+    } catch (e) {
+      lastError = _describe(e);
+      notifyListeners();
     }
   }
 
@@ -150,6 +172,8 @@ class BluetoothController extends ChangeNotifier {
       } else {
         if (caps.canEnableBluetooth) await bt.enableBluetooth();
       }
+      // The platform may not push an adapter-state event, so re-read it.
+      await refreshAdapterState();
     } catch (e) {
       lastError = _describe(e);
       notifyListeners();
