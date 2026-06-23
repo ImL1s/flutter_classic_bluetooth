@@ -207,6 +207,17 @@ usage string to `Info.plist`:
 <true/>
 ```
 
+**Linux** — install the GTK and BlueZ development packages the native plugin
+builds against (Debian/Ubuntu shown; the build fails with a `gtk+-3.0` or
+`bluetooth/bluetooth.h` CMake error if they're missing):
+
+```bash
+sudo apt-get install -y libgtk-3-dev libbluetooth-dev ninja-build cmake pkg-config clang
+```
+
+On Fedora use `gtk3-devel bluez-libs-devel ninja-build cmake clang`; on Arch,
+`gtk3 bluez-libs ninja cmake clang`.
+
 ## Getting started
 
 ### Initialize and check support
