@@ -11,7 +11,7 @@ topics:
   - iot
 
 environment:
-  sdk: ^3.11.4
+  sdk: '>=3.3.0 <4.0.0'
   flutter: '>=3.3.0'
 
 dependencies:

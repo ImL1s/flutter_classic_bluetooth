@@ -13,7 +13,10 @@ import 'btc_stream_sink.dart';
 ///
 /// ## Usage
 /// ```dart
-/// final connection = await bluetooth.connect('AA:BB:CC:DD:EE:FF');
+/// final connection = await bluetooth.connect(
+///   address: 'AA:BB:CC:DD:EE:FF',
+///   uuid: '00001101-0000-1000-8000-00805F9B34FB',
+/// );
 /// connection.input.listen((data) {
 ///   print('Received: $data');
 /// });
@@ -103,6 +106,8 @@ class BtcConnection {
     await _outputSink.close();
     await _methodChannel.invokeMethod('disconnect', {'id': id});
     _state = BtcConnectionState.disconnected;
+    await _stateSubscription?.cancel();
+    _stateSubscription = null;
   }
 
   /// Immediately disconnects, discarding any pending writes.
@@ -110,6 +115,8 @@ class BtcConnection {
     _outputSink.cancel();
     await _methodChannel.invokeMethod('disconnect', {'id': id});
     _state = BtcConnectionState.disconnected;
+    await _stateSubscription?.cancel();
+    _stateSubscription = null;
   }
 
   /// Releases all resources associated with this connection.

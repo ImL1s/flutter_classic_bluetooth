@@ -14,7 +14,7 @@ import 'btc_connection.dart';
 /// ```dart
 /// final server = await bluetooth.startServer(
 ///   uuid: '00001101-0000-1000-8000-00805F9B34FB',
-///   name: 'MyService',
+///   serviceName: 'MyService',
 /// );
 /// server.connections.listen((connection) {
 ///   print('Client connected: ${connection.address}');

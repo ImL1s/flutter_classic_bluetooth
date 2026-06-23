@@ -78,7 +78,7 @@ class FlutterClassicBluetooth {
   /// | Windows | Yes |
   /// | macOS | Yes |
   /// | Linux | Yes |
-  /// | iOS | Yes |
+  /// | iOS | ⚠️ (true only while an MFi accessory is connected) |
   Future<bool> isEnabled() => _platform.isEnabled();
 
   /// Requests the system to enable the Bluetooth adapter.
@@ -90,7 +90,7 @@ class FlutterClassicBluetooth {
   /// | Android | Yes (system dialog) |
   /// | Windows | No |
   /// | macOS | No |
-  /// | Linux | Yes (rfkill) |
+  /// | Linux | No |
   /// | iOS | No |
   Future<bool> enableBluetooth() => _platform.enableBluetooth();
 
@@ -103,7 +103,7 @@ class FlutterClassicBluetooth {
   /// | Android | Yes (API < 33 only) |
   /// | Windows | No |
   /// | macOS | No |
-  /// | Linux | Yes (rfkill) |
+  /// | Linux | No |
   /// | iOS | No |
   Future<bool> disableBluetooth() => _platform.disableBluetooth();
 
@@ -112,10 +112,10 @@ class FlutterClassicBluetooth {
   /// | Platform | Supported |
   /// |----------|-----------|
   /// | Android | Yes |
-  /// | Windows | Yes |
-  /// | macOS | Yes |
-  /// | Linux | Yes |
-  /// | iOS | Yes |
+  /// | Windows | Yes (current state on listen) |
+  /// | macOS | No |
+  /// | Linux | No |
+  /// | iOS | No |
   Stream<BtcAdapterState> get adapterState => _platform.adapterState();
 
   /// Returns the local adapter's friendly name.
