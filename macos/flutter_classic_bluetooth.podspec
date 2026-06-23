@@ -10,9 +10,9 @@ Pod::Spec.new do |s|
 Flutter plugin for Bluetooth Classic (RFCOMM) across Android, iOS (MFi), Windows,
 macOS, and Linux. macOS uses the IOBluetooth framework.
                        DESC
-  s.homepage         = 'https://github.com/Masum-MSNR/flutter_classic_bluetooth'
+  s.homepage         = 'https://github.com/almasumdev/flutter_classic_bluetooth'
   s.license          = { :file => '../LICENSE' }
-  s.author           = { 'Masum-MSNR' => 'dev.almasum@gmail.com' }
+  s.author           = { 'almasumdev' => 'dev.almasum@gmail.com' }
 
   s.source           = { :path => '.' }
   s.source_files = 'flutter_classic_bluetooth/Sources/**/*'

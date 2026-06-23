@@ -54,7 +54,7 @@ These are non-negotiable and apply to the whole file.
 **Images & links (pub.dev rendering gotcha):**
 - pub.dev does **not** render repo-relative image paths. **Any image must use an
   absolute raw URL**, e.g.
-  `https://raw.githubusercontent.com/Masum-MSNR/flutter_classic_bluetooth/main/images/{{FILE}}`.
+  `https://raw.githubusercontent.com/almasumdev/flutter_classic_bluetooth/main/images/{{FILE}}`.
 - This package ships **no banner or preview image**. The logo lives at
   `images/logo.png` and is surfaced **only** through the `screenshots:` entry in
   `pubspec.yaml` (the pub.dev sidebar) — it is **not** placed at the top of the

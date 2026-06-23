@@ -1,9 +1,9 @@
 name: flutter_classic_bluetooth
 description: "Bluetooth Classic (RFCOMM/SPP) serial plugin for Flutter — discover, pair, connect and exchange data on Android, Windows, macOS, Linux and iOS (MFi)."
 version: 0.1.1
-homepage: https://github.com/Masum-MSNR/flutter_classic_bluetooth
-repository: https://github.com/Masum-MSNR/flutter_classic_bluetooth
-issue_tracker: https://github.com/Masum-MSNR/flutter_classic_bluetooth/issues
+homepage: https://github.com/almasumdev/flutter_classic_bluetooth
+repository: https://github.com/almasumdev/flutter_classic_bluetooth
+issue_tracker: https://github.com/almasumdev/flutter_classic_bluetooth/issues
 documentation: https://pub.dev/documentation/flutter_classic_bluetooth/latest/
 
 topics:

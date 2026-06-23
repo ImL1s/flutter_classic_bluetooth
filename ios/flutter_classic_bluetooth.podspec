@@ -11,9 +11,9 @@ Flutter plugin for Bluetooth Classic (RFCOMM) across Android, iOS (MFi), Windows
 macOS, and Linux. On iOS, communication is limited to MFi-certified accessories
 via the ExternalAccessory framework.
                        DESC
-  s.homepage         = 'https://github.com/Masum-MSNR/flutter_classic_bluetooth'
+  s.homepage         = 'https://github.com/almasumdev/flutter_classic_bluetooth'
   s.license          = { :file => '../LICENSE' }
-  s.author           = { 'Masum-MSNR' => 'dev.almasum@gmail.com' }
+  s.author           = { 'almasumdev' => 'dev.almasum@gmail.com' }
   s.source           = { :path => '.' }
   s.source_files = 'flutter_classic_bluetooth/Sources/**/*'
   s.dependency 'Flutter'

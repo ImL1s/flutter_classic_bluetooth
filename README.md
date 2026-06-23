@@ -2,11 +2,11 @@
   <a href="https://pub.dev/packages/flutter_classic_bluetooth"><img src="https://img.shields.io/pub/v/flutter_classic_bluetooth.svg" alt="pub version"></a>
   <a href="https://pub.dev/packages/flutter_classic_bluetooth/score"><img src="https://img.shields.io/pub/points/flutter_classic_bluetooth" alt="pub points"></a>
   <a href="https://pub.dev/packages/flutter_classic_bluetooth"><img src="https://img.shields.io/pub/likes/flutter_classic_bluetooth" alt="pub likes"></a>
-  <a href="https://github.com/Masum-MSNR/flutter_classic_bluetooth/stargazers"><img src="https://badgen.net/github/stars/Masum-MSNR/flutter_classic_bluetooth?icon=github" alt="GitHub stars"></a>
-  <a href="https://github.com/Masum-MSNR/flutter_classic_bluetooth/network/members"><img src="https://badgen.net/github/forks/Masum-MSNR/flutter_classic_bluetooth?icon=github" alt="GitHub forks"></a>
-  <a href="https://github.com/Masum-MSNR/flutter_classic_bluetooth/issues"><img src="https://badgen.net/github/open-issues/Masum-MSNR/flutter_classic_bluetooth?icon=github" alt="GitHub issues"></a>
-  <a href="https://github.com/Masum-MSNR/flutter_classic_bluetooth/actions/workflows/ci.yml"><img src="https://github.com/Masum-MSNR/flutter_classic_bluetooth/actions/workflows/ci.yml/badge.svg" alt="CI status"></a>
-  <a href="https://github.com/Masum-MSNR/flutter_classic_bluetooth/commits/main"><img src="https://badgen.net/github/last-commit/Masum-MSNR/flutter_classic_bluetooth?icon=github" alt="Last commit"></a>
+  <a href="https://github.com/almasumdev/flutter_classic_bluetooth/stargazers"><img src="https://badgen.net/github/stars/almasumdev/flutter_classic_bluetooth?icon=github" alt="GitHub stars"></a>
+  <a href="https://github.com/almasumdev/flutter_classic_bluetooth/network/members"><img src="https://badgen.net/github/forks/almasumdev/flutter_classic_bluetooth?icon=github" alt="GitHub forks"></a>
+  <a href="https://github.com/almasumdev/flutter_classic_bluetooth/issues"><img src="https://badgen.net/github/open-issues/almasumdev/flutter_classic_bluetooth?icon=github" alt="GitHub issues"></a>
+  <a href="https://github.com/almasumdev/flutter_classic_bluetooth/actions/workflows/ci.yml"><img src="https://github.com/almasumdev/flutter_classic_bluetooth/actions/workflows/ci.yml/badge.svg" alt="CI status"></a>
+  <a href="https://github.com/almasumdev/flutter_classic_bluetooth/commits/main"><img src="https://badgen.net/github/last-commit/almasumdev/flutter_classic_bluetooth?icon=github" alt="Last commit"></a>
   <a href="https://opensource.org/licenses/MIT"><img src="https://img.shields.io/badge/License-MIT-blue.svg" alt="License: MIT"></a>
   <a href="https://dart.dev"><img src="https://img.shields.io/badge/Dart-3.3+-0175C2?logo=dart" alt="Dart"></a>
   <a href="https://flutter.dev"><img src="https://img.shields.io/badge/Flutter-3.3+-02569B?logo=flutter" alt="Flutter"></a>
@@ -22,7 +22,7 @@ other serial peripherals — from a single Dart API on **Android, Windows, macOS
 Linux, and iOS (MFi)**. Connections are exposed as Dart streams, so reading and
 writing bytes feels like any other `Stream`/`Sink`.
 
-> ⭐ **Find this useful?** [Star it on GitHub](https://github.com/Masum-MSNR/flutter_classic_bluetooth)
+> ⭐ **Find this useful?** [Star it on GitHub](https://github.com/almasumdev/flutter_classic_bluetooth)
 > and 👍 [like it on pub.dev](https://pub.dev/packages/flutter_classic_bluetooth) —
 > it helps other Flutter developers find a maintained Bluetooth Classic plugin.
 
@@ -148,7 +148,7 @@ can actually do (also queryable at runtime via `getPlatformCapabilities()`):
 ## Example
 
 A complete, runnable demo app lives in the
-[`example/`](https://github.com/Masum-MSNR/flutter_classic_bluetooth/tree/main/example)
+[`example/`](https://github.com/almasumdev/flutter_classic_bluetooth/tree/main/example)
 directory, with screens for adapter control, device discovery, paired devices,
 RFCOMM client/server, and the platform-capabilities matrix. Clone the repository
 and run it, or copy any snippet from [Getting started](#getting-started) below.
@@ -156,9 +156,9 @@ and run it, or copy any snippet from [Getting started](#getting-started) below.
 ## Other useful links
 
 - [API reference](https://pub.dev/documentation/flutter_classic_bluetooth/latest/)
-- [Source code on GitHub](https://github.com/Masum-MSNR/flutter_classic_bluetooth)
-- [Changelog](https://github.com/Masum-MSNR/flutter_classic_bluetooth/blob/main/CHANGELOG.md)
-- [Issue tracker](https://github.com/Masum-MSNR/flutter_classic_bluetooth/issues)
+- [Source code on GitHub](https://github.com/almasumdev/flutter_classic_bluetooth)
+- [Changelog](https://github.com/almasumdev/flutter_classic_bluetooth/blob/main/CHANGELOG.md)
+- [Issue tracker](https://github.com/almasumdev/flutter_classic_bluetooth/issues)
 
 ## Installation
 
@@ -406,9 +406,9 @@ system pairing agent (e.g. a running desktop Bluetooth applet).
 ## Support and feedback
 
 - Found a bug or want a feature? Open an issue on the
-  [issue tracker](https://github.com/Masum-MSNR/flutter_classic_bluetooth/issues).
+  [issue tracker](https://github.com/almasumdev/flutter_classic_bluetooth/issues).
 - Questions and ideas are welcome via
-  [GitHub Discussions](https://github.com/Masum-MSNR/flutter_classic_bluetooth/discussions).
+  [GitHub Discussions](https://github.com/almasumdev/flutter_classic_bluetooth/discussions).
 - Pull requests are welcome — see the repository for contribution guidelines.
 
 ## About
@@ -424,8 +424,8 @@ flutter_classic_bluetooth is created and owned by **Nurullah Al Masum**.
 
 flutter_classic_bluetooth grows with its community — every contributor is listed here:
 
-<a href="https://github.com/Masum-MSNR/flutter_classic_bluetooth/graphs/contributors">
-  <img src="https://contrib.rocks/image?repo=Masum-MSNR/flutter_classic_bluetooth" alt="flutter_classic_bluetooth contributors"/>
+<a href="https://github.com/almasumdev/flutter_classic_bluetooth/graphs/contributors">
+  <img src="https://contrib.rocks/image?repo=almasumdev/flutter_classic_bluetooth" alt="flutter_classic_bluetooth contributors"/>
 </a>
 
 Want to help? Pull requests are welcome — see [Support and feedback](#support-and-feedback).
