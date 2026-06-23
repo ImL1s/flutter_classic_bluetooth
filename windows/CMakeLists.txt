@@ -73,9 +73,11 @@ enable_testing()
 
 # Add the Google Test dependency.
 include(FetchContent)
+# googletest v1.15.2 — release-1.11.0 declared cmake_minimum_required < 3.5,
+# which CMake 4.x (shipped with newer Visual Studio) rejects outright.
 FetchContent_Declare(
   googletest
-  URL https://github.com/google/googletest/archive/release-1.11.0.zip
+  URL https://github.com/google/googletest/archive/refs/tags/v1.15.2.zip
 )
 # Prevent overriding the parent project's compiler/linker settings
 set(gtest_force_shared_crt ON CACHE BOOL "" FORCE)

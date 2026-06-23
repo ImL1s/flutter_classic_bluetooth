@@ -73,6 +73,8 @@ FlutterClassicBluetoothPlugin::FlutterClassicBluetoothPlugin(
     flutter::BinaryMessenger* messenger)
     : messenger_(messenger) {
   InitWinsock();
+  // Created on the platform thread so its message-only window pumps on it.
+  dispatcher_ = std::make_shared<UiThreadDispatcher>();
 }
 
 FlutterClassicBluetoothPlugin::~FlutterClassicBluetoothPlugin() {
@@ -84,6 +86,7 @@ FlutterClassicBluetoothPlugin::~FlutterClassicBluetoothPlugin() {
       conn->Close();
     }
     connections_.clear();
+    connection_channels_.clear();
   }
   {
     std::lock_guard<std::mutex> lock(servers_mutex_);
@@ -92,6 +95,9 @@ FlutterClassicBluetoothPlugin::~FlutterClassicBluetoothPlugin() {
     }
     servers_.clear();
   }
+  // Destroyed last, on the platform thread. Read threads only hold a weak_ptr,
+  // so this is the sole owner and DestroyWindow runs on the creating thread.
+  dispatcher_.reset();
   CleanupWinsock();
 }
 
@@ -379,14 +385,19 @@ void FlutterClassicBluetoothPlugin::HandleConnect(
 
   BTH_ADDR bth_addr = StringToAddress(address);
 
-  // Connect in background thread
+  // Connect on a background thread (connect() blocks), then marshal the result
+  // and channel registration back to the platform thread via the dispatcher.
   auto result_ptr = std::shared_ptr<flutter::MethodResult<EncodableValue>>(std::move(result));
-  std::thread([this, bth_addr, uuid, address, result_ptr]() {
+  std::weak_ptr<UiThreadDispatcher> weak_dispatcher = dispatcher_;
+  std::thread([this, bth_addr, uuid, address, result_ptr, weak_dispatcher]() {
     SOCKET sock = socket(AF_BTH, SOCK_STREAM, BTHPROTO_RFCOMM);
     if (sock == INVALID_SOCKET) {
-      result_ptr->Error("connectionFailed", "Failed to create socket",
-                        EncodableValue(EncodableMap{
-                            {EncodableValue("address"), EncodableValue(address)}}));
+      auto d = weak_dispatcher.lock();
+      if (d) d->Post([result_ptr, address]() {
+        result_ptr->Error("connectionFailed", "Failed to create socket",
+                          EncodableValue(EncodableMap{
+                              {EncodableValue("address"), EncodableValue(address)}}));
+      });
       return;
     }
 
@@ -398,32 +409,88 @@ void FlutterClassicBluetoothPlugin::HandleConnect(
 
     if (connect(sock, (SOCKADDR*)&addr, sizeof(addr)) == SOCKET_ERROR) {
       closesocket(sock);
-      result_ptr->Error("connectionFailed", "Failed to connect",
-                        EncodableValue(EncodableMap{
-                            {EncodableValue("address"), EncodableValue(address)}}));
+      auto d = weak_dispatcher.lock();
+      if (d) d->Post([result_ptr, address]() {
+        result_ptr->Error("connectionFailed", "Failed to connect",
+                          EncodableValue(EncodableMap{
+                              {EncodableValue("address"), EncodableValue(address)}}));
+      });
       return;
     }
 
-    int conn_id;
-    {
-      std::lock_guard<std::mutex> lock(connections_mutex_);
-      conn_id = next_connection_id_++;
-      auto connection = std::make_unique<BluetoothConnection>(conn_id, sock, address);
-      connection->StartReading(
-          [](const std::vector<uint8_t>& data) {
-            // Data is delivered via EventChannel on Dart side
-          },
-          []() {
-            // Disconnect notification via EventChannel
-          });
-      connections_[conn_id] = std::move(connection);
+    auto d = weak_dispatcher.lock();
+    if (!d) {
+      // Plugin is shutting down; don't leak the socket.
+      closesocket(sock);
+      return;
     }
-
-    EncodableMap response;
-    response[EncodableValue("id")] = EncodableValue(conn_id);
-    response[EncodableValue("address")] = EncodableValue(address);
-    result_ptr->Success(EncodableValue(response));
+    d->Post([this, sock, address, result_ptr]() {
+      int conn_id;
+      {
+        std::lock_guard<std::mutex> lock(connections_mutex_);
+        conn_id = next_connection_id_++;
+        auto connection = std::make_unique<BluetoothConnection>(conn_id, sock, address);
+        SetupConnectionStreams(conn_id, connection.get());
+        connections_[conn_id] = std::move(connection);
+      }
+      EncodableMap response;
+      response[EncodableValue("id")] = EncodableValue(conn_id);
+      response[EncodableValue("address")] = EncodableValue(address);
+      result_ptr->Success(EncodableValue(response));
+    });
   }).detach();
+}
+
+void FlutterClassicBluetoothPlugin::SetupConnectionStreams(
+    int conn_id, BluetoothConnection* connection) {
+  // Caller holds connections_mutex_ and runs on the platform thread.
+  auto channels = std::make_shared<ConnectionChannels>();
+
+  std::string data_name = "flutter_classic_bluetooth/connection/" + std::to_string(conn_id);
+  std::string state_name =
+      "flutter_classic_bluetooth/connection_state/" + std::to_string(conn_id);
+
+  channels->data_channel = std::make_unique<flutter::EventChannel<EncodableValue>>(
+      messenger_, data_name, &flutter::StandardMethodCodec::GetInstance());
+  channels->data_channel->SetStreamHandler(
+      std::make_unique<SharedStreamHandler>(channels->data_sink));
+
+  channels->state_channel = std::make_unique<flutter::EventChannel<EncodableValue>>(
+      messenger_, state_name, &flutter::StandardMethodCodec::GetInstance());
+  channels->state_channel->SetStreamHandler(
+      std::make_unique<SharedStreamHandler>(channels->state_sink));
+
+  connection_channels_[conn_id] = channels;
+
+  // Capture sinks + a weak dispatcher; the read thread is detached and must not
+  // touch the sink directly (Flutter requires platform-thread delivery).
+  auto data_sink = channels->data_sink;
+  auto state_sink = channels->state_sink;
+  std::weak_ptr<UiThreadDispatcher> weak_dispatcher = dispatcher_;
+
+  connection->StartReading(
+      [data_sink, weak_dispatcher](const std::vector<uint8_t>& data) {
+        auto d = weak_dispatcher.lock();
+        if (!d) return;
+        d->Post([data_sink, data]() {
+          data_sink->Success(EncodableValue(data));
+        });
+      },
+      [state_sink, weak_dispatcher]() {
+        auto d = weak_dispatcher.lock();
+        if (!d) return;
+        d->Post([state_sink]() {
+          state_sink->Success(EncodableValue(std::string("disconnected")));
+          state_sink->EndOfStream();
+        });
+      });
+
+  // Emit the initial "connected" state (best-effort; delivered if/when listened).
+  if (auto d = dispatcher_) {
+    d->Post([state_sink]() {
+      state_sink->Success(EncodableValue(std::string("connected")));
+    });
+  }
 }
 
 void FlutterClassicBluetoothPlugin::HandleDisconnect(
@@ -442,6 +509,9 @@ void FlutterClassicBluetoothPlugin::HandleDisconnect(
     conn_it->second->Close();
     connections_.erase(conn_it);
   }
+  // Destroying the EventChannels unregisters them. Any in-flight dispatcher
+  // tasks still hold a shared_ptr to the SinkHolders, so this is leak-free.
+  connection_channels_.erase(id);
   result->Success(EncodableValue());
 }
 
@@ -495,13 +565,25 @@ void FlutterClassicBluetoothPlugin::HandleStartServer(
     server_id = next_server_id_++;
     auto server = std::make_unique<BluetoothServer>(server_id, uuid, service_name, secure);
 
-    bool started = server->Start([this](SOCKET client_socket, const std::string& address) {
-      std::lock_guard<std::mutex> lock(connections_mutex_);
-      int conn_id = next_connection_id_++;
-      auto connection = std::make_unique<BluetoothConnection>(conn_id, client_socket, address);
-      connection->StartReading([](const std::vector<uint8_t>&) {}, []() {});
-      connections_[conn_id] = std::move(connection);
-    });
+    std::weak_ptr<UiThreadDispatcher> weak_dispatcher = dispatcher_;
+    bool started = server->Start(
+        [this, weak_dispatcher](SOCKET client_socket, const std::string& address) {
+          // The accept loop runs on a background thread; register the client's
+          // connection streams on the platform thread.
+          auto d = weak_dispatcher.lock();
+          if (!d) {
+            closesocket(client_socket);
+            return;
+          }
+          d->Post([this, client_socket, address]() {
+            std::lock_guard<std::mutex> lock(connections_mutex_);
+            int conn_id = next_connection_id_++;
+            auto connection =
+                std::make_unique<BluetoothConnection>(conn_id, client_socket, address);
+            SetupConnectionStreams(conn_id, connection.get());
+            connections_[conn_id] = std::move(connection);
+          });
+        });
 
     if (!started) {
       result->Error("connectionFailed", "Failed to start server", EncodableValue());

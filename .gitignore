@@ -23,6 +23,13 @@ migrate_working_dir/
 # is commented out by default.
 #.vscode/
 
+# Internal audit / working docs (not published)
+/docs/
+
+# Local hardware test harness (ESP firmware, scratch test apps) — not published
+/local_test/
+example/integration_test/esp32_live_test.dart
+
 # Flutter/Dart/Pub related
 # Libraries should not include pubspec.lock, per https://dart.dev/guides/libraries/private-files#pubspeclock.
 /pubspec.lock

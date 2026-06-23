@@ -52,6 +52,20 @@ add_subdirectory(${FLUTTER_MANAGED_DIR})
 # Application build; see runner/CMakeLists.txt.
 add_subdirectory("runner")
 
+# Lock the install prefix to the local bundle directory BEFORE including the
+# plugins. Some plugins (e.g. this one's unit tests) pull dependencies in via
+# FetchContent — googletest's project() call clears
+# CMAKE_INSTALL_PREFIX_INITIALIZED_TO_DEFAULT. If the prefix override runs after
+# that it is skipped, and the install falls back to the system default
+# (C:/Program Files), which fails without administrator rights. Setting it here,
+# while the flag is still true, keeps `flutter run`/`flutter build` working.
+set(BUILD_BUNDLE_DIR "$<TARGET_FILE_DIR:${BINARY_NAME}>")
+# Make the "install" step default, as it's required to run.
+set(CMAKE_VS_INCLUDE_INSTALL_TO_DEFAULT_BUILD 1)
+if(CMAKE_INSTALL_PREFIX_INITIALIZED_TO_DEFAULT)
+  set(CMAKE_INSTALL_PREFIX "${BUILD_BUNDLE_DIR}" CACHE PATH "..." FORCE)
+endif()
+
 # Enable the test target.
 set(include_flutter_classic_bluetooth_tests TRUE)
 
@@ -64,13 +78,8 @@ include(flutter/generated_plugins.cmake)
 # Support files are copied into place next to the executable, so that it can
 # run in place. This is done instead of making a separate bundle (as on Linux)
 # so that building and running from within Visual Studio will work.
-set(BUILD_BUNDLE_DIR "$<TARGET_FILE_DIR:${BINARY_NAME}>")
-# Make the "install" step default, as it's required to run.
-set(CMAKE_VS_INCLUDE_INSTALL_TO_DEFAULT_BUILD 1)
-if(CMAKE_INSTALL_PREFIX_INITIALIZED_TO_DEFAULT)
-  set(CMAKE_INSTALL_PREFIX "${BUILD_BUNDLE_DIR}" CACHE PATH "..." FORCE)
-endif()
-
+# (CMAKE_INSTALL_PREFIX is locked to the bundle directory above, before the
+# plugins are included.)
 set(INSTALL_BUNDLE_DATA_DIR "${CMAKE_INSTALL_PREFIX}/data")
 set(INSTALL_BUNDLE_LIB_DIR "${CMAKE_INSTALL_PREFIX}")
 
