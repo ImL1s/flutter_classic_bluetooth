@@ -81,7 +81,12 @@ include(flutter/generated_plugins.cmake)
 # By default, "installing" just makes a relocatable bundle in the build
 # directory.
 set(BUILD_BUNDLE_DIR "${PROJECT_BINARY_DIR}/bundle")
-if(CMAKE_INSTALL_PREFIX_INITIALIZED_TO_DEFAULT)
+# Redirect the install prefix to the in-build bundle dir. Also catch the literal
+# default ("/usr/local"): if an earlier configure failed before this line ran
+# (e.g. a missing system dependency), CMake has already consumed the
+# "initialized to default" flag, and without this the build would try to install
+# into /usr/local and fail with a permission error until `flutter clean`.
+if(CMAKE_INSTALL_PREFIX_INITIALIZED_TO_DEFAULT OR CMAKE_INSTALL_PREFIX STREQUAL "/usr/local")
   set(CMAKE_INSTALL_PREFIX "${BUILD_BUNDLE_DIR}" CACHE PATH "..." FORCE)
 endif()
 
@@ -108,8 +113,13 @@ foreach(bundled_library ${PLUGIN_BUNDLED_LIBRARIES})
     COMPONENT Runtime)
 endforeach(bundled_library)
 
-# Copy the native assets provided by the build.dart from all packages.
+# Copy the native assets provided by the build hooks from all packages. Some
+# Flutter SDK versions don't create this directory when no package ships native
+# assets, and install(DIRECTORY) aborts the whole build if its source is
+# missing. Create it (empty if unused) at install time so the build is robust
+# across SDK versions.
 set(NATIVE_ASSETS_DIR "${PROJECT_BUILD_DIR}native_assets/linux/")
+install(CODE "file(MAKE_DIRECTORY \"${NATIVE_ASSETS_DIR}\")" COMPONENT Runtime)
 install(DIRECTORY "${NATIVE_ASSETS_DIR}"
    DESTINATION "${INSTALL_BUNDLE_LIB_DIR}"
    COMPONENT Runtime)
