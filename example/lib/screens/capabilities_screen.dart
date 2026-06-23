@@ -37,8 +37,8 @@ class _CapabilitiesScreenState extends State<CapabilitiesScreen> {
       body: _error != null
           ? Center(child: Text('Error: $_error'))
           : _caps == null
-              ? const Center(child: CircularProgressIndicator())
-              : _buildContent(),
+          ? const Center(child: CircularProgressIndicator())
+          : _buildContent(),
     );
   }
 

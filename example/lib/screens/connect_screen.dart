@@ -46,11 +46,13 @@ class _ConnectScreenState extends State<ConnectScreen> {
         (data) {
           if (!mounted) return;
           setState(() {
-            _log.add(_LogEntry(
-              direction: _Direction.received,
-              text: utf8.decode(data, allowMalformed: true),
-              bytes: data,
-            ));
+            _log.add(
+              _LogEntry(
+                direction: _Direction.received,
+                text: utf8.decode(data, allowMalformed: true),
+                bytes: data,
+              ),
+            );
           });
           _scrollToBottom();
         },
@@ -58,25 +60,31 @@ class _ConnectScreenState extends State<ConnectScreen> {
           if (!mounted) return;
           setState(() {
             _connection = null;
-            _log.add(_LogEntry(
-              direction: _Direction.system,
-              text: 'Connection closed',
-            ));
+            _log.add(
+              _LogEntry(
+                direction: _Direction.system,
+                text: 'Connection closed',
+              ),
+            );
           });
         },
       );
       if (!mounted) return;
       setState(() {
         _connection = connection;
-        _log.add(_LogEntry(
-          direction: _Direction.system,
-          text: 'Connected to ${widget.device.displayName}',
-        ));
+        _log.add(
+          _LogEntry(
+            direction: _Direction.system,
+            text: 'Connected to ${widget.device.displayName}',
+          ),
+        );
       });
     } on BtcException catch (e) {
       if (!mounted) return;
       setState(() {
-        _log.add(_LogEntry(direction: _Direction.system, text: 'Error: ${e.message}'));
+        _log.add(
+          _LogEntry(direction: _Direction.system, text: 'Error: ${e.message}'),
+        );
       });
     } finally {
       if (mounted) setState(() => _connecting = false);
@@ -101,13 +109,20 @@ class _ConnectScreenState extends State<ConnectScreen> {
     try {
       _connection!.output.add(data);
       setState(() {
-        _log.add(_LogEntry(direction: _Direction.sent, text: text, bytes: data));
+        _log.add(
+          _LogEntry(direction: _Direction.sent, text: text, bytes: data),
+        );
       });
       _inputController.clear();
       _scrollToBottom();
     } on BtcException catch (e) {
       setState(() {
-        _log.add(_LogEntry(direction: _Direction.system, text: 'Send error: ${e.message}'));
+        _log.add(
+          _LogEntry(
+            direction: _Direction.system,
+            text: 'Send error: ${e.message}',
+          ),
+        );
       });
     }
   }
@@ -135,7 +150,8 @@ class _ConnectScreenState extends State<ConnectScreen> {
             const Padding(
               padding: EdgeInsets.only(right: 16),
               child: SizedBox(
-                width: 20, height: 20,
+                width: 20,
+                height: 20,
                 child: CircularProgressIndicator(strokeWidth: 2),
               ),
             )
@@ -153,7 +169,9 @@ class _ConnectScreenState extends State<ConnectScreen> {
             child: _log.isEmpty
                 ? Center(
                     child: Text(
-                      connected ? 'Connected — send a message' : 'Tap link icon to connect',
+                      connected
+                          ? 'Connected — send a message'
+                          : 'Tap link icon to connect',
                       style: Theme.of(context).textTheme.bodyLarge,
                     ),
                   )
@@ -161,7 +179,8 @@ class _ConnectScreenState extends State<ConnectScreen> {
                     controller: _scrollController,
                     padding: const EdgeInsets.all(8),
                     itemCount: _log.length,
-                    itemBuilder: (context, index) => _LogTile(entry: _log[index]),
+                    itemBuilder: (context, index) =>
+                        _LogTile(entry: _log[index]),
                   ),
           ),
           if (connected)
@@ -176,7 +195,10 @@ class _ConnectScreenState extends State<ConnectScreen> {
                         decoration: const InputDecoration(
                           hintText: 'Type message...',
                           border: OutlineInputBorder(),
-                          contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                          contentPadding: EdgeInsets.symmetric(
+                            horizontal: 12,
+                            vertical: 8,
+                          ),
                         ),
                         onSubmitted: (_) => _send(),
                       ),

@@ -78,8 +78,9 @@ void main() {
       expect(result, isA<bool>());
     });
 
-    testWidgets('startDiscovery and stopDiscovery do not throw',
-        (tester) async {
+    testWidgets('startDiscovery and stopDiscovery do not throw', (
+      tester,
+    ) async {
       try {
         await bluetooth.startDiscovery();
         // Give it a moment then stop
@@ -147,20 +148,15 @@ void main() {
 
     testWidgets('connect validates UUID format', (tester) async {
       expect(
-        () => bluetooth.connect(
-          address: 'AA:BB:CC:DD:EE:FF',
-          uuid: 'not-a-uuid',
-        ),
+        () =>
+            bluetooth.connect(address: 'AA:BB:CC:DD:EE:FF', uuid: 'not-a-uuid'),
         throwsA(isA<BtcUuidException>()),
       );
     });
 
     testWidgets('startServer validates UUID format', (tester) async {
       expect(
-        () => bluetooth.startServer(
-          uuid: 'bad-uuid',
-          serviceName: 'Test',
-        ),
+        () => bluetooth.startServer(uuid: 'bad-uuid', serviceName: 'Test'),
         throwsA(isA<BtcUuidException>()),
       );
     });
@@ -173,8 +169,7 @@ void main() {
       bluetooth = FlutterClassicBluetooth();
     });
 
-    testWidgets('getPlatformCapabilities returns all fields',
-        (tester) async {
+    testWidgets('getPlatformCapabilities returns all fields', (tester) async {
       final caps = await bluetooth.getPlatformCapabilities();
       expect(caps, isA<BtcPlatformCapabilities>());
       expect(caps.canEnableBluetooth, isA<bool>());
@@ -417,10 +412,7 @@ void main() {
       final tile = find.text('Paired Devices');
       expect(tile, findsAtLeast(1));
 
-      final listTile = find.ancestor(
-        of: tile,
-        matching: find.byType(ListTile),
-      );
+      final listTile = find.ancestor(of: tile, matching: find.byType(ListTile));
       if (listTile.evaluate().isEmpty) return false;
 
       final widget = tester.widget<ListTile>(listTile.first);
@@ -511,16 +503,16 @@ void main() {
       expect(find.text('Requires MFi'), findsOneWidget);
     });
 
-    testWidgets('shows check or cancel icons for each capability',
-        (tester) async {
+    testWidgets('shows check or cancel icons for each capability', (
+      tester,
+    ) async {
       await navigateToCaps(tester);
 
       // Should have a mix of check_circle and cancel icons (12 total)
       final checks = find.byIcon(Icons.check_circle);
       final cancels = find.byIcon(Icons.cancel);
 
-      final total =
-          checks.evaluate().length + cancels.evaluate().length;
+      final total = checks.evaluate().length + cancels.evaluate().length;
       expect(total, equals(12));
     });
 
@@ -556,10 +548,7 @@ void main() {
       final tile = find.text('Server');
       expect(tile, findsAtLeast(1));
 
-      final listTile = find.ancestor(
-        of: tile,
-        matching: find.byType(ListTile),
-      );
+      final listTile = find.ancestor(of: tile, matching: find.byType(ListTile));
       if (listTile.evaluate().isEmpty) return false;
 
       final widget = tester.widget<ListTile>(listTile.first);
@@ -598,8 +587,9 @@ void main() {
   // ── App UI Tests — Loading States ──────────────────────────────────
 
   group('App UI — Loading States', () {
-    testWidgets('Home screen shows loading indicator before data arrives',
-        (tester) async {
+    testWidgets('Home screen shows loading indicator before data arrives', (
+      tester,
+    ) async {
       await tester.pumpWidget(const BluetoothExampleApp());
       // Pump only one frame — async _init() hasn't completed yet
       await tester.pump();
@@ -607,10 +597,11 @@ void main() {
       // On fast platforms the native call may resolve within one frame,
       // so the spinner might already be gone. Either spinner OR content
       // is valid at this point.
-      final hasSpinner =
-          find.byType(CircularProgressIndicator).evaluate().isNotEmpty;
-      final hasContent =
-          find.text('Bluetooth Classic').evaluate().isNotEmpty;
+      final hasSpinner = find
+          .byType(CircularProgressIndicator)
+          .evaluate()
+          .isNotEmpty;
+      final hasContent = find.text('Bluetooth Classic').evaluate().isNotEmpty;
       expect(hasSpinner || hasContent, isTrue);
 
       // Now let it settle — data should load
@@ -621,15 +612,17 @@ void main() {
       expect(find.text('Bluetooth Classic'), findsAtLeast(1));
     });
 
-    testWidgets('Home screen transitions from loading to status card',
-        (tester) async {
+    testWidgets('Home screen transitions from loading to status card', (
+      tester,
+    ) async {
       await tester.pumpWidget(const BluetoothExampleApp());
       await tester.pump();
 
       // Status text should NOT be visible yet (still loading)
-      final hasStatus = find.textContaining(
-        RegExp('Hardware supported|Not supported'),
-      ).evaluate().isNotEmpty;
+      final hasStatus = find
+          .textContaining(RegExp('Hardware supported|Not supported'))
+          .evaluate()
+          .isNotEmpty;
       // It may or may not be visible depending on how fast the native call is
       // but the spinner should be present
       if (!hasStatus) {
@@ -655,8 +648,10 @@ void main() {
       await tester.pump(); // one more for the route transition
 
       // May still show spinner during load
-      final hasSpinner =
-          find.byType(CircularProgressIndicator).evaluate().isNotEmpty;
+      final hasSpinner = find
+          .byType(CircularProgressIndicator)
+          .evaluate()
+          .isNotEmpty;
       final hasStatus = find.text('Status').evaluate().isNotEmpty;
 
       // Either loading or already loaded — both valid
@@ -685,8 +680,10 @@ void main() {
       // After pumping, content should still be visible (loading is fast)
       // or spinner may briefly appear
       final hasContent = find.text('Status').evaluate().isNotEmpty;
-      final hasSpinner =
-          find.byType(CircularProgressIndicator).evaluate().isNotEmpty;
+      final hasSpinner = find
+          .byType(CircularProgressIndicator)
+          .evaluate()
+          .isNotEmpty;
       expect(hasContent || hasSpinner, isTrue);
 
       await tester.pumpAndSettle();
@@ -694,17 +691,15 @@ void main() {
       expect(find.text('Status'), findsOneWidget);
     });
 
-    testWidgets('Paired screen shows loading then content or empty',
-        (tester) async {
+    testWidgets('Paired screen shows loading then content or empty', (
+      tester,
+    ) async {
       await tester.pumpWidget(const BluetoothExampleApp());
       await tester.pumpAndSettle();
 
       // Check if Paired Devices tile is enabled
       final tile = find.text('Paired Devices');
-      final listTile = find.ancestor(
-        of: tile,
-        matching: find.byType(ListTile),
-      );
+      final listTile = find.ancestor(of: tile, matching: find.byType(ListTile));
       if (listTile.evaluate().isEmpty) return;
       final widget = tester.widget<ListTile>(listTile.first);
       if (!widget.enabled) return;
@@ -714,15 +709,19 @@ void main() {
       await tester.pump();
 
       // May show spinner while loading paired devices
-      final hasSpinner =
-          find.byType(CircularProgressIndicator).evaluate().isNotEmpty;
-      final hasContent = find
+      final hasSpinner = find
+          .byType(CircularProgressIndicator)
+          .evaluate()
+          .isNotEmpty;
+      final hasContent =
+          find
               .textContaining(RegExp('No paired devices'))
               .evaluate()
               .isNotEmpty ||
           find
               .textContaining(
-                  RegExp(r'[0-9A-Fa-f]{2}:[0-9A-Fa-f]{2}:[0-9A-Fa-f]{2}'))
+                RegExp(r'[0-9A-Fa-f]{2}:[0-9A-Fa-f]{2}:[0-9A-Fa-f]{2}'),
+              )
               .evaluate()
               .isNotEmpty;
 
@@ -732,8 +731,9 @@ void main() {
       expect(find.text('Paired Devices'), findsAtLeast(1));
     });
 
-    testWidgets('Capabilities screen shows loading then capabilities',
-        (tester) async {
+    testWidgets('Capabilities screen shows loading then capabilities', (
+      tester,
+    ) async {
       await tester.pumpWidget(const BluetoothExampleApp());
       await tester.pumpAndSettle();
 
@@ -742,10 +742,11 @@ void main() {
       await tester.pump();
 
       // May show spinner while fetching capabilities
-      final hasSpinner =
-          find.byType(CircularProgressIndicator).evaluate().isNotEmpty;
-      final hasCaps =
-          find.text('Enable Bluetooth').evaluate().isNotEmpty;
+      final hasSpinner = find
+          .byType(CircularProgressIndicator)
+          .evaluate()
+          .isNotEmpty;
+      final hasCaps = find.text('Enable Bluetooth').evaluate().isNotEmpty;
 
       expect(hasSpinner || hasCaps, isTrue);
 
@@ -755,17 +756,15 @@ void main() {
       expect(find.text('Discover Devices'), findsOneWidget);
     });
 
-    testWidgets('Server screen shows Start FAB and responds to tap',
-        (tester) async {
+    testWidgets('Server screen shows Start FAB and responds to tap', (
+      tester,
+    ) async {
       await tester.pumpWidget(const BluetoothExampleApp());
       await tester.pumpAndSettle();
 
       // Check if Server tile is enabled
       final tile = find.text('Server');
-      final listTile = find.ancestor(
-        of: tile,
-        matching: find.byType(ListTile),
-      );
+      final listTile = find.ancestor(of: tile, matching: find.byType(ListTile));
       if (listTile.evaluate().isEmpty) return;
       final widget = tester.widget<ListTile>(listTile.first);
       if (!widget.enabled) return;
@@ -787,10 +786,7 @@ void main() {
       await tester.pumpAndSettle();
 
       final tile = find.text('Paired Devices');
-      final listTile = find.ancestor(
-        of: tile,
-        matching: find.byType(ListTile),
-      );
+      final listTile = find.ancestor(of: tile, matching: find.byType(ListTile));
       if (listTile.evaluate().isEmpty) return;
       final widget = tester.widget<ListTile>(listTile.first);
       if (!widget.enabled) return;
@@ -803,10 +799,11 @@ void main() {
       await tester.pump();
 
       // Content may flicker to loading or stay — both valid
-      final hasSpinner =
-          find.byType(CircularProgressIndicator).evaluate().isNotEmpty;
-      final hasContent =
-          find.text('Paired Devices').evaluate().isNotEmpty;
+      final hasSpinner = find
+          .byType(CircularProgressIndicator)
+          .evaluate()
+          .isNotEmpty;
+      final hasContent = find.text('Paired Devices').evaluate().isNotEmpty;
       expect(hasSpinner || hasContent, isTrue);
 
       await tester.pumpAndSettle();
@@ -817,8 +814,9 @@ void main() {
   // ── App UI Tests — Navigation Flow ───────────────────────────────────
 
   group('App UI — Navigation Flow', () {
-    testWidgets('navigate Adapter → back → Capabilities → back',
-        (tester) async {
+    testWidgets('navigate Adapter → back → Capabilities → back', (
+      tester,
+    ) async {
       await tester.pumpWidget(const BluetoothExampleApp());
       await tester.pumpAndSettle();
 

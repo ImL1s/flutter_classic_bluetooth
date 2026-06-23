@@ -81,8 +81,8 @@ class _AdapterScreenState extends State<AdapterScreen> {
       body: _loading
           ? const Center(child: CircularProgressIndicator())
           : _error != null
-              ? Center(child: Text('Error: $_error'))
-              : _buildContent(),
+          ? Center(child: Text('Error: $_error'))
+          : _buildContent(),
     );
   }
 
@@ -138,7 +138,10 @@ class _InfoRow extends StatelessWidget {
         children: [
           SizedBox(
             width: 100,
-            child: Text(label, style: const TextStyle(fontWeight: FontWeight.bold)),
+            child: Text(
+              label,
+              style: const TextStyle(fontWeight: FontWeight.bold),
+            ),
           ),
           Expanded(child: Text(value)),
         ],

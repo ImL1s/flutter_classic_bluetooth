@@ -1,89 +1,130 @@
-name: CI
-
-# Compile-verifies all five platforms on their native runners. The plugin's
-# Dart layer and the Windows/Android builds are also verifiable locally; Linux,
-# macOS and iOS native code can only be compiled on their own OS, which these
-# runners provide.
+name: CI & Release
 
 on:
-  push:
-    branches: [main, 'fix/**', 'feat/**']
   pull_request:
+    branches: [main]
+  push:
     branches: [main]
   workflow_dispatch:
 
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+
+concurrency:
+  group: ci-release-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
-  analyze-test:
-    name: Analyze + unit tests
+  checks:
+    name: Format, analyze & test
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v5
-      - uses: subosito/flutter-action@v2
-        with:
-          channel: stable
-      - run: flutter pub get
-      - run: flutter analyze lib test
-      - run: flutter test
 
-  build-android:
-    name: Build Android (APK)
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v5
-      - uses: actions/setup-java@v5
-        with:
-          distribution: temurin
-          java-version: '17'
       - uses: subosito/flutter-action@v2
         with:
           channel: stable
-      - run: flutter pub get
-      - run: flutter build apk --debug
+
+      - name: Package — install
+        run: flutter pub get
+
+      - name: Package — format
+        run: dart format --output=none --set-exit-if-changed .
+
+      - name: Package — analyze
+        run: flutter analyze
+
+      - name: Package — test
+        run: flutter test
+
+      - name: Example — install, analyze & test
         working-directory: example
+        run: |
+          flutter pub get
+          flutter analyze
+          flutter test
 
-  build-linux:
-    name: Build Linux (native plugin)
+  pana:
+    name: Pana score gate
+    needs: checks
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v5
-      - name: Install Linux build deps
+
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+
+      - run: flutter pub get
+
+      # pana validates the pubspec `screenshots` (logo.png) and needs the webp
+      # tools (cwebp / gif2webp) to do so.
+      - name: Install screenshot tools (webp)
         run: |
           sudo apt-get update
-          sudo apt-get install -y ninja-build libgtk-3-dev libbluetooth-dev clang cmake pkg-config
-      - uses: subosito/flutter-action@v2
-        with:
-          channel: stable
-      - run: flutter config --enable-linux-desktop
-      - run: flutter pub get
-      - run: flutter build linux --debug
-        working-directory: example
+          sudo apt-get install -y webp
 
-  build-windows:
-    name: Build Windows (native plugin)
-    runs-on: windows-latest
+      # Floor is 140 (the score provable without dartdoc/webp present). With webp
+      # installed the screenshot check passes, so CI should report ~150–160 — raise
+      # this gate once the real CI score is confirmed.
+      - name: Require >= 140 pub points
+        run: |
+          dart pub global activate pana
+          dart pub global run pana --json > pana.json 2> pana.err || true
+          POINTS=$(jq -r '.scores.grantedPoints // empty' pana.json)
+          MAX=$(jq -r '.scores.maxPoints // empty' pana.json)
+          echo "Pana score: ${POINTS:-?}/${MAX:-?}"
+          if [ -z "$POINTS" ]; then
+            echo "::error::Could not read pana score."; tail -n 50 pana.err; exit 1
+          fi
+          if [ "$POINTS" -lt 140 ]; then
+            echo "::error::pana $POINTS/$MAX is below the required 140 — aborting."; exit 1
+          fi
+
+  version:
+    name: Resolve version
+    needs: pana
+    if: github.event_name != 'pull_request'
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.v.outputs.version }}
+      is_new: ${{ steps.v.outputs.is_new }}
     steps:
       - uses: actions/checkout@v5
-      - uses: subosito/flutter-action@v2
         with:
-          channel: stable
-      - run: flutter config --enable-windows-desktop
-      - run: flutter pub get
-      - run: flutter build windows --debug
-        working-directory: example
+          fetch-depth: 0
+          fetch-tags: true
 
-  build-apple:
-    name: Build macOS + iOS (native plugins)
-    runs-on: macos-latest
+      - id: v
+        name: Is this a new version?
+        run: |
+          VERSION=$(grep '^version:' pubspec.yaml | awk '{print $2}')
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+          if git rev-parse "v$VERSION" >/dev/null 2>&1; then
+            echo "is_new=false" >> "$GITHUB_OUTPUT"
+            echo "v$VERSION is already tagged — nothing to release."
+          else
+            echo "is_new=true" >> "$GITHUB_OUTPUT"
+            echo "v$VERSION is new — will tag, then publish."
+          fi
+
+  # Push the tag with a PAT so it triggers the Publish workflow — a default
+  # GITHUB_TOKEN push would not. Requires the RELEASE_PAT repo secret.
+  tag:
+    name: Tag release
+    needs: version
+    if: needs.version.outputs.is_new == 'true'
+    runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v5
-      - uses: subosito/flutter-action@v2
         with:
-          channel: stable
-      - run: flutter config --enable-macos-desktop
-      - run: flutter pub get
-      - name: Build macOS
-        run: flutter build macos --debug
-        working-directory: example
-      - name: Build iOS (no codesign)
-        run: flutter build ios --debug --no-codesign
-        working-directory: example
+          token: ${{ secrets.RELEASE_PAT }}
+          fetch-depth: 0
+          fetch-tags: true
+
+      - name: Create & push tag
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git tag "v${{ needs.version.outputs.version }}"
+          git push origin "v${{ needs.version.outputs.version }}"

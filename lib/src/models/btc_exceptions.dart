@@ -59,8 +59,7 @@ class BtcUnsupportedException extends BtcException {
     required this.platform,
     String? reason,
   }) : super(
-          reason ??
-              '$feature is not supported on $platform',
+          reason ?? '$feature is not supported on $platform',
           code: 'unsupported',
         );
 
@@ -81,8 +80,7 @@ class BtcPermissionException extends BtcException {
 ///
 /// {@category Exceptions}
 class BtcDisabledException extends BtcException {
-  const BtcDisabledException(
-      [super.message = 'Bluetooth adapter is disabled'])
+  const BtcDisabledException([super.message = 'Bluetooth adapter is disabled'])
       : super(code: 'bluetoothDisabled');
 }
 

@@ -21,15 +21,13 @@ class MockFlutterClassicBluetoothPlatform
   Future<bool> disableBluetooth() => Future.value(true);
 
   @override
-  Stream<BtcAdapterState> adapterState() =>
-      Stream.value(BtcAdapterState.on);
+  Stream<BtcAdapterState> adapterState() => Stream.value(BtcAdapterState.on);
 
   @override
   Future<String?> getAdapterName() => Future.value('TestAdapter');
 
   @override
-  Future<String?> getAdapterAddress() =>
-      Future.value('AA:BB:CC:DD:EE:FF');
+  Future<String?> getAdapterAddress() => Future.value('AA:BB:CC:DD:EE:FF');
 
   @override
   Future<void> startDiscovery() => Future.value();
@@ -47,8 +45,7 @@ class MockFlutterClassicBluetoothPlatform
   Stream<BtcDevice> discoveryResults() => const Stream.empty();
 
   @override
-  Future<List<BtcDevice>> getPairedDevices() =>
-      Future.value([
+  Future<List<BtcDevice>> getPairedDevices() => Future.value([
         const BtcDevice(
           address: 'AA:BB:CC:DD:EE:FF',
           name: 'TestDevice',
@@ -135,9 +132,12 @@ void main() {
       expect(() => platform.discoveryState(), throwsUnimplementedError);
       expect(() => platform.discoveryResults(), throwsUnimplementedError);
       expect(() => platform.getPairedDevices(), throwsUnimplementedError);
-      expect(() => platform.bondDevice('AA:BB:CC:DD:EE:FF'), throwsUnimplementedError);
-      expect(() => platform.unbondDevice('AA:BB:CC:DD:EE:FF'), throwsUnimplementedError);
-      expect(() => platform.bondState('AA:BB:CC:DD:EE:FF'), throwsUnimplementedError);
+      expect(() => platform.bondDevice('AA:BB:CC:DD:EE:FF'),
+          throwsUnimplementedError);
+      expect(() => platform.unbondDevice('AA:BB:CC:DD:EE:FF'),
+          throwsUnimplementedError);
+      expect(() => platform.bondState('AA:BB:CC:DD:EE:FF'),
+          throwsUnimplementedError);
       expect(
         () => platform.connect(
           address: 'AA:BB:CC:DD:EE:FF',
@@ -156,7 +156,8 @@ void main() {
       );
       expect(() => platform.stopServer(0), throwsUnimplementedError);
       expect(() => platform.setDiscoverable(120), throwsUnimplementedError);
-      expect(() => platform.getPlatformCapabilities(), throwsUnimplementedError);
+      expect(
+          () => platform.getPlatformCapabilities(), throwsUnimplementedError);
     });
 
     test('can set platform instance', () {
@@ -624,7 +625,8 @@ void main() {
     test('PlatformException converted to BtcPermissionException', () async {
       TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
           .setMockMethodCallHandler(platform.methodChannel, (call) async {
-        throw PlatformException(code: 'permissionDenied', message: 'No BT permission');
+        throw PlatformException(
+            code: 'permissionDenied', message: 'No BT permission');
       });
 
       expect(
@@ -853,7 +855,8 @@ void main() {
 
       expect(restored.canDiscoverDevices, original.canDiscoverDevices);
       expect(restored.canEnableBluetooth, original.canEnableBluetooth);
-      expect(restored.requiresMfiCertification, original.requiresMfiCertification);
+      expect(
+          restored.requiresMfiCertification, original.requiresMfiCertification);
       expect(restored.platformNote, original.platformNote);
     });
 
@@ -1064,7 +1067,8 @@ void main() {
     });
 
     test('add sends write over method channel', () async {
-      final methodChannel = const MethodChannel('flutter_classic_bluetooth/methods');
+      final methodChannel =
+          const MethodChannel('flutter_classic_bluetooth/methods');
       final calls = <MethodCall>[];
 
       TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
@@ -1091,7 +1095,8 @@ void main() {
     });
 
     test('writes are chained in order', () async {
-      final methodChannel = const MethodChannel('flutter_classic_bluetooth/methods');
+      final methodChannel =
+          const MethodChannel('flutter_classic_bluetooth/methods');
       final calls = <int>[];
 
       TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
@@ -1173,7 +1178,8 @@ void main() {
     });
 
     test('close sends stopServer method call', () async {
-      final methodChannel = const MethodChannel('flutter_classic_bluetooth/methods');
+      final methodChannel =
+          const MethodChannel('flutter_classic_bluetooth/methods');
       final calls = <MethodCall>[];
 
       TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger

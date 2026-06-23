@@ -66,8 +66,8 @@ class _HomeScreenState extends State<HomeScreen> {
       body: _error != null
           ? Center(child: Text('Error: $_error'))
           : _supported == null
-              ? const Center(child: CircularProgressIndicator())
-              : _buildBody(context),
+          ? const Center(child: CircularProgressIndicator())
+          : _buildBody(context),
     );
   }
 
@@ -151,11 +151,15 @@ class _StatusCard extends StatelessWidget {
               Row(
                 children: [
                   Icon(
-                    enabled == true ? Icons.bluetooth_connected : Icons.bluetooth_disabled,
+                    enabled == true
+                        ? Icons.bluetooth_connected
+                        : Icons.bluetooth_disabled,
                     color: enabled == true ? Colors.blue : Colors.grey,
                   ),
                   const SizedBox(width: 8),
-                  Text(enabled == true ? 'Adapter enabled' : 'Adapter disabled'),
+                  Text(
+                    enabled == true ? 'Adapter enabled' : 'Adapter disabled',
+                  ),
                 ],
               ),
             ],

@@ -226,7 +226,8 @@ class MethodChannelFlutterClassicBluetooth
 
   /// Invokes a method on the platform channel and converts
   /// [PlatformException] to typed [BtcException].
-  Future<T?> _invoke<T>(String method, [Map<String, dynamic>? arguments]) async {
+  Future<T?> _invoke<T>(String method,
+      [Map<String, dynamic>? arguments]) async {
     try {
       return await methodChannel.invokeMethod<T>(method, arguments);
     } on PlatformException catch (e) {
@@ -266,8 +267,7 @@ class MethodChannelFlutterClassicBluetooth
         return BtcAddressException(
             e.details?['address'] as String? ?? 'unknown');
       case 'invalidUuid':
-        return BtcUuidException(
-            e.details?['uuid'] as String? ?? 'unknown');
+        return BtcUuidException(e.details?['uuid'] as String? ?? 'unknown');
       default:
         return BtcException(
           e.message ?? 'Unknown Bluetooth error',

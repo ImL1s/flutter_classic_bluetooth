@@ -62,47 +62,53 @@ class _PairedScreenState extends State<PairedScreen> {
       appBar: AppBar(
         title: const Text('Paired Devices'),
         actions: [
-          IconButton(
-            icon: const Icon(Icons.refresh),
-            onPressed: _load,
-          ),
+          IconButton(icon: const Icon(Icons.refresh), onPressed: _load),
         ],
       ),
       body: _error != null
           ? Center(child: Text('Error: $_error'))
           : _devices == null
-              ? const Center(child: CircularProgressIndicator())
-              : _devices!.isEmpty
-                  ? const Center(child: Text('No paired devices'))
-                  : ListView.builder(
-                      itemCount: _devices!.length,
-                      itemBuilder: (context, index) {
-                        final device = _devices![index];
-                        return ListTile(
-                          leading: const Icon(Icons.bluetooth_connected, color: Colors.blue),
-                          title: Text(device.displayName),
-                          subtitle: Text(device.address),
-                          trailing: PopupMenuButton<String>(
-                            onSelected: (action) {
-                              switch (action) {
-                                case 'connect':
-                                  Navigator.of(context).push(
-                                    MaterialPageRoute(
-                                      builder: (_) => ConnectScreen(device: device),
-                                    ),
-                                  );
-                                case 'unbond':
-                                  _unbond(device);
-                              }
-                            },
-                            itemBuilder: (_) => [
-                              const PopupMenuItem(value: 'connect', child: Text('Connect')),
-                              const PopupMenuItem(value: 'unbond', child: Text('Unbond')),
-                            ],
-                          ),
-                        );
-                      },
-                    ),
+          ? const Center(child: CircularProgressIndicator())
+          : _devices!.isEmpty
+          ? const Center(child: Text('No paired devices'))
+          : ListView.builder(
+              itemCount: _devices!.length,
+              itemBuilder: (context, index) {
+                final device = _devices![index];
+                return ListTile(
+                  leading: const Icon(
+                    Icons.bluetooth_connected,
+                    color: Colors.blue,
+                  ),
+                  title: Text(device.displayName),
+                  subtitle: Text(device.address),
+                  trailing: PopupMenuButton<String>(
+                    onSelected: (action) {
+                      switch (action) {
+                        case 'connect':
+                          Navigator.of(context).push(
+                            MaterialPageRoute(
+                              builder: (_) => ConnectScreen(device: device),
+                            ),
+                          );
+                        case 'unbond':
+                          _unbond(device);
+                      }
+                    },
+                    itemBuilder: (_) => [
+                      const PopupMenuItem(
+                        value: 'connect',
+                        child: Text('Connect'),
+                      ),
+                      const PopupMenuItem(
+                        value: 'unbond',
+                        child: Text('Unbond'),
+                      ),
+                    ],
+                  ),
+                );
+              },
+            ),
     );
   }
 }

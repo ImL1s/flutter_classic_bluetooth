@@ -195,8 +195,7 @@ class FlutterClassicBluetooth {
   /// | macOS | Yes |
   /// | Linux | Yes (BlueZ D-Bus) |
   /// | iOS | Yes (connected MFi accessories) |
-  Future<List<BtcDevice>> getPairedDevices() =>
-      _platform.getPairedDevices();
+  Future<List<BtcDevice>> getPairedDevices() => _platform.getPairedDevices();
 
   /// Initiates pairing with the device at [address].
   ///

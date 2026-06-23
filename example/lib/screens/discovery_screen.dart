@@ -74,13 +74,15 @@ class _DiscoveryScreenState extends State<DiscoveryScreen> {
       appBar: AppBar(
         title: const Text('Discovery'),
         actions: [
-          if (_discovering) const Padding(
-            padding: EdgeInsets.only(right: 8),
-            child: SizedBox(
-              width: 20, height: 20,
-              child: CircularProgressIndicator(strokeWidth: 2),
+          if (_discovering)
+            const Padding(
+              padding: EdgeInsets.only(right: 8),
+              child: SizedBox(
+                width: 20,
+                height: 20,
+                child: CircularProgressIndicator(strokeWidth: 2),
+              ),
             ),
-          ),
         ],
       ),
       floatingActionButton: FloatingActionButton.extended(
@@ -126,9 +128,7 @@ class _DeviceTile extends StatelessWidget {
         device.bondState == BtcBondState.bonded
             ? Icons.bluetooth_connected
             : Icons.bluetooth,
-        color: device.bondState == BtcBondState.bonded
-            ? Colors.blue
-            : null,
+        color: device.bondState == BtcBondState.bonded ? Colors.blue : null,
       ),
       title: Text(device.displayName),
       subtitle: Text(

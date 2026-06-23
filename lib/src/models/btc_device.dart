@@ -93,8 +93,7 @@ class BtcDevice {
 
   @override
   bool operator ==(Object other) =>
-      identical(this, other) ||
-      other is BtcDevice && other.address == address;
+      identical(this, other) || other is BtcDevice && other.address == address;
 
   @override
   int get hashCode => address.hashCode;

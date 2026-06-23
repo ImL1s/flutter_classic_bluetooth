@@ -81,8 +81,12 @@ class _ServerScreenState extends State<ServerScreen> {
         onPressed: _starting ? null : (running ? _stopServer : _startServer),
         icon: _starting
             ? const SizedBox(
-                width: 20, height: 20,
-                child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                width: 20,
+                height: 20,
+                child: CircularProgressIndicator(
+                  strokeWidth: 2,
+                  color: Colors.white,
+                ),
               )
             : Icon(running ? Icons.stop : Icons.play_arrow),
         label: Text(running ? 'Stop' : 'Start'),
