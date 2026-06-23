@@ -180,6 +180,13 @@ struct ConnectionChannels {
   std::shared_ptr<SinkHolder> state_sink = std::make_shared<SinkHolder>();
 };
 
+// Per-server event channel (server/{id}) delivering accepted client connections
+// to Dart's BtcServerSocket.connections stream.
+struct ServerChannel {
+  std::unique_ptr<flutter::EventChannel<flutter::EncodableValue>> channel;
+  std::shared_ptr<SinkHolder> sink = std::make_shared<SinkHolder>();
+};
+
 class FlutterClassicBluetoothPlugin : public flutter::Plugin {
  public:
   static void RegisterWithRegistrar(flutter::PluginRegistrarWindows *registrar);
@@ -203,6 +210,8 @@ class FlutterClassicBluetoothPlugin : public flutter::Plugin {
   // Per-connection event channels, keyed by connection id. Guarded by
   // connections_mutex_ together with connections_.
   std::map<int, std::shared_ptr<ConnectionChannels>> connection_channels_;
+  // Per-server event channels, keyed by server id. Guarded by servers_mutex_.
+  std::map<int, std::shared_ptr<ServerChannel>> server_channels_;
   std::mutex connections_mutex_;
   std::mutex servers_mutex_;
   int next_connection_id_ = 1;
@@ -219,6 +228,7 @@ class FlutterClassicBluetoothPlugin : public flutter::Plugin {
   std::unique_ptr<flutter::EventChannel<flutter::EncodableValue>> adapter_state_channel_;
   std::unique_ptr<flutter::EventChannel<flutter::EncodableValue>> discovery_state_channel_;
   std::unique_ptr<flutter::EventChannel<flutter::EncodableValue>> discovery_results_channel_;
+  std::unique_ptr<flutter::EventChannel<flutter::EncodableValue>> bond_state_channel_;
   PluginStreamHandler* adapter_state_handler_ = nullptr;
   PluginStreamHandler* discovery_state_handler_ = nullptr;
   PluginStreamHandler* discovery_results_handler_ = nullptr;

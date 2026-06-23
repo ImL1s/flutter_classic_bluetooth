@@ -28,6 +28,89 @@ using flutter::EncodableList;
 using flutter::EncodableMap;
 using flutter::EncodableValue;
 
+namespace {
+// Safely extract an int id from an EncodableValue, tolerating the codec
+// delivering it as either int32_t or int64_t. Avoids throwing std::get.
+bool ExtractInt(const EncodableValue& value, int* out) {
+  if (const auto* p = std::get_if<int32_t>(&value)) {
+    *out = *p;
+    return true;
+  }
+  if (const auto* p = std::get_if<int64_t>(&value)) {
+    *out = static_cast<int>(*p);
+    return true;
+  }
+  return false;
+}
+
+// Emits the current adapter power state once when a listener subscribes.
+// Windows offers no simple change-notification here, so this is a snapshot.
+class AdapterStateStreamHandler
+    : public flutter::StreamHandler<EncodableValue> {
+ protected:
+  std::unique_ptr<flutter::StreamHandlerError<EncodableValue>> OnListenInternal(
+      const EncodableValue*,
+      std::unique_ptr<flutter::EventSink<EncodableValue>>&& events) override {
+    HANDLE radio = nullptr;
+    BLUETOOTH_FIND_RADIO_PARAMS params = {sizeof(BLUETOOTH_FIND_RADIO_PARAMS)};
+    HBLUETOOTH_RADIO_FIND find = BluetoothFindFirstRadio(&params, &radio);
+    std::string state = "unsupported";
+    if (find) {
+      state = (BluetoothIsConnectable(radio) != FALSE) ? "on" : "off";
+      BluetoothFindRadioClose(find);
+      CloseHandle(radio);
+    }
+    events->Success(EncodableValue(state));
+    sink_ = std::move(events);
+    return nullptr;
+  }
+  std::unique_ptr<flutter::StreamHandlerError<EncodableValue>> OnCancelInternal(
+      const EncodableValue*) override {
+    sink_.reset();
+    return nullptr;
+  }
+
+ private:
+  std::unique_ptr<flutter::EventSink<EncodableValue>> sink_;
+};
+
+// Emits the current bond state of the {address} argument once on subscribe.
+class BondStateStreamHandler : public flutter::StreamHandler<EncodableValue> {
+ protected:
+  std::unique_ptr<flutter::StreamHandlerError<EncodableValue>> OnListenInternal(
+      const EncodableValue* arguments,
+      std::unique_ptr<flutter::EventSink<EncodableValue>>&& events) override {
+    std::string address;
+    if (const auto* m = std::get_if<EncodableMap>(arguments)) {
+      auto it = m->find(EncodableValue("address"));
+      if (it != m->end()) {
+        if (const auto* s = std::get_if<std::string>(&it->second)) address = *s;
+      }
+    }
+    std::string state = "none";
+    if (!address.empty()) {
+      BLUETOOTH_DEVICE_INFO info = {};
+      info.dwSize = sizeof(BLUETOOTH_DEVICE_INFO);
+      info.Address.ullLong = StringToAddress(address);
+      if (BluetoothGetDeviceInfo(nullptr, &info) == ERROR_SUCCESS) {
+        state = info.fAuthenticated ? "bonded" : "none";
+      }
+    }
+    events->Success(EncodableValue(state));
+    sink_ = std::move(events);
+    return nullptr;
+  }
+  std::unique_ptr<flutter::StreamHandlerError<EncodableValue>> OnCancelInternal(
+      const EncodableValue*) override {
+    sink_.reset();
+    return nullptr;
+  }
+
+ private:
+  std::unique_ptr<flutter::EventSink<EncodableValue>> sink_;
+};
+}  // namespace
+
 // static
 void FlutterClassicBluetoothPlugin::RegisterWithRegistrar(
     flutter::PluginRegistrarWindows *registrar) {
@@ -53,10 +136,16 @@ void FlutterClassicBluetoothPlugin::RegisterWithRegistrar(
   plugin->discovery_results_channel_ = std::make_unique<flutter::EventChannel<EncodableValue>>(
       registrar->messenger(), "flutter_classic_bluetooth/discovery_results",
       &flutter::StandardMethodCodec::GetInstance());
+  plugin->bond_state_channel_ = std::make_unique<flutter::EventChannel<EncodableValue>>(
+      registrar->messenger(), "flutter_classic_bluetooth/bond_state",
+      &flutter::StandardMethodCodec::GetInstance());
 
-  auto adapter_handler = std::make_unique<PluginStreamHandler>();
-  plugin->adapter_state_handler_ = adapter_handler.get();
-  plugin->adapter_state_channel_->SetStreamHandler(std::move(adapter_handler));
+  // Adapter state: emit the current state when a listener subscribes.
+  plugin->adapter_state_channel_->SetStreamHandler(
+      std::make_unique<AdapterStateStreamHandler>());
+  // Bond state: emit the current bond state of the requested address on listen.
+  plugin->bond_state_channel_->SetStreamHandler(
+      std::make_unique<BondStateStreamHandler>());
 
   auto disc_state_handler = std::make_unique<PluginStreamHandler>();
   plugin->discovery_state_handler_ = disc_state_handler.get();
@@ -94,6 +183,7 @@ FlutterClassicBluetoothPlugin::~FlutterClassicBluetoothPlugin() {
       server->Stop();
     }
     servers_.clear();
+    server_channels_.clear();
   }
   // Destroyed last, on the platform thread. Read threads only hold a weak_ptr,
   // so this is the sole owner and DestroyWindow runs on the creating thread.
@@ -497,11 +587,11 @@ void FlutterClassicBluetoothPlugin::HandleDisconnect(
     const EncodableMap& args,
     std::unique_ptr<flutter::MethodResult<EncodableValue>> result) {
   auto it = args.find(EncodableValue("id"));
-  if (it == args.end()) {
+  int id;
+  if (it == args.end() || !ExtractInt(it->second, &id)) {
     result->Error("connectionFailed", "Connection ID is required", EncodableValue());
     return;
   }
-  int id = std::get<int>(it->second);
 
   std::lock_guard<std::mutex> lock(connections_mutex_);
   auto conn_it = connections_.find(id);
@@ -521,13 +611,19 @@ void FlutterClassicBluetoothPlugin::HandleWrite(
   auto id_it = args.find(EncodableValue("id"));
   auto data_it = args.find(EncodableValue("data"));
 
-  if (id_it == args.end() || data_it == args.end()) {
+  int id;
+  if (id_it == args.end() || data_it == args.end() ||
+      !ExtractInt(id_it->second, &id)) {
     result->Error("writeFailed", "Connection ID and data are required", EncodableValue());
     return;
   }
 
-  int id = std::get<int>(id_it->second);
-  const auto& data = std::get<std::vector<uint8_t>>(data_it->second);
+  const auto* data_ptr = std::get_if<std::vector<uint8_t>>(&data_it->second);
+  if (!data_ptr) {
+    result->Error("writeFailed", "data must be a byte list", EncodableValue());
+    return;
+  }
+  const auto& data = *data_ptr;
 
   std::lock_guard<std::mutex> lock(connections_mutex_);
   auto conn_it = connections_.find(id);
@@ -563,11 +659,25 @@ void FlutterClassicBluetoothPlugin::HandleStartServer(
   {
     std::lock_guard<std::mutex> lock(servers_mutex_);
     server_id = next_server_id_++;
+
+    // Register the server/{id} event channel that BtcServerSocket.connections
+    // listens on; each accepted client is delivered here as {id, address}.
+    auto server_channel = std::make_shared<ServerChannel>();
+    std::string ch_name =
+        "flutter_classic_bluetooth/server/" + std::to_string(server_id);
+    server_channel->channel = std::make_unique<flutter::EventChannel<EncodableValue>>(
+        messenger_, ch_name, &flutter::StandardMethodCodec::GetInstance());
+    server_channel->channel->SetStreamHandler(
+        std::make_unique<SharedStreamHandler>(server_channel->sink));
+    server_channels_[server_id] = server_channel;
+    auto server_sink = server_channel->sink;
+
     auto server = std::make_unique<BluetoothServer>(server_id, uuid, service_name, secure);
 
     std::weak_ptr<UiThreadDispatcher> weak_dispatcher = dispatcher_;
     bool started = server->Start(
-        [this, weak_dispatcher](SOCKET client_socket, const std::string& address) {
+        [this, weak_dispatcher, server_sink](SOCKET client_socket,
+                                             const std::string& address) {
           // The accept loop runs on a background thread; register the client's
           // connection streams on the platform thread.
           auto d = weak_dispatcher.lock();
@@ -575,17 +685,25 @@ void FlutterClassicBluetoothPlugin::HandleStartServer(
             closesocket(client_socket);
             return;
           }
-          d->Post([this, client_socket, address]() {
-            std::lock_guard<std::mutex> lock(connections_mutex_);
-            int conn_id = next_connection_id_++;
-            auto connection =
-                std::make_unique<BluetoothConnection>(conn_id, client_socket, address);
-            SetupConnectionStreams(conn_id, connection.get());
-            connections_[conn_id] = std::move(connection);
+          d->Post([this, client_socket, address, server_sink]() {
+            int conn_id;
+            {
+              std::lock_guard<std::mutex> lock(connections_mutex_);
+              conn_id = next_connection_id_++;
+              auto connection =
+                  std::make_unique<BluetoothConnection>(conn_id, client_socket, address);
+              SetupConnectionStreams(conn_id, connection.get());
+              connections_[conn_id] = std::move(connection);
+            }
+            // Notify Dart of the accepted client (after its channels exist).
+            server_sink->Success(EncodableValue(EncodableMap{
+                {EncodableValue("id"), EncodableValue(conn_id)},
+                {EncodableValue("address"), EncodableValue(address)}}));
           });
         });
 
     if (!started) {
+      server_channels_.erase(server_id);
       result->Error("connectionFailed", "Failed to start server", EncodableValue());
       return;
     }
@@ -602,11 +720,11 @@ void FlutterClassicBluetoothPlugin::HandleStopServer(
     const EncodableMap& args,
     std::unique_ptr<flutter::MethodResult<EncodableValue>> result) {
   auto it = args.find(EncodableValue("id"));
-  if (it == args.end()) {
+  int id;
+  if (it == args.end() || !ExtractInt(it->second, &id)) {
     result->Error("connectionFailed", "Server ID is required", EncodableValue());
     return;
   }
-  int id = std::get<int>(it->second);
 
   std::lock_guard<std::mutex> lock(servers_mutex_);
   auto server_it = servers_.find(id);
@@ -614,6 +732,7 @@ void FlutterClassicBluetoothPlugin::HandleStopServer(
     server_it->second->Stop();
     servers_.erase(server_it);
   }
+  server_channels_.erase(id);
   result->Success(EncodableValue());
 }
 

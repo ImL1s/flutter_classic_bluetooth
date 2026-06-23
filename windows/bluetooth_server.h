@@ -22,11 +22,17 @@ class BluetoothServer {
   void Stop();
 
  private:
+  // Publishes (or removes) the RFCOMM service in the local SDP database so
+  // remote devices can resolve uuid_ -> the bound RFCOMM channel.
+  void SetSdpService(bool register_service);
+
   int id_;
   std::string uuid_;
   std::string service_name_;
   bool secure_;
   SOCKET server_socket_ = INVALID_SOCKET;
+  SOCKADDR_BTH bound_addr_ = {};
+  bool sdp_registered_ = false;
   std::atomic<bool> running_{false};
   std::thread accept_thread_;
 };

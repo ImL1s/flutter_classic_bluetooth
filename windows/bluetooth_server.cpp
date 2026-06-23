@@ -33,6 +33,13 @@ bool BluetoothServer::Start(std::function<void(SOCKET, const std::string&)> on_c
     return false;
   }
 
+  // Publish the service via SDP so remote devices can find the RFCOMM channel
+  // by UUID. Best-effort: a failure here doesn't stop the server.
+  int bound_len = sizeof(bound_addr_);
+  if (getsockname(server_socket_, (SOCKADDR*)&bound_addr_, &bound_len) == 0) {
+    SetSdpService(true);
+  }
+
   running_.store(true);
   accept_thread_ = std::thread([this, on_connection]() {
     while (running_.load()) {
@@ -53,9 +60,39 @@ bool BluetoothServer::Start(std::function<void(SOCKET, const std::string&)> on_c
 
 void BluetoothServer::Stop() {
   running_.store(false);
+  if (sdp_registered_) {
+    SetSdpService(false);
+    sdp_registered_ = false;
+  }
   if (server_socket_ != INVALID_SOCKET) {
     closesocket(server_socket_);
     server_socket_ = INVALID_SOCKET;
+  }
+}
+
+void BluetoothServer::SetSdpService(bool register_service) {
+  CSADDR_INFO addr_info = {};
+  addr_info.LocalAddr.iSockaddrLength = sizeof(SOCKADDR_BTH);
+  addr_info.LocalAddr.lpSockaddr = reinterpret_cast<SOCKADDR*>(&bound_addr_);
+  addr_info.iSocketType = SOCK_STREAM;
+  addr_info.iProtocol = BTHPROTO_RFCOMM;
+
+  GUID service_guid = StringToGuid(uuid_);
+  std::wstring wname(service_name_.begin(), service_name_.end());
+
+  WSAQUERYSETW query = {};
+  query.dwSize = sizeof(WSAQUERYSETW);
+  query.lpszServiceInstanceName = wname.empty() ? nullptr : &wname[0];
+  query.lpServiceClassId = &service_guid;
+  query.dwNameSpace = NS_BTH;
+  query.dwNumberOfCsAddrs = 1;
+  query.lpcsaBuffer = &addr_info;
+
+  if (WSASetServiceW(&query,
+                     register_service ? RNRSERVICE_REGISTER : RNRSERVICE_DELETE,
+                     0) == 0 &&
+      register_service) {
+    sdp_registered_ = true;
   }
 }
 
