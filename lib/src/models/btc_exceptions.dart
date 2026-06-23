@@ -120,6 +120,14 @@ class BtcTimeoutException extends BtcException {
   }) : super(message, code: 'timeout');
 }
 
+/// Thrown when starting or running device discovery fails.
+///
+/// {@category Exceptions}
+class BtcDiscoveryException extends BtcException {
+  const BtcDiscoveryException([super.message = 'Failed to start discovery'])
+      : super(code: 'discoveryFailed');
+}
+
 /// Thrown when an invalid Bluetooth MAC address is provided.
 ///
 /// {@category Exceptions}

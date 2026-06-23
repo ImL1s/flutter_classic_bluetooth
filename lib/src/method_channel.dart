@@ -255,6 +255,8 @@ class MethodChannelFlutterClassicBluetooth
         );
       case 'writeFailed':
         return BtcWriteException(e.message ?? 'Write failed');
+      case 'discoveryFailed':
+        return BtcDiscoveryException(e.message ?? 'Failed to start discovery');
       case 'timeout':
         return BtcTimeoutException(
           message: e.message ?? 'Operation timed out',

@@ -93,11 +93,19 @@ enum BtcConnectionState {
   disconnected,
 
   /// Connection attempt in progress.
+  ///
+  /// Represents the phase while `connect()` is awaiting — before a
+  /// [BtcConnection] object exists. A connection is only returned once it
+  /// reaches [connected], so this value is observed via the pending future
+  /// rather than a connection's `stateStream`.
   connecting,
 
   /// Connection is active and ready for I/O.
   connected,
 
   /// Graceful disconnect in progress.
+  ///
+  /// Emitted on a connection's `stateStream` when `finish()` or `close()`
+  /// begins, before the final [disconnected].
   disconnecting,
 }

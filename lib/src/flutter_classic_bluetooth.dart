@@ -78,7 +78,7 @@ class FlutterClassicBluetooth {
   /// | Windows | Yes |
   /// | macOS | Yes |
   /// | Linux | Yes |
-  /// | iOS | ⚠️ (true only while an MFi accessory is connected) |
+  /// | iOS | ⚠️ (CoreBluetooth radio state; MFi-accessory fallback until known) |
   Future<bool> isEnabled() => _platform.isEnabled();
 
   /// Requests the system to enable the Bluetooth adapter.
@@ -113,9 +113,9 @@ class FlutterClassicBluetooth {
   /// |----------|-----------|
   /// | Android | Yes |
   /// | Windows | Yes (current state on listen) |
-  /// | macOS | No |
-  /// | Linux | No |
-  /// | iOS | No |
+  /// | macOS | Yes (current state on listen) |
+  /// | Linux | Yes (current state on listen) |
+  /// | iOS | Yes (CoreBluetooth radio state) |
   Stream<BtcAdapterState> get adapterState => _platform.adapterState();
 
   /// Returns the local adapter's friendly name.
@@ -193,7 +193,7 @@ class FlutterClassicBluetooth {
   /// | Android | Yes |
   /// | Windows | Yes |
   /// | macOS | Yes |
-  /// | Linux | Yes |
+  /// | Linux | No (requires BlueZ D-Bus; use `bluetoothctl`) |
   /// | iOS | Yes (connected MFi accessories) |
   Future<List<BtcDevice>> getPairedDevices() =>
       _platform.getPairedDevices();
@@ -206,8 +206,8 @@ class FlutterClassicBluetooth {
   /// |----------|-----------|
   /// | Android | Yes |
   /// | Windows | Yes (system dialog) |
-  /// | macOS | Yes |
-  /// | Linux | Yes |
+  /// | macOS | No (pair via System Settings) |
+  /// | Linux | No (pair via `bluetoothctl`) |
   /// | iOS | No |
   ///
   /// Throws [BtcAddressException] if [address] is not a valid MAC.
@@ -224,8 +224,8 @@ class FlutterClassicBluetooth {
   /// |----------|-----------|
   /// | Android | Yes |
   /// | Windows | Yes |
-  /// | macOS | Yes |
-  /// | Linux | Yes |
+  /// | macOS | No (unpair via System Settings) |
+  /// | Linux | No (unpair via `bluetoothctl`) |
   /// | iOS | No |
   ///
   /// Throws [BtcAddressException] if [address] is not a valid MAC.
@@ -249,6 +249,11 @@ class FlutterClassicBluetooth {
   /// If [secure] is `true` (default), uses authenticated/encrypted RFCOMM.
   /// Returns a [BtcConnection] for reading/writing data.
   ///
+  /// If [timeout] is provided, the attempt fails with a [BtcTimeoutException]
+  /// when it does not complete in time. Note: the native connection attempt may
+  /// still resolve afterwards on some platforms; the returned connection (if
+  /// any) is then orphaned — call [disconnect] if you track its id.
+  ///
   /// | Platform | Supported |
   /// |----------|-----------|
   /// | Android | Yes |
@@ -259,14 +264,25 @@ class FlutterClassicBluetooth {
   ///
   /// Throws [BtcAddressException] if [address] is not a valid MAC.
   /// Throws [BtcUuidException] if [uuid] is not a valid UUID.
+  /// Throws [BtcTimeoutException] if [timeout] elapses first.
   Future<BtcConnection> connect({
     required String address,
     required String uuid,
     bool secure = true,
+    Duration? timeout,
   }) {
     _validateAddress(address);
     _validateUuid(uuid);
-    return _platform.connect(address: address, uuid: uuid, secure: secure);
+    final future =
+        _platform.connect(address: address, uuid: uuid, secure: secure);
+    if (timeout == null) return future;
+    return future.timeout(
+      timeout,
+      onTimeout: () => throw BtcTimeoutException(
+        message: 'Connection to $address timed out',
+        timeoutMs: timeout.inMilliseconds,
+      ),
+    );
   }
 
   /// Disconnects the connection with the given [id].

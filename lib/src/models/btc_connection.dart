@@ -43,7 +43,12 @@ class BtcConnection {
 
   late final Stream<Uint8List> _inputStream;
   late final BtcStreamSink _outputSink;
-  late final Stream<BtcConnectionState> _stateStream;
+  late final Stream<BtcConnectionState> _nativeStateStream;
+
+  /// Merges native connection-state events with local lifecycle transitions
+  /// (e.g. [BtcConnectionState.disconnecting] emitted by [finish]/[close]).
+  final StreamController<BtcConnectionState> _stateController =
+      StreamController<BtcConnectionState>.broadcast();
 
   StreamSubscription<BtcConnectionState>? _stateSubscription;
   BtcConnectionState _state = BtcConnectionState.connected;
@@ -70,16 +75,20 @@ class BtcConnection {
       methodChannel: _methodChannel,
     );
 
-    _stateStream = _stateChannel.receiveBroadcastStream().map((event) {
+    _nativeStateStream = _stateChannel.receiveBroadcastStream().map((event) {
       return BtcConnectionState.values.firstWhere(
         (e) => e.name == event,
         orElse: () => BtcConnectionState.disconnected,
       );
     });
 
-    _stateSubscription = _stateStream.listen((state) {
-      _state = state;
-    });
+    // Forward native state events into the merged controller.
+    _stateSubscription = _nativeStateStream.listen(_setState);
+  }
+
+  void _setState(BtcConnectionState state) {
+    _state = state;
+    if (!_stateController.isClosed) _stateController.add(state);
   }
 
   /// Stream of incoming bytes from the remote device.
@@ -92,7 +101,11 @@ class BtcConnection {
   BtcStreamSink get output => _outputSink;
 
   /// Stream of connection state changes.
-  Stream<BtcConnectionState> get stateStream => _stateStream;
+  ///
+  /// Emits [BtcConnectionState.disconnecting] when [finish]/[close] begins and
+  /// [BtcConnectionState.disconnected] once the link is torn down, in addition
+  /// to any native-originated transitions (e.g. a remote-initiated drop).
+  Stream<BtcConnectionState> get stateStream => _stateController.stream;
 
   /// The current connection state.
   BtcConnectionState get state => _state;
@@ -103,18 +116,20 @@ class BtcConnection {
   /// Gracefully disconnects: waits for all pending writes to complete,
   /// then closes the connection.
   Future<void> finish() async {
+    _setState(BtcConnectionState.disconnecting);
     await _outputSink.close();
     await _methodChannel.invokeMethod('disconnect', {'id': id});
-    _state = BtcConnectionState.disconnected;
+    _setState(BtcConnectionState.disconnected);
     await _stateSubscription?.cancel();
     _stateSubscription = null;
   }
 
   /// Immediately disconnects, discarding any pending writes.
   Future<void> close() async {
+    _setState(BtcConnectionState.disconnecting);
     _outputSink.cancel();
     await _methodChannel.invokeMethod('disconnect', {'id': id});
-    _state = BtcConnectionState.disconnected;
+    _setState(BtcConnectionState.disconnected);
     await _stateSubscription?.cancel();
     _stateSubscription = null;
   }
@@ -127,5 +142,6 @@ class BtcConnection {
     _stateSubscription?.cancel();
     _stateSubscription = null;
     _outputSink.cancel();
+    if (!_stateController.isClosed) _stateController.close();
   }
 }

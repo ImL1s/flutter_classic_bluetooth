@@ -29,16 +29,18 @@ Discover, pair, connect, and exchange data across Android, iOS (MFi), Windows, m
 
 | Feature | Android | Windows | macOS | Linux | iOS |
 |---------|---------|---------|-------|-------|-----|
+| Adapter state stream | ✅ | ✅ | ✅ | ✅ | ✅ |
 | Discover devices | ✅ | ✅ | ✅ | ✅ | ❌ |
-| Get paired devices | ✅ | ✅ | ✅ | ✅ | ✅¹ |
-| Pair / Unpair | ✅ | ✅ | ✅ | ❌² | ❌ |
+| Get paired devices | ✅ | ✅ | ✅ | ❌³ | ✅¹ |
+| Pair / Unpair | ✅ | ✅ | ❌² | ❌² | ❌ |
 | Connect (RFCOMM) | ✅ | ✅ | ✅ | ✅ | ✅¹ |
 | Server mode | ✅ | ✅ | ✅ | ✅ | ❌ |
 | Enable / Disable | ✅ | ❌ | ❌ | ❌ | ❌ |
 | Set discoverable | ✅ | ❌ | ❌ | ✅ | ❌ |
 
 ¹ iOS uses the ExternalAccessory framework — only MFi-certified accessories are supported.<br/>
-² Linux pairing requires BlueZ D-Bus agent (use `bluetoothctl` or system settings).
+² macOS / Linux pairing is done through the OS (System Settings / `bluetoothctl`).<br/>
+³ Linux paired-device listing requires the BlueZ D-Bus API.
 
 ## Installation
 
@@ -200,7 +202,7 @@ Add to `Info.plist`:
 
 ## Examples
 
-Check out the [example](example/) directory for a complete demo app with 7 screens showcasing all features.
+Check out the [example](example/) directory for a complete demo app, with screens for adapter control, device discovery, paired devices, RFCOMM client/server, and the platform-capabilities matrix.
 
 ## License
 

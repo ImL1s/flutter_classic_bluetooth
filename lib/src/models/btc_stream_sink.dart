@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:convert';
 
 import 'package:flutter/services.dart';
 
@@ -51,6 +52,32 @@ class BtcStreamSink {
 
     return _lastWrite;
   }
+
+  /// Queues raw [bytes] to be written, accepting any `List<int>`.
+  ///
+  /// Convenience wrapper around [add] that copies [bytes] into a [Uint8List].
+  Future<void> writeBytes(List<int> bytes) =>
+      add(bytes is Uint8List ? bytes : Uint8List.fromList(bytes));
+
+  /// Encodes [text] (UTF-8 by default) and queues it to be written.
+  Future<void> writeString(String text, {Encoding encoding = utf8}) =>
+      add(Uint8List.fromList(encoding.encode(text)));
+
+  /// Pipes every chunk of [stream] to the remote device, in order.
+  ///
+  /// Completes when [stream] is done and all of its chunks have been written.
+  /// Throws [StateError] if the sink is (or becomes) closed.
+  Future<void> addStream(Stream<Uint8List> stream) async {
+    await for (final chunk in stream) {
+      await add(chunk);
+    }
+  }
+
+  /// Resolves when all writes queued so far have completed.
+  ///
+  /// Unlike [close], this does not mark the sink as closed — more data can be
+  /// queued afterwards.
+  Future<void> get allSent => _lastWrite;
 
   /// Waits for all pending writes to complete, then marks this sink as closed.
   Future<void> close() async {

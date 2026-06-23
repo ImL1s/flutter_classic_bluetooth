@@ -8,11 +8,11 @@ import 'btc_enums.dart';
 /// |----------|---------|---------|-------|-------|-----|
 /// | address | Yes MAC | Yes MAC | Yes MAC | Yes MAC | ⚠️ serial/ID |
 /// | name | Yes | Yes | Yes | Yes | Yes |
-/// | alias | Yes API 30+ | No | No | Yes | No |
-/// | rssi | Yes | No | Yes | Yes | No |
+/// | alias | Yes API 30+ | No | No | No | No |
+/// | rssi | Yes | No | Yes | No | No |
 /// | type | Yes | No | No | No | No |
 /// | bondState | Yes | Yes | Yes | Yes | Yes (always bonded) |
-/// | uuids | Yes | Yes | Yes | Yes | ⚠️ protocol strings |
+/// | uuids | Yes | Yes | Yes | No | ⚠️ protocol strings |
 ///
 /// {@category Models}
 class BtcDevice {

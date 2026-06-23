@@ -43,6 +43,7 @@
 /// | [BtcDisabledException] | Adapter is off |
 /// | [BtcConnectionException] | Connection failed |
 /// | [BtcWriteException] | Write failed |
+/// | [BtcDiscoveryException] | Discovery failed to start |
 /// | [BtcTimeoutException] | Operation timed out |
 /// | [BtcAddressException] | Invalid MAC address |
 /// | [BtcUuidException] | Invalid UUID |
@@ -53,15 +54,16 @@
 /// |---------|---------|-----|---------|-------|-------|
 /// | Adapter state | Yes | Yes | Yes | Yes | Yes |
 /// | Discovery | Yes | No | Yes | Yes | Yes |
-/// | Paired devices | Yes | Yes(1) | Yes | Yes | Yes |
-/// | Bond/Unbond | Yes | No | Yes | Yes | No(2) |
+/// | Paired devices | Yes | Yes(1) | Yes | Yes | No(3) |
+/// | Bond/Unbond | Yes | No | Yes | No(2) | No(2) |
 /// | RFCOMM connect | Yes | Yes(1) | Yes | Yes | Yes |
 /// | RFCOMM server | Yes | No | Yes | Yes | Yes |
-/// | Enable/Disable | Yes | No | No | No | Yes |
+/// | Enable/Disable | Yes | No | No | No | No |
 /// | Set discoverable | Yes | No | No | No | Yes |
 ///
 /// (1) iOS requires MFi-certified accessories via ExternalAccessory framework.
-/// (2) Linux returns an error for bond/unbond operations.
+/// (2) macOS/Linux pairing is done through the OS (System Settings / `bluetoothctl`).
+/// (3) Linux paired-device listing requires the BlueZ D-Bus API.
 ///
 /// ## Example
 ///
