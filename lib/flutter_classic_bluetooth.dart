@@ -55,16 +55,18 @@
 /// | Adapter state | Yes | Yes | Yes | Yes | Yes |
 /// | Discovery | Yes | No | Yes | Yes | Yes |
 /// | Paired devices | Yes | Yes(1) | Yes | Yes | Yes |
-/// | Bond/Unbond | Yes | No | Yes | No(2) | Yes(3) |
+/// | Bond | Yes | No | Yes(2) | Yes(3) | No |
+/// | Unbond | Yes | No | No(4) | Yes(3) | No |
 /// | RFCOMM connect | Yes | Yes(1) | Yes | Yes | Yes |
 /// | RFCOMM server | Yes | No | Yes | Yes | Yes |
 /// | Enable/Disable | Yes | No | No | No | Yes(3) |
 /// | Set discoverable | Yes | No | No | No | Yes |
 ///
 /// (1) iOS requires MFi-certified accessories via ExternalAccessory framework.
-/// (2) macOS pairing is done through the OS (System Settings).
+/// (2) macOS pairs via IOBluetoothDevicePair and may show a system prompt.
 /// (3) Linux uses the BlueZ D-Bus API (org.bluez); pairing a PIN/passkey device
 ///     needs a system pairing agent.
+/// (4) macOS has no public API to remove a pairing — unpair via System Settings.
 ///
 /// ## Example
 ///

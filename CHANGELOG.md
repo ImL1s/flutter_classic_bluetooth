@@ -22,7 +22,8 @@ Reliability and completeness pass across all five platforms.
   paired-device listing, and pairing/unpairing.
 * **macOS**: implement device discovery (inquiry delegate + channels), deliver
   server-accepted clients via channel-open notifications, async (non-blocking)
-  connect/write, and main-thread event delivery.
+  connect/write, main-thread event delivery, and programmatic pairing via
+  `IOBluetoothDevicePair` (unpairing has no public API — use System Settings).
 * **iOS**: real adapter-state stream via CoreBluetooth; `isEnabled` uses the radio
   state with an MFi-accessory fallback.
 

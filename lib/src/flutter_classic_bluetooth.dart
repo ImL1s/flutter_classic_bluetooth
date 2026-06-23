@@ -206,7 +206,7 @@ class FlutterClassicBluetooth {
   /// |----------|-----------|
   /// | Android | Yes |
   /// | Windows | Yes (system dialog) |
-  /// | macOS | No (pair via System Settings) |
+  /// | macOS | Yes (IOBluetoothDevicePair; may show a system prompt) |
   /// | Linux | Yes (BlueZ D-Bus; PIN/passkey devices need a system agent) |
   /// | iOS | No |
   ///

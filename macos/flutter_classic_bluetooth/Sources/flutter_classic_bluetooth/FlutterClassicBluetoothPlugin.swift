@@ -14,6 +14,9 @@ public class FlutterClassicBluetoothPlugin: NSObject, FlutterPlugin {
     private var inquiryDelegate: DeviceInquiryDelegate?
     private var discovering = false
 
+    private var pairer: IOBluetoothDevicePair?
+    private var pairingDelegate: PairingDelegate?
+
     // Global event channel handlers.
     private var adapterStateHandler: SnapshotStreamHandler?
     private var bondStateHandler: SnapshotStreamHandler?
@@ -113,13 +116,19 @@ public class FlutterClassicBluetoothPlugin: NSObject, FlutterPlugin {
         case "getPairedDevices":
             handleGetPairedDevices(result: result)
 
-        case "bondDevice", "unbondDevice":
-            // IOBluetooth has no reliable headless pairing API; pairing is done
-            // through System Settings. Report honestly instead of misreporting.
+        case "bondDevice":
+            guard let address = args?["address"] as? String else {
+                result(FlutterError(code: "invalidAddress", message: "Address is required", details: nil))
+                return
+            }
+            handleBondDevice(address: address, result: result)
+
+        case "unbondDevice":
+            // IOBluetooth exposes no public API to remove an existing pairing.
             result(FlutterError(
                 code: "unsupported",
-                message: "Pairing must be done through macOS System Settings; programmatic \(call.method == "bondDevice" ? "bonding" : "unbonding") is not available.",
-                details: ["feature": call.method, "platform": "macOS"]
+                message: "Unpairing must be done through macOS System Settings; no public IOBluetooth API removes a pairing.",
+                details: ["feature": "unbondDevice", "platform": "macOS"]
             ))
 
         case "connect":
@@ -219,6 +228,31 @@ public class FlutterClassicBluetoothPlugin: NSObject, FlutterPlugin {
         let paired = IOBluetoothDevice.pairedDevices() as? [IOBluetoothDevice] ?? []
         let devices = paired.map { deviceToMap($0) }
         result(devices)
+    }
+
+    // MARK: - Pairing
+
+    private func handleBondDevice(address: String, result: @escaping FlutterResult) {
+        guard let device = IOBluetoothDevice(addressString: address),
+              let pair = IOBluetoothDevicePair(device: device) else {
+            result(false)
+            return
+        }
+        // Pairing is asynchronous; complete the Dart result from the delegate.
+        // It may surface a system pairing prompt for PIN/passkey devices.
+        let delegate = PairingDelegate { [weak self] success in
+            result(success)
+            self?.pairer = nil
+            self?.pairingDelegate = nil
+        }
+        pair.delegate = delegate
+        pairingDelegate = delegate
+        pairer = pair
+        if pair.start() != kIOReturnSuccess {
+            result(false)
+            pairer = nil
+            pairingDelegate = nil
+        }
     }
 
     // MARK: - Connection
@@ -321,8 +355,9 @@ public class FlutterClassicBluetoothPlugin: NSObject, FlutterPlugin {
             "canDisableBluetooth": false,
             "canDiscoverDevices": true,
             "canGetPairedDevices": true,
-            // Pairing is handled by macOS System Settings, not programmatically.
-            "canBondDevices": false,
+            // bondDevice uses IOBluetoothDevicePair (may show a system prompt);
+            // there is no public API to remove an existing pairing.
+            "canBondDevices": true,
             "canUnbondDevices": false,
             "canCreateServer": true,
             "canSetDiscoverable": false,
@@ -330,7 +365,7 @@ public class FlutterClassicBluetoothPlugin: NSObject, FlutterPlugin {
             "supportsSecureConnection": true,
             "supportsInsecureConnection": false,
             "requiresMfiCertification": false,
-            "platformNote": "macOS — Bluetooth Classic via IOBluetooth. Discovery, connect, server and paired-device listing are supported. Pairing/unpairing must be done through System Settings."
+            "platformNote": "macOS — Bluetooth Classic via IOBluetooth. Discovery, connect, server, paired-device listing and pairing (IOBluetoothDevicePair) are supported. Unpairing must be done through System Settings."
         ])
     }
 
@@ -385,6 +420,20 @@ private class DeviceInquiryDelegate: NSObject, IOBluetoothDeviceInquiryDelegate 
 
     func deviceInquiryComplete(_ sender: IOBluetoothDeviceInquiry!, error: IOReturn, aborted: Bool) {
         onComplete()
+    }
+}
+
+// MARK: - Pairing Delegate
+
+private class PairingDelegate: NSObject, IOBluetoothDevicePairDelegate {
+    let onFinished: (Bool) -> Void
+
+    init(onFinished: @escaping (Bool) -> Void) {
+        self.onFinished = onFinished
+    }
+
+    func devicePairingFinished(_ sender: IOBluetoothDevicePair!, error: IOReturn) {
+        onFinished(error == kIOReturnSuccess)
     }
 }
 
