@@ -15,6 +15,7 @@ set(PLUGIN_NAME "flutter_classic_bluetooth_plugin")
 list(APPEND PLUGIN_SOURCES
   "flutter_classic_bluetooth_plugin.cc"
   "bluetooth_helper.h"
+  "bluetooth_dbus.h"
   "bluetooth_connection.h"
   "bluetooth_server.h"
 )

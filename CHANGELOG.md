@@ -18,7 +18,8 @@ Reliability and completeness pass across all five platforms.
   connection state, server-accepted clients, adapter and bond snapshots) on the GLib
   main loop; resolve the RFCOMM channel from the service UUID via SDP; honor `secure`
   (RFCOMM link mode) and `setDiscoverable` duration; atomic socket shutdown; consistent
-  device-map keys.
+  device-map keys. Add a BlueZ **D-Bus** layer (`org.bluez`) for adapter enable/disable,
+  paired-device listing, and pairing/unpairing.
 * **macOS**: implement device discovery (inquiry delegate + channels), deliver
   server-accepted clients via channel-open notifications, async (non-blocking)
   connect/write, and main-thread event delivery.

@@ -90,7 +90,7 @@ class FlutterClassicBluetooth {
   /// | Android | Yes (system dialog) |
   /// | Windows | No |
   /// | macOS | No |
-  /// | Linux | No |
+  /// | Linux | Yes (BlueZ D-Bus) |
   /// | iOS | No |
   Future<bool> enableBluetooth() => _platform.enableBluetooth();
 
@@ -103,7 +103,7 @@ class FlutterClassicBluetooth {
   /// | Android | Yes (API < 33 only) |
   /// | Windows | No |
   /// | macOS | No |
-  /// | Linux | No |
+  /// | Linux | Yes (BlueZ D-Bus) |
   /// | iOS | No |
   Future<bool> disableBluetooth() => _platform.disableBluetooth();
 
@@ -193,7 +193,7 @@ class FlutterClassicBluetooth {
   /// | Android | Yes |
   /// | Windows | Yes |
   /// | macOS | Yes |
-  /// | Linux | No (requires BlueZ D-Bus; use `bluetoothctl`) |
+  /// | Linux | Yes (BlueZ D-Bus) |
   /// | iOS | Yes (connected MFi accessories) |
   Future<List<BtcDevice>> getPairedDevices() =>
       _platform.getPairedDevices();
@@ -207,7 +207,7 @@ class FlutterClassicBluetooth {
   /// | Android | Yes |
   /// | Windows | Yes (system dialog) |
   /// | macOS | No (pair via System Settings) |
-  /// | Linux | No (pair via `bluetoothctl`) |
+  /// | Linux | Yes (BlueZ D-Bus; PIN/passkey devices need a system agent) |
   /// | iOS | No |
   ///
   /// Throws [BtcAddressException] if [address] is not a valid MAC.
@@ -225,7 +225,7 @@ class FlutterClassicBluetooth {
   /// | Android | Yes |
   /// | Windows | Yes |
   /// | macOS | No (unpair via System Settings) |
-  /// | Linux | No (unpair via `bluetoothctl`) |
+  /// | Linux | Yes (BlueZ D-Bus) |
   /// | iOS | No |
   ///
   /// Throws [BtcAddressException] if [address] is not a valid MAC.

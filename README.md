@@ -138,16 +138,16 @@ can actually do (also queryable at runtime via `getPlatformCapabilities()`):
 |---------|---------|---------|-------|-------|-----|
 | Adapter state stream | ✅ | ✅ | ✅ | ✅ | ✅ |
 | Discover devices | ✅ | ✅ | ✅ | ✅ | ❌ |
-| Get paired devices | ✅ | ✅ | ✅ | ❌³ | ✅¹ |
-| Pair / Unpair | ✅ | ✅ | ❌² | ❌² | ❌ |
+| Get paired devices | ✅ | ✅ | ✅ | ✅ | ✅¹ |
+| Pair / Unpair | ✅ | ✅ | ❌² | ✅³ | ❌ |
 | Connect (RFCOMM) | ✅ | ✅ | ✅ | ✅ | ✅¹ |
 | Server mode | ✅ | ✅ | ✅ | ✅ | ❌ |
-| Enable / Disable | ✅ | ❌ | ❌ | ❌ | ❌ |
+| Enable / Disable | ✅ | ❌ | ❌ | ✅³ | ❌ |
 | Set discoverable | ✅ | ✅ | ❌ | ✅ | ❌ |
 
 ¹ iOS uses the ExternalAccessory framework — only **MFi-certified** accessories are supported, and the `uuid` argument is treated as the MFi protocol string.<br/>
-² macOS / Linux pairing is done through the OS (System Settings / `bluetoothctl`).<br/>
-³ Linux paired-device listing requires the BlueZ D-Bus API.
+² macOS pairing is done through the OS (System Settings).<br/>
+³ Linux uses the BlueZ D-Bus API (`org.bluez`); pairing a device that needs a PIN/passkey requires a system pairing agent.
 
 ## Example
 
@@ -400,10 +400,11 @@ Call `getPlatformCapabilities()` and check the matching flag (e.g.
 `canDiscoverDevices`, `canCreateServer`) before invoking it — the plugin reports
 capabilities honestly per platform.
 
-**Pairing returns unsupported on macOS/Linux — why?**
-On those platforms pairing is handled by the OS (System Settings or
-`bluetoothctl`); connect to already-paired devices, or pair them once through the
-system UI.
+**How does pairing work on macOS and Linux?**
+On macOS, pairing is handled by the OS — pair once through System Settings, then
+connect to the already-paired device. On Linux, `bondDevice`/`unbondDevice` use
+the BlueZ D-Bus API directly; devices that require a PIN or passkey additionally
+need a system pairing agent (e.g. a running desktop Bluetooth applet).
 
 ## Support and feedback
 

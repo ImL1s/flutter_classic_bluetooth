@@ -19,6 +19,7 @@
 #include <bluetooth/rfcomm.h>
 
 #include "bluetooth_helper.h"
+#include "bluetooth_dbus.h"
 #include "bluetooth_connection.h"
 #include "bluetooth_server.h"
 
@@ -299,11 +300,9 @@ static FlMethodResponse* handle_stop_discovery(FlutterClassicBluetoothPlugin* se
 }
 
 static FlMethodResponse* handle_get_paired_devices(FlutterClassicBluetoothPlugin* self) {
-    // Enumerating bonded devices reliably requires the BlueZ D-Bus API, which
-    // this implementation does not use. Return an empty list rather than the
-    // misleading "every nearby device is paired" an inquiry would produce.
-    // canGetPairedDevices is reported false in the capabilities.
+    // Enumerate bonded devices via the BlueZ D-Bus ObjectManager.
     g_autoptr(FlValue) devices = fl_value_new_list();
+    dbus_append_paired_devices(devices);
     return FL_METHOD_RESPONSE(fl_method_success_response_new(devices));
 }
 
@@ -425,23 +424,27 @@ static FlMethodResponse* handle_write(FlutterClassicBluetoothPlugin* self, FlVal
 }
 
 static FlMethodResponse* handle_bond_device(FlutterClassicBluetoothPlugin* self, FlValue* args) {
-    g_autoptr(FlValue) details = fl_value_new_map();
-    fl_value_set_string_take(details, "feature", fl_value_new_string("bondDevice"));
-    fl_value_set_string_take(details, "platform", fl_value_new_string("Linux"));
-    return FL_METHOD_RESPONSE(fl_method_error_response_new(
-        "unsupported",
-        "Pairing on Linux requires BlueZ D-Bus agent interaction which is not yet implemented. Use bluetoothctl or system settings to pair.",
-        details));
+    FlValue* addr_val = fl_value_lookup_string(args, "address");
+    if (!addr_val || fl_value_get_type(addr_val) != FL_VALUE_TYPE_STRING) {
+        return FL_METHOD_RESPONSE(fl_method_error_response_new(
+            "invalidAddress", "Address is required", nullptr));
+    }
+    // Pair via BlueZ D-Bus (org.bluez.Device1.Pair).
+    bool ok = dbus_pair_device(get_hci_device_id(), fl_value_get_string(addr_val));
+    g_autoptr(FlValue) result = fl_value_new_bool(ok);
+    return FL_METHOD_RESPONSE(fl_method_success_response_new(result));
 }
 
 static FlMethodResponse* handle_unbond_device(FlutterClassicBluetoothPlugin* self, FlValue* args) {
-    g_autoptr(FlValue) details = fl_value_new_map();
-    fl_value_set_string_take(details, "feature", fl_value_new_string("unbondDevice"));
-    fl_value_set_string_take(details, "platform", fl_value_new_string("Linux"));
-    return FL_METHOD_RESPONSE(fl_method_error_response_new(
-        "unsupported",
-        "Unpairing on Linux requires BlueZ D-Bus agent interaction which is not yet implemented. Use bluetoothctl or system settings.",
-        details));
+    FlValue* addr_val = fl_value_lookup_string(args, "address");
+    if (!addr_val || fl_value_get_type(addr_val) != FL_VALUE_TYPE_STRING) {
+        return FL_METHOD_RESPONSE(fl_method_error_response_new(
+            "invalidAddress", "Address is required", nullptr));
+    }
+    // Unpair via BlueZ D-Bus (org.bluez.Adapter1.RemoveDevice).
+    bool ok = dbus_remove_device(get_hci_device_id(), fl_value_get_string(addr_val));
+    g_autoptr(FlValue) result = fl_value_new_bool(ok);
+    return FL_METHOD_RESPONSE(fl_method_success_response_new(result));
 }
 
 static FlMethodResponse* handle_start_server(FlutterClassicBluetoothPlugin* self, FlValue* args) {
@@ -574,13 +577,12 @@ static FlMethodResponse* handle_set_discoverable(FlutterClassicBluetoothPlugin* 
 
 static FlMethodResponse* handle_get_platform_capabilities(FlutterClassicBluetoothPlugin* self) {
     g_autoptr(FlValue) caps = fl_value_new_map();
-    fl_value_set_string_take(caps, "canEnableBluetooth", fl_value_new_bool(false));
-    fl_value_set_string_take(caps, "canDisableBluetooth", fl_value_new_bool(false));
+    fl_value_set_string_take(caps, "canEnableBluetooth", fl_value_new_bool(true));
+    fl_value_set_string_take(caps, "canDisableBluetooth", fl_value_new_bool(true));
     fl_value_set_string_take(caps, "canDiscoverDevices", fl_value_new_bool(true));
-    // Bonded-device enumeration and pairing require the BlueZ D-Bus API.
-    fl_value_set_string_take(caps, "canGetPairedDevices", fl_value_new_bool(false));
-    fl_value_set_string_take(caps, "canBondDevices", fl_value_new_bool(false));
-    fl_value_set_string_take(caps, "canUnbondDevices", fl_value_new_bool(false));
+    fl_value_set_string_take(caps, "canGetPairedDevices", fl_value_new_bool(true));
+    fl_value_set_string_take(caps, "canBondDevices", fl_value_new_bool(true));
+    fl_value_set_string_take(caps, "canUnbondDevices", fl_value_new_bool(true));
     fl_value_set_string_take(caps, "canCreateServer", fl_value_new_bool(true));
     fl_value_set_string_take(caps, "canSetDiscoverable", fl_value_new_bool(true));
     fl_value_set_string_take(caps, "supportsMultipleConnections", fl_value_new_bool(true));
@@ -588,7 +590,7 @@ static FlMethodResponse* handle_get_platform_capabilities(FlutterClassicBluetoot
     fl_value_set_string_take(caps, "supportsInsecureConnection", fl_value_new_bool(true));
     fl_value_set_string_take(caps, "requiresMfiCertification", fl_value_new_bool(false));
     fl_value_set_string_take(caps, "platformNote",
-        fl_value_new_string("Linux — Bluetooth Classic via BlueZ/AF_BLUETOOTH RFCOMM. Discovery, connect, server and data streaming work. Paired-device listing and pairing require the BlueZ D-Bus API and are unsupported here."));
+        fl_value_new_string("Linux — Bluetooth Classic via BlueZ. Discovery, connect, server and data streaming use AF_BLUETOOTH RFCOMM; adapter power, paired-device listing and pairing/unpairing use the BlueZ D-Bus API (org.bluez). Pairing devices that need a PIN/passkey requires a system agent."));
     return FL_METHOD_RESPONSE(fl_method_success_response_new(caps));
 }
 
@@ -604,10 +606,11 @@ static void flutter_classic_bluetooth_plugin_handle_method_call(
     } else if (strcmp(method, "isEnabled") == 0) {
         response = handle_is_enabled(self);
     } else if (strcmp(method, "enableBluetooth") == 0 || strcmp(method, "disableBluetooth") == 0) {
-        response = FL_METHOD_RESPONSE(fl_method_error_response_new(
-            "unsupported",
-            "Cannot programmatically enable/disable Bluetooth on Linux",
-            nullptr));
+        // Toggle the adapter Powered property via BlueZ D-Bus.
+        bool enable = strcmp(method, "enableBluetooth") == 0;
+        bool ok = dbus_set_adapter_powered(get_hci_device_id(), enable);
+        g_autoptr(FlValue) result = fl_value_new_bool(ok);
+        response = FL_METHOD_RESPONSE(fl_method_success_response_new(result));
     } else if (strcmp(method, "getAdapterName") == 0) {
         response = handle_get_adapter_name(self);
     } else if (strcmp(method, "getAdapterAddress") == 0) {
