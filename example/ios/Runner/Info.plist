@@ -4,6 +4,15 @@
 <dict>
 	<key>CADisableMinimumFrameDurationOnPhone</key>
 	<true/>
+	<!-- Bluetooth Classic on iOS uses the ExternalAccessory framework (MFi).
+	     Declare the accessory protocol strings your hardware advertises; without
+	     this, EAAccessoryManager.connectedAccessories is always empty. -->
+	<key>UISupportedExternalAccessoryProtocols</key>
+	<array>
+		<string>com.example.spp</string>
+	</array>
+	<key>NSBluetoothAlwaysUsageDescription</key>
+	<string>This app uses Bluetooth to communicate with nearby accessories.</string>
 	<key>CFBundleDevelopmentRegion</key>
 	<string>$(DEVELOPMENT_LANGUAGE)</string>
 	<key>CFBundleDisplayName</key>
