@@ -459,7 +459,7 @@ class BluetoothConnectionWrapper: NSObject, IOBluetoothRFCOMMChannelDelegate {
     }
 
     func close() {
-        channel?.close()
+        channel?.closeChannel()
         channel = nil
         DispatchQueue.main.async { [weak self] in
             self?.stateStreamHandler?.eventSink?("disconnected")
@@ -536,9 +536,11 @@ class BluetoothServerWrapper: NSObject {
         // Publish an RFCOMM (SPP) service record; macOS assigns a channel.
         let serviceDict: [String: Any] = [
             "0001 - ServiceClassIDList": [uuidDataFromString(uuid)],
+            // L2CAP (0x0100) over which RFCOMM (0x0003) runs; macOS assigns the
+            // RFCOMM channel number when the record is published.
             "0004 - ProtocolDescriptorList": [
-                [IOBluetoothSDPUUID(uuid16: UInt16(kBluetoothSDPUUID16L2CAP.rawValue))],
-                [IOBluetoothSDPUUID(uuid16: UInt16(kBluetoothSDPUUID16RFCOMM.rawValue))]
+                [IOBluetoothSDPUUID(uuid16: 0x0100)],
+                [IOBluetoothSDPUUID(uuid16: 0x0003)]
             ],
             "0100 - ServiceName*": serviceName
         ]
@@ -575,7 +577,7 @@ class BluetoothServerWrapper: NSObject {
     func stop() {
         openNotification?.unregister()
         openNotification = nil
-        sdpRecord?.remove()
+        sdpRecord?.removeServiceRecord()
         sdpRecord = nil
     }
 
