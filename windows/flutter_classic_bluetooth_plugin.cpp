@@ -10,6 +10,7 @@
 #include <flutter/plugin_registrar_windows.h>
 #include <flutter/standard_method_codec.h>
 
+#include <chrono>
 #include <cstdio>
 #include <memory>
 #include <sstream>
@@ -271,10 +272,8 @@ void FlutterClassicBluetoothPlugin::HandleMethodCall(
     if (args) HandleStopServer(*args, std::move(result));
     else result->Error("invalidArguments", "Arguments required", EncodableValue());
   } else if (method == "setDiscoverable") {
-    result->Error("unsupported", "setDiscoverable not available on Windows",
-                  EncodableValue(EncodableMap{
-                      {EncodableValue("feature"), EncodableValue("setDiscoverable")},
-                      {EncodableValue("platform"), EncodableValue("Windows")}}));
+    const auto* args = std::get_if<EncodableMap>(method_call.arguments());
+    HandleSetDiscoverable(args, std::move(result));
   } else if (method == "getPlatformCapabilities") {
     HandleGetPlatformCapabilities(std::move(result));
   } else {
@@ -773,6 +772,42 @@ void FlutterClassicBluetoothPlugin::HandleStopServer(
   result->Success(EncodableValue());
 }
 
+void FlutterClassicBluetoothPlugin::HandleSetDiscoverable(
+    const EncodableMap* args,
+    std::unique_ptr<flutter::MethodResult<EncodableValue>> result) {
+  int duration = 120;
+  if (args) {
+    auto it = args->find(EncodableValue("duration"));
+    if (it != args->end()) {
+      int d;
+      if (ExtractInt(it->second, &d)) duration = d;
+    }
+  }
+
+  bool ok = false;
+  HANDLE radio = nullptr;
+  BLUETOOTH_FIND_RADIO_PARAMS params = {sizeof(BLUETOOTH_FIND_RADIO_PARAMS)};
+  HBLUETOOTH_RADIO_FIND find = BluetoothFindFirstRadio(&params, &radio);
+  if (find) {
+    // Make the radio connectable + discoverable (inquiry scan).
+    BluetoothEnableIncomingConnections(radio, TRUE);
+    ok = BluetoothEnableDiscovery(radio, TRUE) != FALSE;
+    BluetoothFindRadioClose(find);
+    CloseHandle(radio);
+  }
+
+  // Windows has no built-in discoverability timeout; honor the requested
+  // duration by turning discovery back off afterwards.
+  if (ok && duration > 0) {
+    std::thread([duration]() {
+      std::this_thread::sleep_for(std::chrono::seconds(duration));
+      BluetoothEnableDiscovery(nullptr, FALSE);
+    }).detach();
+  }
+
+  result->Success(EncodableValue(ok));
+}
+
 void FlutterClassicBluetoothPlugin::HandleGetPlatformCapabilities(
     std::unique_ptr<flutter::MethodResult<EncodableValue>> result) {
   EncodableMap caps;
@@ -783,7 +818,7 @@ void FlutterClassicBluetoothPlugin::HandleGetPlatformCapabilities(
   caps[EncodableValue("canBondDevices")] = EncodableValue(true);
   caps[EncodableValue("canUnbondDevices")] = EncodableValue(true);
   caps[EncodableValue("canCreateServer")] = EncodableValue(true);
-  caps[EncodableValue("canSetDiscoverable")] = EncodableValue(false);
+  caps[EncodableValue("canSetDiscoverable")] = EncodableValue(true);
   caps[EncodableValue("supportsMultipleConnections")] = EncodableValue(true);
   caps[EncodableValue("supportsSecureConnection")] = EncodableValue(true);
   caps[EncodableValue("supportsInsecureConnection")] = EncodableValue(true);

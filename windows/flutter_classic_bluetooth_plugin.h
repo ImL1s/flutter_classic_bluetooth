@@ -258,6 +258,9 @@ class FlutterClassicBluetoothPlugin : public flutter::Plugin {
                          std::unique_ptr<flutter::MethodResult<flutter::EncodableValue>> result);
   void HandleStopServer(const flutter::EncodableMap& args,
                         std::unique_ptr<flutter::MethodResult<flutter::EncodableValue>> result);
+  void HandleSetDiscoverable(
+      const flutter::EncodableMap* args,
+      std::unique_ptr<flutter::MethodResult<flutter::EncodableValue>> result);
   void HandleGetPlatformCapabilities(
       std::unique_ptr<flutter::MethodResult<flutter::EncodableValue>> result);
 

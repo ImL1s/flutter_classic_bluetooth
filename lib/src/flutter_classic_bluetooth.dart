@@ -335,7 +335,7 @@ class FlutterClassicBluetooth {
   /// | Platform | Supported |
   /// |----------|-----------|
   /// | Android | Yes (system dialog) |
-  /// | Windows | No |
+  /// | Windows | Yes (BluetoothEnableDiscovery) |
   /// | macOS | No |
   /// | Linux | Yes |
   /// | iOS | No |

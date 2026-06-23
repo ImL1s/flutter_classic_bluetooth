@@ -12,7 +12,8 @@ Reliability and completeness pass across all five platforms.
 * **Windows**: register the per-connection `connection/{id}`, `connection_state/{id}`,
   `server/{id}` and `bond_state` event channels (inbound data was silently dropped);
   deliver server-accepted clients; publish an SDP record; honor the `secure` flag;
-  crash-safe id extraction; consistent device-map keys; surface `WSAStartup` failure.
+  crash-safe id extraction; consistent device-map keys; surface `WSAStartup` failure;
+  implement `setDiscoverable` via `BluetoothEnableDiscovery` (with a duration timer).
 * **Linux**: wire all event channels (discovery results/state, connection data,
   connection state, server-accepted clients, adapter and bond snapshots) on the GLib
   main loop; resolve the RFCOMM channel from the service UUID via SDP; honor `secure`

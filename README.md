@@ -36,7 +36,7 @@ Discover, pair, connect, and exchange data across Android, iOS (MFi), Windows, m
 | Connect (RFCOMM) | ✅ | ✅ | ✅ | ✅ | ✅¹ |
 | Server mode | ✅ | ✅ | ✅ | ✅ | ❌ |
 | Enable / Disable | ✅ | ❌ | ❌ | ❌ | ❌ |
-| Set discoverable | ✅ | ❌ | ❌ | ✅ | ❌ |
+| Set discoverable | ✅ | ✅ | ❌ | ✅ | ❌ |
 
 ¹ iOS uses the ExternalAccessory framework — only MFi-certified accessories are supported.<br/>
 ² macOS / Linux pairing is done through the OS (System Settings / `bluetoothctl`).<br/>
