@@ -43,6 +43,24 @@ class BluetoothController extends ChangeNotifier {
 
   final Map<String, BtcDevice> _discovered = {};
 
+  /// Merges a follow-up discovery [update] onto a [previous] sighting of the
+  /// same device, keeping earlier non-null fields. Some platforms emit later
+  /// events (e.g. an RSSI refresh) that omit the name, which would otherwise
+  /// blank it out and make the list show a bare MAC address.
+  BtcDevice _mergeDevice(BtcDevice previous, BtcDevice update) {
+    return BtcDevice(
+      address: update.address,
+      name: update.name ?? previous.name,
+      alias: update.alias ?? previous.alias,
+      rssi: update.rssi ?? previous.rssi,
+      type: update.type != BtcDeviceType.unknown ? update.type : previous.type,
+      bondState: update.bondState != BtcBondState.none
+          ? update.bondState
+          : previous.bondState,
+      uuids: update.uuids.isNotEmpty ? update.uuids : previous.uuids,
+    );
+  }
+
   /// Devices found during the current/last scan, strongest signal first.
   List<BtcDevice> get discovered {
     final list = _discovered.values.toList();
@@ -76,7 +94,9 @@ class BluetoothController extends ChangeNotifier {
         });
 
         _resultsSub = bt.discoveryResults.listen((device) {
-          _discovered[device.address] = device;
+          final prev = _discovered[device.address];
+          _discovered[device.address] =
+              prev == null ? device : _mergeDevice(prev, device);
           notifyListeners();
         });
 

@@ -4,9 +4,13 @@ import '../controller.dart';
 import '../widgets.dart';
 
 class DashboardPage extends StatelessWidget {
-  const DashboardPage({super.key, required this.controller});
+  const DashboardPage({super.key, required this.controller, this.onNavigate});
 
   final BluetoothController controller;
+
+  /// Switches the app shell to the tab at the given index (Discover = 1,
+  /// Paired = 2), so a quick action lands the user where its result appears.
+  final void Function(int index)? onNavigate;
 
   @override
   Widget build(BuildContext context) {
@@ -27,7 +31,7 @@ class DashboardPage extends StatelessWidget {
             const SizedBox(height: 16),
             _AdapterInfo(controller: controller),
             const SizedBox(height: 16),
-            _QuickActions(controller: controller),
+            _QuickActions(controller: controller, onNavigate: onNavigate),
           ],
         );
       },
@@ -129,8 +133,9 @@ class _AdapterInfo extends StatelessWidget {
 }
 
 class _QuickActions extends StatelessWidget {
-  const _QuickActions({required this.controller});
+  const _QuickActions({required this.controller, this.onNavigate});
   final BluetoothController controller;
+  final void Function(int index)? onNavigate;
 
   @override
   Widget build(BuildContext context) {
@@ -146,13 +151,23 @@ class _QuickActions extends StatelessWidget {
             ActionChip(
               avatar: const Icon(Icons.radar, size: 18),
               label: const Text('Scan'),
-              onPressed: controller.isOn ? controller.startScan : null,
+              onPressed: controller.isOn
+                  ? () {
+                      onNavigate?.call(1); // jump to Discover
+                      controller.startScan();
+                    }
+                  : null,
             ),
           if (caps.canGetPairedDevices)
             ActionChip(
               avatar: const Icon(Icons.refresh, size: 18),
               label: const Text('Refresh paired'),
-              onPressed: controller.isOn ? controller.refreshPaired : null,
+              onPressed: controller.isOn
+                  ? () {
+                      onNavigate?.call(2); // jump to Paired
+                      controller.refreshPaired();
+                    }
+                  : null,
             ),
           if (caps.canSetDiscoverable)
             ActionChip(

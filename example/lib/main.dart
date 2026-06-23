@@ -110,7 +110,10 @@ class _HomeShellState extends State<HomeShell> with WidgetsBindingObserver {
   Widget _page(int i) {
     switch (i) {
       case 0:
-        return DashboardPage(controller: _controller);
+        return DashboardPage(
+          controller: _controller,
+          onNavigate: (i) => setState(() => _index = i),
+        );
       case 1:
         return DiscoverPage(controller: _controller);
       case 2:
