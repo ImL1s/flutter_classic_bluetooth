@@ -19,7 +19,9 @@ Reliability and completeness pass across all five platforms.
   main loop; resolve the RFCOMM channel from the service UUID via SDP; honor `secure`
   (RFCOMM link mode) and `setDiscoverable` duration; atomic socket shutdown; consistent
   device-map keys. Add a BlueZ **D-Bus** layer (`org.bluez`) for adapter enable/disable,
-  paired-device listing, and pairing/unpairing.
+  paired-device listing, and pairing/unpairing. Bump the bundled GoogleTest to
+  v1.15.2 so the example configures on CMake 4.x (older releases declared a
+  `cmake_minimum_required` below 3.5, which CMake 4 rejects).
 * **macOS**: implement device discovery (inquiry delegate + channels), deliver
   server-accepted clients via channel-open notifications, async (non-blocking)
   connect/write, main-thread event delivery, and programmatic pairing via
