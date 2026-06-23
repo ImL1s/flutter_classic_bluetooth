@@ -6,6 +6,7 @@
   <a href="https://github.com/Masum-MSNR/flutter_classic_bluetooth/network/members"><img src="https://badgen.net/github/forks/Masum-MSNR/flutter_classic_bluetooth?icon=github" alt="GitHub forks"></a>
   <a href="https://github.com/Masum-MSNR/flutter_classic_bluetooth/issues"><img src="https://badgen.net/github/open-issues/Masum-MSNR/flutter_classic_bluetooth?icon=github" alt="GitHub issues"></a>
   <a href="https://github.com/Masum-MSNR/flutter_classic_bluetooth/actions/workflows/ci.yml"><img src="https://github.com/Masum-MSNR/flutter_classic_bluetooth/actions/workflows/ci.yml/badge.svg" alt="CI status"></a>
+  <a href="https://github.com/Masum-MSNR/flutter_classic_bluetooth/commits/main"><img src="https://badgen.net/github/last-commit/Masum-MSNR/flutter_classic_bluetooth?icon=github" alt="Last commit"></a>
   <a href="https://opensource.org/licenses/MIT"><img src="https://img.shields.io/badge/License-MIT-blue.svg" alt="License: MIT"></a>
   <a href="https://dart.dev"><img src="https://img.shields.io/badge/Dart-3.3+-0175C2?logo=dart" alt="Dart"></a>
   <a href="https://flutter.dev"><img src="https://img.shields.io/badge/Flutter-3.3+-02569B?logo=flutter" alt="Flutter"></a>

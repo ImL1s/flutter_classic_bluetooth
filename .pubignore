@@ -5,6 +5,9 @@
 # Maintainer docs — useful on GitHub, not needed by package consumers.
 docs/
 
+# AI assistant instructions — local only.
+CLAUDE.md
+
 # Local hardware test harness (ESP firmware, scratch apps) — never ship.
 local_test/
 

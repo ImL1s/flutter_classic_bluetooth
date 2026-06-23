@@ -28,6 +28,9 @@ migrate_working_dir/
 /docs/*
 !/docs/README_STRUCTURE_GUIDE.md
 
+# AI assistant instructions — local only, not tracked or published.
+/CLAUDE.md
+
 # Local hardware test harness (ESP firmware, scratch test apps) — not published
 /local_test/
 example/integration_test/esp32_live_test.dart
