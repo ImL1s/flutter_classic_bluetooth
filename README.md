@@ -12,7 +12,7 @@
   <a href="https://flutter.dev"><img src="https://img.shields.io/badge/Flutter-3.3+-02569B?logo=flutter" alt="Flutter"></a>
 </p>
 
-# Bluetooth Classic (RFCOMM) Plugin for Flutter
+# Bluetooth Classic Serial (RFCOMM/SPP) Plugin for Flutter
 
 **flutter_classic_bluetooth** is a Flutter plugin for **Bluetooth Classic
 serial communication over RFCOMM (the Serial Port Profile, SPP)**. It lets you

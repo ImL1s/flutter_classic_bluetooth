@@ -1,3 +1,9 @@
+## 0.1.2
+
+* Discoverability: lead the package `description`, README title and opening with
+  the terms developers actually search (Bluetooth Classic, RFCOMM/SPP, serial,
+  ESP32, HC-05) so the package surfaces for those queries. No code changes.
+
 ## 0.1.1
 
 Reliability and completeness pass across all five platforms, plus API ergonomics.
