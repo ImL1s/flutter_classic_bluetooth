@@ -2,7 +2,9 @@
 
 * Discoverability: lead the package `description`, README title and opening with
   the terms developers actually search (Bluetooth Classic, RFCOMM/SPP, serial,
-  ESP32, HC-05) so the package surfaces for those queries. No code changes.
+  ESP32, HC-05) so the package surfaces for those queries.
+* Docs: add a **Roadmap** section to the README — a checked list of shipped
+  capabilities plus planned items. No code changes.
 
 ## 0.1.1
 
