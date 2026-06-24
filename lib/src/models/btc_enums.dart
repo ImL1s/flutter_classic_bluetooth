@@ -78,6 +78,34 @@ enum BtcDeviceType {
   unknown,
 }
 
+/// High-level state of a [BtcReconnectingConnection].
+///
+/// | State | Description |
+/// |-------|-------------|
+/// | connecting | Establishing the first connection |
+/// | connected | Connected and ready for I/O |
+/// | reconnecting | Link dropped; backing off before the next attempt |
+/// | closed | Stopped by the caller — no further reconnects |
+/// | failed | Gave up after exhausting `maxAttempts` |
+///
+/// {@category Enums}
+enum BtcReconnectState {
+  /// Establishing the first connection.
+  connecting,
+
+  /// Connected and ready for I/O.
+  connected,
+
+  /// The link dropped; waiting/backing off before the next attempt.
+  reconnecting,
+
+  /// Stopped by the caller — no further reconnects.
+  closed,
+
+  /// Gave up after exhausting `maxAttempts`.
+  failed,
+}
+
 /// Connection state of an active RFCOMM connection.
 ///
 /// | State | Description |

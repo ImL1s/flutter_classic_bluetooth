@@ -19,6 +19,8 @@
 /// | [FlutterClassicBluetooth] | Main entry point — adapter, discovery, pairing, connection, server |
 /// | [BtcDevice] | Represents a remote Bluetooth device |
 /// | [BtcConnection] | Active RFCOMM connection with input/output streams |
+/// | [BtcReconnectingConnection] | Self-healing connection that auto-reconnects |
+/// | [BtcReconnectPolicy] | Backoff/retry settings for auto-reconnect |
 /// | [BtcServerSocket] | Listens for incoming RFCOMM connections |
 /// | [BtcStreamSink] | Ordered write sink for a connection |
 /// | [BtcPlatformCapabilities] | Platform feature support matrix |
@@ -31,6 +33,7 @@
 /// | [BtcBondState] | Device pairing state |
 /// | [BtcDeviceType] | Classic, LE, or Dual-mode |
 /// | [BtcConnectionState] | Connection lifecycle states |
+/// | [BtcReconnectState] | Auto-reconnect link states |
 ///
 /// ## Exceptions
 ///
@@ -92,6 +95,7 @@
 library;
 
 export 'src/btc_uuid.dart';
+export 'src/btc_reconnecting_connection.dart';
 export 'src/flutter_classic_bluetooth.dart';
 export 'src/platform_interface.dart';
 export 'src/method_channel.dart';
@@ -99,6 +103,7 @@ export 'src/models/btc_enums.dart';
 export 'src/models/btc_exceptions.dart';
 export 'src/models/btc_device.dart';
 export 'src/models/btc_connection.dart';
+export 'src/models/btc_reconnect_policy.dart';
 export 'src/models/btc_stream_sink.dart';
 export 'src/models/btc_server_socket.dart';
 export 'src/models/btc_platform_capabilities.dart';

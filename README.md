@@ -64,6 +64,7 @@ through broadcast streams.
   - [Send data](#send-data)
   - [Watch the connection state](#watch-the-connection-state)
   - [Disconnect and dispose](#disconnect-and-dispose)
+  - [Reconnect automatically](#reconnect-automatically)
   - [Run an RFCOMM server](#run-an-rfcomm-server)
   - [Pair and unpair](#pair-and-unpair)
   - [Adapter state and control](#adapter-state-and-control)
@@ -85,6 +86,7 @@ Dart API. Expand a group for details:
 - RFCOMM **server** — advertise an SDP service and accept incoming clients
 - **Multiple simultaneous** connections, each with its own id
 - Optional **connection timeout**
+- Optional **auto-reconnect** with exponential backoff (`connectWithReconnect`)
 
 </details>
 
@@ -166,12 +168,12 @@ list — [contributions](#support-and-feedback) welcome.
 - [x] Runtime **platform-capability** matrix
 - [x] Typed **exception hierarchy** (`BtcException` + subtypes)
 - [x] `BtcUuid.spp` default — `connect(address: ...)` just works for serial devices
+- [x] Optional **auto-reconnect** with exponential backoff (`connectWithReconnect`)
 - [x] **Five platforms** — Android, Windows, macOS, Linux, iOS (MFi)
 - [x] Linux via **BlueZ D-Bus** — discovery, adapter and pairing work without root
 
 **Planned**
 
-- [ ] Optional auto-reconnect / retry helper
 - [ ] Live RSSI updates on an active connection
 - [ ] Linux: built-in pairing agent for PIN/passkey devices
 - [ ] macOS: programmatic unpair (pending a public Apple API)
@@ -346,6 +348,31 @@ await connection.finish(); // flush pending writes, then disconnect
 // or: await connection.close(); // disconnect immediately
 
 connection.dispose(); // always release resources when done
+```
+
+### Reconnect automatically
+
+For long-lived links to a flaky device, `connectWithReconnect` keeps the
+connection alive across drops. Its `input` and `state` streams are **stable** —
+subscribe once and keep receiving data as the underlying connection is replaced.
+
+```dart
+final link = bluetooth.connectWithReconnect(
+  address: 'AA:BB:CC:DD:EE:FF',
+  policy: const BtcReconnectPolicy(
+    maxAttempts: null, // retry forever (default)
+    initialBackoff: Duration(seconds: 1),
+    maxBackoff: Duration(seconds: 30),
+  ),
+);
+
+link.state.listen((s) => print('Link: ${s.name}')); // connecting/connected/reconnecting/…
+link.input.listen((bytes) => print('RX ${bytes.length} bytes'));
+
+if (link.isConnected) await link.sendString('PING\r\n');
+
+// ...when done
+await link.close(); // stop reconnecting and release everything
 ```
 
 ### Run an RFCOMM server

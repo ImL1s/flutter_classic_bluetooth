@@ -1,6 +1,8 @@
 import 'btc_uuid.dart';
+import 'btc_reconnecting_connection.dart';
 import 'platform_interface.dart';
 import 'models/btc_enums.dart';
+import 'models/btc_reconnect_policy.dart';
 import 'models/btc_connection.dart';
 import 'models/btc_device.dart';
 import 'models/btc_server_socket.dart';
@@ -303,6 +305,41 @@ class FlutterClassicBluetooth {
   /// | Linux | Yes |
   /// | iOS | Yes |
   Future<void> disconnect(int id) => _platform.disconnect(id);
+
+  /// Connects to [address] and **automatically reconnects** if the link drops.
+  ///
+  /// Returns a [BtcReconnectingConnection] whose [BtcReconnectingConnection.input]
+  /// and [BtcReconnectingConnection.state] streams are stable across reconnects —
+  /// subscribe once and keep receiving data as the underlying connection is
+  /// transparently replaced. Retry timing is controlled by [policy]. Call
+  /// [BtcReconnectingConnection.close] to stop.
+  ///
+  /// ```dart
+  /// final link = bluetooth.connectWithReconnect(address: 'AA:BB:CC:DD:EE:FF');
+  /// link.input.listen((bytes) => print('RX ${bytes.length}'));
+  /// ```
+  ///
+  /// Available wherever [connect] is. Throws [BtcAddressException] /
+  /// [BtcUuidException] for an invalid [address] / [uuid].
+  BtcReconnectingConnection connectWithReconnect({
+    required String address,
+    String uuid = BtcUuid.spp,
+    bool secure = true,
+    BtcReconnectPolicy policy = const BtcReconnectPolicy(),
+  }) {
+    _validateAddress(address);
+    _validateUuid(uuid);
+    final link = BtcReconnectingConnection(
+      address: address,
+      uuid: uuid,
+      secure: secure,
+      policy: policy,
+      connector: () =>
+          _platform.connect(address: address, uuid: uuid, secure: secure),
+    );
+    link.start();
+    return link;
+  }
 
   // ── Server ───────────────────────────────────────────────────────────
 

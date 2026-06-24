@@ -1,10 +1,18 @@
 ## 0.1.2
 
+### Added
+* **Auto-reconnect**: `connectWithReconnect()` returns a `BtcReconnectingConnection`
+  that transparently re-establishes the link when it drops, with a configurable
+  `BtcReconnectPolicy` (exponential backoff, max attempts, per-attempt timeout).
+  Its `input` and `state` streams are stable across reconnects, so you subscribe
+  once. New `BtcReconnectState` enum.
+
+### Changed
 * Discoverability: lead the package `description`, README title and opening with
   the terms developers actually search (Bluetooth Classic, RFCOMM/SPP, serial,
   ESP32, HC-05) so the package surfaces for those queries.
 * Docs: add a **Roadmap** section to the README — a checked list of shipped
-  capabilities plus planned items. No code changes.
+  capabilities plus planned items.
 
 ## 0.1.1
 
