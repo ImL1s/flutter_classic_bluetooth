@@ -156,28 +156,28 @@ list — [contributions](#support-and-feedback) welcome.
 
 **Shipped**
 
-- [x] RFCOMM/SPP **client** — connect by address + UUID, secure/insecure, optional timeout
-- [x] RFCOMM **server** — advertise an SDP service and accept incoming clients
-- [x] **Multiple simultaneous** connections, each with its own id
-- [x] Device **discovery** with results and start/stop state streams
-- [x] **Paired/bonded** device listing
-- [x] **Pair / unpair** with a bond-state stream
-- [x] Adapter **state stream**, **enable/disable**, and **set discoverable**
-- [x] Streamed byte I/O with an ordered write sink (`writeString` / `writeBytes` / `addStream`)
-- [x] **Connection-state** lifecycle stream
-- [x] Runtime **platform-capability** matrix
-- [x] Typed **exception hierarchy** (`BtcException` + subtypes)
-- [x] `BtcUuid.spp` default — `connect(address: ...)` just works for serial devices
-- [x] Optional **auto-reconnect** with exponential backoff (`connectWithReconnect`)
-- [x] **Five platforms** — Android, Windows, macOS, Linux, iOS (MFi)
-- [x] Linux via **BlueZ D-Bus** — discovery, adapter and pairing work without root
+- ✅ RFCOMM/SPP **client** — connect by address + UUID, secure/insecure, optional timeout
+- ✅ RFCOMM **server** — advertise an SDP service and accept incoming clients
+- ✅ **Multiple simultaneous** connections, each with its own id
+- ✅ Device **discovery** with results and start/stop state streams
+- ✅ **Paired/bonded** device listing
+- ✅ **Pair / unpair** with a bond-state stream
+- ✅ Adapter **state stream**, **enable/disable**, and **set discoverable**
+- ✅ Streamed byte I/O with an ordered write sink (`writeString` / `writeBytes` / `addStream`)
+- ✅ **Connection-state** lifecycle stream
+- ✅ Runtime **platform-capability** matrix
+- ✅ Typed **exception hierarchy** (`BtcException` + subtypes)
+- ✅ `BtcUuid.spp` default — `connect(address: ...)` just works for serial devices
+- ✅ Optional **auto-reconnect** with exponential backoff (`connectWithReconnect`)
+- ✅ **Five platforms** — Android, Windows, macOS, Linux, iOS (MFi)
+- ✅ Linux via **BlueZ D-Bus** — discovery, adapter and pairing work without root
 
 **Planned**
 
-- [ ] Live RSSI updates on an active connection
-- [ ] Linux: built-in pairing agent for PIN/passkey devices
-- [ ] macOS: programmatic unpair (pending a public Apple API)
-- [ ] Expanded on-device integration tests
+- ⬜ Live RSSI updates on an active connection
+- ⬜ Linux: built-in pairing agent for PIN/passkey devices
+- ⬜ macOS: programmatic unpair (pending a public Apple API)
+- ⬜ Expanded on-device integration tests
 
 **Out of scope** — use a dedicated package instead: Bluetooth Low Energy (BLE),
 and Web (Bluetooth Classic is not available in browsers).
