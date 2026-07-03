@@ -23,6 +23,7 @@
 /// | [BtcReconnectPolicy] | Backoff/retry settings for auto-reconnect |
 /// | [BtcServerSocket] | Listens for incoming RFCOMM connections |
 /// | [BtcStreamSink] | Ordered write sink for a connection |
+/// | [BtcFrameSplitter] | Splits input into delimited frames (`.lines()` helper) |
 /// | [BtcPlatformCapabilities] | Platform feature support matrix |
 ///
 /// ## Enums
@@ -95,6 +96,7 @@
 library;
 
 export 'src/btc_uuid.dart';
+export 'src/btc_frame_splitter.dart';
 export 'src/btc_reconnecting_connection.dart';
 export 'src/flutter_classic_bluetooth.dart';
 export 'src/platform_interface.dart';

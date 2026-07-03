@@ -61,6 +61,7 @@ through broadcast streams.
   - [List paired devices](#list-paired-devices)
   - [Connect to a device](#connect-to-a-device)
   - [Receive data](#receive-data)
+  - [Read line-by-line](#read-line-by-line)
   - [Send data](#send-data)
   - [Watch the connection state](#watch-the-connection-state)
   - [Disconnect and dispose](#disconnect-and-dispose)
@@ -104,6 +105,7 @@ Dart API. Expand a group for details:
 <summary><b>🔀 Streamed I/O</b></summary>
 
 - Incoming bytes as a Dart `Stream<Uint8List>`
+- **Line/frame reader** — `input.lines()` / `input.frames()` reassemble delimited messages across chunks
 - Ordered write sink — `add`, `writeBytes`, `writeString`, `addStream`, `allSent`
 - Connection-state stream (`connecting` → `connected` → `disconnecting` → `disconnected`)
 
@@ -164,6 +166,7 @@ list — [contributions](#support-and-feedback) welcome.
 - ✅ **Pair / unpair** with a bond-state stream
 - ✅ Adapter **state stream**, **enable/disable**, and **set discoverable**
 - ✅ Streamed byte I/O with an ordered write sink (`writeString` / `writeBytes` / `addStream`)
+- ✅ Line/frame reader — split serial input on a delimiter (`input.lines()` / `input.frames()`)
 - ✅ **Connection-state** lifecycle stream
 - ✅ Runtime **platform-capability** matrix
 - ✅ Typed **exception hierarchy** (`BtcException` + subtypes)
@@ -316,6 +319,23 @@ connection.input.listen(
   onDone: () => print('Remote closed the connection'),
 );
 ```
+
+### Read line-by-line
+
+Serial devices send delimited text, but RFCOMM (like any stream) doesn't
+preserve message boundaries. `lines()` reassembles complete lines across chunks
+— it splits on `\n`, strips a trailing `\r`, and decodes to `String`:
+
+```dart
+connection.input.lines().listen((line) => print('> $line'));
+
+// Custom framing: split on any delimiter, keep raw bytes.
+connection.input
+    .frames(delimiter: const [0x03]) // e.g. ETX-terminated frames
+    .listen((frame) => print('frame: ${frame.length} bytes'));
+```
+
+Works the same on an auto-reconnecting link: `link.input.lines()`.
 
 ### Send data
 

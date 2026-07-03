@@ -1,3 +1,13 @@
+## 0.1.3
+
+### Added
+* **Line / frame reading** for serial data: `Stream<Uint8List>.lines()` and
+  `.frames()` extensions plus the `BtcFrameSplitter` transformer reassemble
+  delimiter-terminated messages that span multiple `input` chunks. `.lines()`
+  splits on `\n`, strips a trailing `\r`, and decodes to `String`, so ESP32 /
+  HC-05 / Arduino serial output reads cleanly with `connection.input.lines()`.
+  A `.decoded()` helper streams multi-byte-safe text.
+
 ## 0.1.2
 
 ### Added
