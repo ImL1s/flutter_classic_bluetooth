@@ -288,7 +288,7 @@ class FlutterClassicBluetooth {
   /// Connects to the device at [address] using the given [uuid].
   ///
   /// [uuid] defaults to [BtcUuid.spp] (the Serial Port Profile), which is what
-  /// HC-05/HC-06, ESP32/ESP8266, Arduino, and most serial devices use — so for
+  /// HC-05/HC-06, ESP32/ESP8266, Arduino, and most serial devices use. So for
   /// the common case you only need `connect(address: ...)`.
   ///
   /// If [secure] is `true` (default), uses authenticated/encrypted RFCOMM.
@@ -297,7 +297,7 @@ class FlutterClassicBluetooth {
   /// If [timeout] is provided, the attempt fails with a [BtcTimeoutException]
   /// when it does not complete in time. Note: the native connection attempt may
   /// still resolve afterwards on some platforms; the returned connection (if
-  /// any) is then orphaned — call [disconnect] if you track its id.
+  /// any) is then orphaned. Call [disconnect] if you track its id.
   ///
   /// | Platform | Supported |
   /// |----------|-----------|
@@ -348,8 +348,8 @@ class FlutterClassicBluetooth {
   /// Connects to [address] and **automatically reconnects** if the link drops.
   ///
   /// Returns a [BtcReconnectingConnection] whose [BtcReconnectingConnection.input]
-  /// and [BtcReconnectingConnection.state] streams are stable across reconnects —
-  /// subscribe once and keep receiving data as the underlying connection is
+  /// and [BtcReconnectingConnection.state] streams are stable across reconnects.
+  /// Subscribe once and keep receiving data as the underlying connection is
   /// transparently replaced. Retry timing is controlled by [policy]. Call
   /// [BtcReconnectingConnection.close] to stop.
   ///

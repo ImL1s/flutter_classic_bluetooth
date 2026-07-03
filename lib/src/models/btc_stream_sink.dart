@@ -63,7 +63,7 @@ class BtcStreamSink {
   Future<void> writeString(String text, {Encoding encoding = utf8}) =>
       add(Uint8List.fromList(encoding.encode(text)));
 
-  /// Writes [text] followed by [newline] (CRLF by default) — the common shape
+  /// Writes [text] followed by [newline] (CRLF by default), the common shape
   /// for line-based serial protocols (AT commands, etc.).
   Future<void> writeLine(
     String text, {
@@ -84,7 +84,7 @@ class BtcStreamSink {
 
   /// Resolves when all writes queued so far have completed.
   ///
-  /// Unlike [close], this does not mark the sink as closed — more data can be
+  /// Unlike [close], this does not mark the sink as closed. More data can be
   /// queued afterwards.
   Future<void> get allSent => _lastWrite;
 

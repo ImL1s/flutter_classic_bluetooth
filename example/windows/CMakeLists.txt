@@ -54,7 +54,7 @@ add_subdirectory("runner")
 
 # Lock the install prefix to the local bundle directory BEFORE including the
 # plugins. Some plugins (e.g. this one's unit tests) pull dependencies in via
-# FetchContent — googletest's project() call clears
+# FetchContent: googletest's project() call clears
 # CMAKE_INSTALL_PREFIX_INITIALIZED_TO_DEFAULT. If the prefix override runs after
 # that it is skipped, and the install falls back to the system default
 # (C:/Program Files), which fails without administrator rights. Setting it here,

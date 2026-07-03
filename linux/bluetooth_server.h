@@ -31,7 +31,7 @@ public:
         if (socket_ < 0) return false;
 
         // Honor the secure flag: require authentication + encryption on accepted
-        // links. Best-effort — ignored if the kernel rejects the option.
+        // links. Best-effort, ignored if the kernel rejects the option.
         if (secure_) {
             int lm = RFCOMM_LM_AUTH | RFCOMM_LM_ENCRYPT;
             setsockopt(socket_, SOL_RFCOMM, RFCOMM_LM, &lm, sizeof(lm));

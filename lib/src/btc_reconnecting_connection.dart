@@ -12,7 +12,7 @@ import 'models/btc_reconnect_policy.dart';
 /// A self-healing RFCOMM connection that transparently reconnects when the link
 /// drops, using the exponential backoff described by its [policy].
 ///
-/// Unlike a raw [BtcConnection] — which is replaced on every drop — this
+/// Unlike a raw [BtcConnection] (which is replaced on every drop), this
 /// object's [input] and [state] streams are **stable**: subscribe once and keep
 /// receiving data and status across reconnects. Create one via
 /// [FlutterClassicBluetooth.connectWithReconnect].
@@ -31,7 +31,7 @@ class BtcReconnectingConnection {
   /// Creates a reconnecting connection driven by [connector].
   ///
   /// [connector] is invoked for every (re)connect attempt and must return a
-  /// fresh [BtcConnection]. Call [start] to begin — or just use
+  /// fresh [BtcConnection]. Call [start] to begin, or just use
   /// [FlutterClassicBluetooth.connectWithReconnect], which wires the connector
   /// and starts it for you.
   BtcReconnectingConnection({
@@ -71,10 +71,10 @@ class BtcReconnectingConnection {
   bool _retryPending = false;
   BtcReconnectState _state = BtcReconnectState.connecting;
 
-  /// Incoming bytes from the remote device — stable across reconnects.
+  /// Incoming bytes from the remote device, stable across reconnects.
   Stream<Uint8List> get input => _input.stream;
 
-  /// High-level link-state changes (connecting → connected → reconnecting → …).
+  /// High-level link-state changes (connecting → connected → reconnecting → ...).
   Stream<BtcReconnectState> get state => _stateCtl.stream;
 
   /// The current link state.
@@ -178,7 +178,7 @@ class BtcReconnectingConnection {
   /// Sends [data] over the current connection.
   ///
   /// Throws [BtcConnectionException] if the link is not connected right now
-  /// (e.g. mid-reconnect) — check [isConnected] or watch [state] first.
+  /// (e.g. mid-reconnect). Check [isConnected] or watch [state] first.
   Future<void> send(Uint8List data) {
     final conn = _current;
     if (conn == null || _state != BtcReconnectState.connected) {
@@ -227,7 +227,7 @@ class BtcReconnectingConnection {
 
   /// Stops reconnecting, disconnects, and releases all resources.
   ///
-  /// After this the object is finished — its [input] and [state] streams close.
+  /// After this the object is finished. Its [input] and [state] streams close.
   Future<void> close() async {
     if (_closed) return;
     _closed = true;

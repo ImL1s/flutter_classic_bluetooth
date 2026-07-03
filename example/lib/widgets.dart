@@ -14,13 +14,13 @@ import 'package:flutter_classic_bluetooth/flutter_classic_bluetooth.dart';
       return (label: 'On', color: cs.primary, icon: Icons.bluetooth);
     case BtcAdapterState.turningOn:
       return (
-        label: 'Turning on…',
+        label: 'Turning on...',
         color: cs.tertiary,
         icon: Icons.bluetooth_searching,
       );
     case BtcAdapterState.turningOff:
       return (
-        label: 'Turning off…',
+        label: 'Turning off...',
         color: cs.tertiary,
         icon: Icons.bluetooth_disabled,
       );
@@ -44,7 +44,7 @@ import 'package:flutter_classic_bluetooth/flutter_classic_bluetooth.dart';
     case BtcBondState.bonded:
       return (label: 'Paired', color: cs.primary);
     case BtcBondState.bonding:
-      return (label: 'Pairing…', color: cs.tertiary);
+      return (label: 'Pairing...', color: cs.tertiary);
     case BtcBondState.none:
       return (label: 'Not paired', color: cs.outline);
   }
@@ -58,10 +58,10 @@ import 'package:flutter_classic_bluetooth/flutter_classic_bluetooth.dart';
     case BtcConnectionState.connected:
       return (label: 'Connected', color: cs.primary, icon: Icons.link);
     case BtcConnectionState.connecting:
-      return (label: 'Connecting…', color: cs.tertiary, icon: Icons.sync);
+      return (label: 'Connecting...', color: cs.tertiary, icon: Icons.sync);
     case BtcConnectionState.disconnecting:
       return (
-        label: 'Disconnecting…',
+        label: 'Disconnecting...',
         color: cs.tertiary,
         icon: Icons.link_off,
       );

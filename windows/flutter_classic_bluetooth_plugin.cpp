@@ -360,7 +360,7 @@ void FlutterClassicBluetoothPlugin::HandleStartDiscovery(
     discovery_state_handler_->sink()->Success(EncodableValue(true));
   }
 
-  // Discovery runs in a background thread — results are sent via event channel
+  // Discovery runs in a background thread; results are sent via event channel
   discovery_thread_ = std::thread([this]() {
     BLUETOOTH_DEVICE_SEARCH_PARAMS search_params = {};
     search_params.dwSize = sizeof(BLUETOOTH_DEVICE_SEARCH_PARAMS);
@@ -513,7 +513,7 @@ void FlutterClassicBluetoothPlugin::HandleConnect(
     }
 
     // Honor the secure flag: request an authenticated (and thus encrypted)
-    // RFCOMM link before connecting. Best-effort — ignored if unsupported.
+    // RFCOMM link before connecting. Best-effort, ignored if unsupported.
     if (secure) {
       ULONG auth = TRUE;
       setsockopt(sock, SOL_RFCOMM, SO_BTH_AUTHENTICATE,
@@ -824,7 +824,7 @@ void FlutterClassicBluetoothPlugin::HandleGetPlatformCapabilities(
   caps[EncodableValue("supportsInsecureConnection")] = EncodableValue(true);
   caps[EncodableValue("requiresMfiCertification")] = EncodableValue(false);
   caps[EncodableValue("platformNote")] = EncodableValue(
-      std::string("Windows — Bluetooth Classic via Winsock2 AF_BTH. Cannot programmatically enable/disable Bluetooth."));
+      std::string("Windows: Bluetooth Classic via Winsock2 AF_BTH. Cannot programmatically enable/disable Bluetooth."));
   result->Success(EncodableValue(caps));
 }
 

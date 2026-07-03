@@ -41,9 +41,9 @@ class BondStateReceiver(private val context: Context) : EventChannel.StreamHandl
                     events.success(BluetoothHelper.bondStateToString(device.bondState))
                 }
             } catch (_: IllegalArgumentException) {
-                // Invalid address — skip the snapshot.
+                // Invalid address, skip the snapshot.
             } catch (_: SecurityException) {
-                // Missing permission — skip the snapshot.
+                // Missing permission, skip the snapshot.
             }
         }
     }

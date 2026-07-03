@@ -67,7 +67,7 @@ inline std::string GuidToString(const GUID& guid) {
 }
 
 // Enumerates the installed RFCOMM/SDP service UUIDs for a (paired) device.
-// Returns an empty list for unknown/unpaired devices — Windows only exposes
+// Returns an empty list for unknown/unpaired devices; Windows only exposes
 // services for authenticated/remembered peers.
 inline flutter::EncodableList DeviceServiceUuids(const BLUETOOTH_DEVICE_INFO& info) {
     flutter::EncodableList uuids;

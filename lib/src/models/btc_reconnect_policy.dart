@@ -2,8 +2,8 @@ import 'dart:math' as math;
 
 /// Controls how a [BtcReconnectingConnection] retries after the link drops.
 ///
-/// Reconnect delays grow exponentially — `initialBackoff`,
-/// `initialBackoff * backoffMultiplier`, … — capped at [maxBackoff].
+/// Reconnect delays grow exponentially (`initialBackoff`,
+/// `initialBackoff * backoffMultiplier`, ...), capped at [maxBackoff].
 ///
 /// {@category Models}
 class BtcReconnectPolicy {

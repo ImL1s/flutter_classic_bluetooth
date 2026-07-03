@@ -240,7 +240,7 @@ public class FlutterClassicBluetoothPlugin: NSObject, FlutterPlugin {
             "supportsSecureConnection": true,
             "supportsInsecureConnection": false,
             "requiresMfiCertification": true,
-            "platformNote": "iOS — Bluetooth Classic via ExternalAccessory. Only MFi-certified accessories supported. Discovery, pairing, and server mode not available. Pair through iOS Settings."
+            "platformNote": "iOS: Bluetooth Classic via ExternalAccessory. Only MFi-certified accessories supported. Discovery, pairing, and server mode not available. Pair through iOS Settings."
         ])
     }
 }

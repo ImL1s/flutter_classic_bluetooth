@@ -380,7 +380,7 @@ public class FlutterClassicBluetoothPlugin: NSObject, FlutterPlugin {
             "supportsInsecureConnection": false,
             "canReadConnectionRssi": true,
             "requiresMfiCertification": false,
-            "platformNote": "macOS — Bluetooth Classic via IOBluetooth. Discovery, connect, server, paired-device listing, pairing (IOBluetoothDevicePair) and connection RSSI are supported. Unpairing must be done through System Settings."
+            "platformNote": "macOS: Bluetooth Classic via IOBluetooth. Discovery, connect, server, paired-device listing, pairing (IOBluetoothDevicePair) and connection RSSI are supported. Unpairing must be done through System Settings."
         ])
     }
 
@@ -530,7 +530,7 @@ class BluetoothConnectionWrapper: NSObject, IOBluetoothRFCOMMChannelDelegate {
         }
     }
 
-    // IOBluetoothRFCOMMChannelDelegate — these fire on IOBluetooth's run loop;
+    // IOBluetoothRFCOMMChannelDelegate: these fire on IOBluetooth's run loop;
     // Flutter event sinks must be invoked on the main thread.
 
     public func rfcommChannelOpenComplete(_ rfcommChannel: IOBluetoothRFCOMMChannel!, status error: IOReturn) {

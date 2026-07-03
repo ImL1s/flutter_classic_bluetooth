@@ -44,7 +44,7 @@ class DiscoverPage extends StatelessWidget {
                             ? Icons.bluetooth_searching
                             : Icons.radar,
                         title: controller.scanning
-                            ? 'Scanning…'
+                            ? 'Scanning...'
                             : 'No devices yet',
                         message: controller.scanning
                             ? 'Make sure the target device is powered on and '
@@ -106,7 +106,7 @@ class _ScanHeader extends StatelessWidget {
                 Expanded(
                   child: Text(
                     controller.scanning
-                        ? 'Scanning for devices…'
+                        ? 'Scanning for devices...'
                         : '${controller.discovered.length} device(s) found',
                     style: Theme.of(context).textTheme.titleSmall?.copyWith(
                       color: controller.scanning ? cs.onPrimaryContainer : null,

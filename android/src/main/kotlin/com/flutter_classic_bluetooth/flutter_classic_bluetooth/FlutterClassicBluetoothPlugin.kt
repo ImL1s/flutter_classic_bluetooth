@@ -474,7 +474,7 @@ class FlutterClassicBluetoothPlugin :
                 "supportsSecureConnection" to true,
                 "supportsInsecureConnection" to true,
                 "requiresMfiCertification" to false,
-                "platformNote" to "Android — full Bluetooth Classic support. unbondDevice uses reflection (hidden API)."
+                "platformNote" to "Android: full Bluetooth Classic support. unbondDevice uses reflection (hidden API)."
             )
         )
     }

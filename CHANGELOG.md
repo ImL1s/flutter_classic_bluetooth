@@ -9,11 +9,11 @@
   A `.decoded()` helper streams multi-byte-safe text.
 * **Request/response**: `BtcConnection.sendAndReceive()` (and the same on
   `BtcReconnectingConnection`) writes a command and returns the first response
-  line — or the first line matching a `where` predicate — with framing and a
+  line (or the first line matching a `where` predicate) with framing and a
   timeout handled for you. Ideal for AT-command devices.
-* `BtcStreamSink.writeLine()` / `BtcReconnectingConnection.sendLine()` — write
+* `BtcStreamSink.writeLine()` / `BtcReconnectingConnection.sendLine()`: write
   text with a trailing newline (CRLF by default).
-* One-shot `FlutterClassicBluetooth.scan()` — starts discovery, collects results
+* One-shot `FlutterClassicBluetooth.scan()`: starts discovery, collects results
   for a timeout (de-duplicated and merged), stops, and returns them sorted by
   signal strength. Plus `BtcDevice.mergedWith()` to combine repeated sightings.
 * `BtcReconnectingConnection` now exposes `attempts` and `lastError` for UIs that
@@ -24,8 +24,8 @@
   Linux throw `BtcUnsupportedException` (no public Classic API for connection
   RSSI). Discovery-time RSSI stays available everywhere on `BtcDevice.rssi`.
 * **Linux**: the plugin registers an auto-accepting BlueZ pairing agent
-  (`org.bluez.Agent1`), so Secure Simple Pairing ("just works") devices — ESP32,
-  most HC-05/06 — pair from `bondDevice()` without a desktop dialog. Devices that
+  (`org.bluez.Agent1`), so Secure Simple Pairing ("just works") devices (ESP32,
+  most HC-05/06) pair from `bondDevice()` without a desktop dialog. Devices that
   require typing a PIN/passkey still need a system agent.
 
 ## 0.1.2
@@ -41,7 +41,7 @@
 * Discoverability: lead the package `description`, README title and opening with
   the terms developers actually search (Bluetooth Classic, RFCOMM/SPP, serial,
   ESP32, HC-05) so the package surfaces for those queries.
-* Docs: add a **Roadmap** section to the README — a checked list of shipped
+* Docs: add a **Roadmap** section to the README, a checked list of shipped
   capabilities plus planned items.
 
 ## 0.1.1
@@ -49,8 +49,8 @@
 Reliability and completeness pass across all five platforms, plus API ergonomics.
 
 ### Added
-* `BtcUuid.spp`, and `connect()` / `startServer()` now default `uuid` to it — the
-  common case is just `connect(address: ...)` (HC-05/06, ESP32, Arduino, …).
+* `BtcUuid.spp`, and `connect()` / `startServer()` now default `uuid` to it. The
+  common case is just `connect(address: ...)` (HC-05/06, ESP32, Arduino, ...).
 * `connect()` gains an optional `timeout` (throws `BtcTimeoutException`).
 * `BtcConnection.stateStream` emits `disconnecting` → `disconnected` on `finish()`/`close()`.
 * `BtcStreamSink` gains `writeString`, `writeBytes`, `addStream` and `allSent`.
@@ -88,7 +88,7 @@ Reliability and completeness pass across all five platforms, plus API ergonomics
 
 * Initial release.
 * Unified Dart API for Bluetooth Classic (RFCOMM) communication.
-* **Android**: Full support — discovery, pairing, connect, server, discoverability.
+* **Android**: Full support (discovery, pairing, connect, server, discoverability).
 * **Windows**: Discovery, pairing, connect, server via Winsock2/AF_BTH.
 * **macOS**: Discovery, pairing, connect, server via IOBluetooth.
 * **Linux**: Discovery, connect, server via BlueZ/RFCOMM. Pairing requires external tools.

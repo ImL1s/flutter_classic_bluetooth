@@ -1,4 +1,4 @@
-/// Flutter Classic Bluetooth — Bluetooth Classic (RFCOMM) communication plugin.
+/// Flutter Classic Bluetooth: Bluetooth Classic (RFCOMM) communication plugin.
 ///
 /// Provides a unified Dart API for discovering, pairing, and communicating
 /// with Bluetooth Classic devices over RFCOMM across Android, iOS (MFi only),
@@ -16,7 +16,7 @@
 ///
 /// | Class | Purpose |
 /// |---|---|
-/// | [FlutterClassicBluetooth] | Main entry point — adapter, discovery, pairing, connection, server |
+/// | [FlutterClassicBluetooth] | Main entry point: adapter, discovery, pairing, connection, server |
 /// | [BtcDevice] | Represents a remote Bluetooth device |
 /// | [BtcConnection] | Active RFCOMM connection with input/output streams |
 /// | [BtcReconnectingConnection] | Self-healing connection that auto-reconnects |
@@ -70,7 +70,7 @@
 /// (2) macOS pairs via IOBluetoothDevicePair and may show a system prompt.
 /// (3) Linux uses the BlueZ D-Bus API (org.bluez); pairing a PIN/passkey device
 ///     needs a system pairing agent.
-/// (4) macOS has no public API to remove a pairing — unpair via System Settings.
+/// (4) macOS has no public API to remove a pairing; unpair via System Settings.
 ///
 /// ## Example
 ///

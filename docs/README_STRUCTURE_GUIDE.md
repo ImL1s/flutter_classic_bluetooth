@@ -7,7 +7,7 @@ the per-platform support story is first-class instead of hidden. An AI assistant
 professional, and **discoverable** on pub.dev.
 
 It blends a clean product spine (cover → descriptive title → overview → table of
-contents → … → getting started → support → about) with the pub.dev
+contents → ... → getting started → support → about) with the pub.dev
 search-ranking lessons every package needs, plus the two sections a plugin must
 carry that a pure-Dart library does not: **Platform support** and **Platform
 setup**.
@@ -16,7 +16,7 @@ setup**.
 
 ## 0. How to use this guide
 
-1. Read **Global rules** (§1) — they apply to every section.
+1. Read **Global rules** (§1): they apply to every section.
 2. Build the README in the **exact section order** of §2. Include all
    `REQUIRED` sections; include `OPTIONAL` / `RECOMMENDED` ones only when the
    note applies.
@@ -37,18 +37,18 @@ These are non-negotiable and apply to the whole file.
 **Discoverability (pub.dev indexes text, not pixels):**
 - The **first ~500 characters** (the title + overview prose) and the **first
   ~5000 characters** carry the most search weight. Front-load real sentences
-  containing the primary keywords there — not buried in emoji bullets or code
+  containing the primary keywords there, not buried in emoji bullets or code
   blocks (the indexer weights those less).
 - State the **primary keywords as plain words** early and naturally: the domain
   nouns (`Bluetooth Classic`, `RFCOMM`, `SPP`, `serial`), the verbs the plugin
   supports (`discover`, `pair`, `connect`, `send`, `receive`), the device classes
   (`ESP32`, `HC-05`, `printer`, `scanner`, `OBD-II`), and the platforms
-  (`Android`, `iOS`, `Windows`, `macOS`, `Linux`, `Flutter`). Do not keyword-stuff
-  — write natural prose that happens to be keyword-dense.
+  (`Android`, `iOS`, `Windows`, `macOS`, `Linux`, `Flutter`). Do not keyword-stuff:
+  write natural prose that happens to be keyword-dense.
 - Disambiguate from **BLE** explicitly and early. The single most common wrong
   click is a BLE user; say "Bluetooth **Classic** (RFCOMM/SPP), not BLE" in the
   overview and the FAQ.
-- Every image **must have descriptive `alt` text** — the indexer cannot read
+- Every image **must have descriptive `alt` text**: the indexer cannot read
   images, so the alt text is the only signal it gets.
 
 **Images & links (pub.dev rendering gotcha):**
@@ -57,35 +57,35 @@ These are non-negotiable and apply to the whole file.
   `https://raw.githubusercontent.com/almasumdev/flutter_classic_bluetooth/main/images/{{FILE}}`.
 - This package ships **no banner or preview image**. The logo lives at
   `images/logo.png` and is surfaced **only** through the `screenshots:` entry in
-  `pubspec.yaml` (the pub.dev sidebar) — it is **not** placed at the top of the
+  `pubspec.yaml` (the pub.dev sidebar); it is **not** placed at the top of the
   README. Do not re-add a top logo/banner; the README opens with the badges.
 - Internal links (Table of contents) use lowercase-hyphen anchors of the heading
-  text: lowercase it, drop punctuation, turn each space into `-` (an em dash `—`
-  with surrounding spaces becomes `--`).
+  text: lowercase it, drop punctuation, and turn each space into `-` (so
+  `Getting started` becomes `getting-started`).
 
 **Style:**
 - Headings: **sentence case** for top-level (`## Getting started`,
   `## Platform support`), kept stable so TOC anchors don't break.
 - The H1 is a **descriptive, keyword-rich title**
   (`# Bluetooth Classic (RFCOMM) Plugin for Flutter`), **not** just the package
-  name — pub.dev already shows the name in its own header.
+  name; pub.dev already shows the name in its own header.
 - Every code fence declares its language (` ```dart `, ` ```xml `, ` ```bash `).
-- Code samples must be **copy-paste runnable** and minimal — no pseudo-code, and
+- Code samples must be **copy-paste runnable** and minimal: no pseudo-code, and
   verify every symbol against the plugin's real Dart API before publishing.
 - Tone: confident and factual. **Never claim a capability a platform does not
   have.** The capability matrix and the `getPlatformCapabilities()` flags are the
-  source of truth — the prose must agree with them.
+  source of truth; the prose must agree with them.
 
 **Honesty rule (plugin-specific):**
 - Bluetooth Classic support genuinely differs per OS. Every "Yes/No" in the
   Platform support matrix must match the real native implementation **and** the
   `BtcPlatformCapabilities` flag the code returns. If a feature is blocked by the
-  OS (iOS discovery/server, macOS unpair), say so in a footnote — do not imply
+  OS (iOS discovery/server, macOS unpair), say so in a footnote; do not imply
   parity that isn't there.
 
 **Table of contents rule:**
 - The TOC lists **only the sections that appear *below* it**. The title and
-  Overview sit **above** the TOC, so they are **not** listed — start the TOC at
+  Overview sit **above** the TOC, so they are **not** listed. Start the TOC at
   **Key features**.
 - **Nest the Getting started subsection headings** under the Getting started
   entry, so readers can jump straight to a specific task.
@@ -102,16 +102,16 @@ Build the README top-to-bottom in this order.
 |---|---------|--------|---------|
 | 1 | Badges | REQUIRED | pub version/points/likes, GitHub stars/forks/issues, CI, license, Dart, Flutter |
 | 2 | Descriptive title (H1) + intro | REQUIRED | Keyword-rich `# Bluetooth Classic (RFCOMM) Plugin for Flutter` + one-paragraph pitch |
-| 3 | Star/like CTA | RECOMMENDED | One-line blockquote, **top only** — never repeat it at the bottom |
+| 3 | Star/like CTA | RECOMMENDED | One-line blockquote, **top only**, never repeat it at the bottom |
 | 4 | Overview | REQUIRED | Keyword-dense "what it is + what it does"; disambiguate from BLE; **What you can do with it** bullets |
-| 5 | Table of contents | REQUIRED | Lists only sections **below** it — starts at Key features; **nests Getting started subsections** |
+| 5 | Table of contents | REQUIRED | Lists only sections **below** it, starting at Key features; **nests Getting started subsections** |
 | 6 | Key features | REQUIRED | Grouped `<details>` capability bullets, keyword-rich |
 | 7 | Platform support | REQUIRED (plugin) | The per-feature × per-OS capability matrix, with footnotes for OS limits |
 | 8 | Example | RECOMMENDED | Pointer to the runnable `example/` app and its screens |
 | 9 | Other useful links | RECOMMENDED | API reference, repo, changelog, issues |
 | 10 | Installation | REQUIRED | `flutter pub add` + import line |
 | 11 | Platform setup | REQUIRED (plugin) | Android manifest perms, iOS Info.plist (MFi + usage), macOS entitlement |
-| 12 | Getting started | REQUIRED | **Many small, focused, copy-paste snippets** — one task each |
+| 12 | Getting started | REQUIRED | **Many small, focused, copy-paste snippets**, one task each |
 | 13 | FAQ | RECOMMENDED | Long-tail queries (Classic vs BLE, why iOS differs, multiple connections, pairing on macOS/Linux) |
 | 14 | Support and feedback | RECOMMENDED | Issues, discussions, contributing |
 | 15 | About | RECOMMENDED | What it is, maintainer, **the license** in prose, contributors image |
@@ -119,13 +119,13 @@ Build the README top-to-bottom in this order.
 > **Plugin deviations from the cross-package guide.** The canonical guide says
 > "no dedicated Platform support section" because for a pure-Dart library pub.dev
 > derives the platforms automatically. For *this* plugin the matrix is core
-> information — *which features* work on *which OS* — so **Platform support** and
+> information (*which features* work on *which OS*), so **Platform support** and
 > **Platform setup** are REQUIRED sections here. There is still **no Performance,
 > Comparison, Migration, Architecture, or License section** (the License lives in
 > the `LICENSE` file and is stated in About prose).
 
 > **Getting started** is the workhorse: prefer **many short snippets** (one per
-> task — init/support check, discover, list paired, connect, receive, send, watch
+> task: init/support check, discover, list paired, connect, receive, send, watch
 > state, disconnect/dispose, server, pair/unpair, adapter control, error handling)
 > over a few large ones. Small, titled, copy-paste examples are what users scan
 > for, and each heading becomes a nested TOC entry.
@@ -149,12 +149,12 @@ Copy each block and fill the placeholders.
   <a href="https://flutter.dev"><img src="https://img.shields.io/badge/Flutter-3.3+-02569B?logo=flutter" alt="Flutter"></a>
 </p>
 ```
-> No banner above the badges — this package has no banner asset, and the logo is
+> No banner above the badges. This package has no banner asset, and the logo is
 > the pub.dev `screenshots:` entry, not a README image. The badges are the first
 > thing in the file. Add a **Flutter** badge alongside the **Dart** one (this is
 > a plugin, not a pure-Dart package). The GitHub stars/forks/issues badges only
-> resolve once the repo is public and can transiently rate-limit on shields.io —
-> drop them if the flakiness isn't worth it; keep pub + CI + license + SDK.
+> resolve once the repo is public and can transiently rate-limit on shields.io.
+> Drop them if the flakiness isn't worth it; keep pub + CI + license + SDK.
 
 ### 2. Descriptive title (H1) + intro
 ```md
@@ -163,7 +163,7 @@ Copy each block and fill the placeholders.
 **flutter_classic_bluetooth** is a Flutter plugin for **Bluetooth Classic serial
 communication over RFCOMM (the Serial Port Profile, SPP)**. It lets you
 **discover, pair, connect to, and exchange data with** Bluetooth Classic devices
-— {{ESP32, HC-05/HC-06 modules, barcode scanners, printers, OBD-II adapters}} —
+({{ESP32, HC-05/HC-06 modules, barcode scanners, printers, OBD-II adapters}})
 from a single Dart API on **Android, Windows, macOS, Linux, and iOS (MFi)**.
 {{One more sentence on the streamed-I/O value proposition.}}
 ```
@@ -171,11 +171,11 @@ from a single Dart API on **Android, Windows, macOS, Linux, and iOS (MFi)**.
 ### 3. Star/like CTA (top only)
 ```md
 > ⭐ **Find this useful?** [Star it on GitHub]({{REPO_URL}})
-> and 👍 [like it on pub.dev](https://pub.dev/packages/flutter_classic_bluetooth) —
-> it helps other Flutter developers find a maintained Bluetooth Classic plugin.
+> and 👍 [like it on pub.dev](https://pub.dev/packages/flutter_classic_bluetooth).
+> It helps other Flutter developers find a maintained Bluetooth Classic plugin.
 ```
 > Place this **once**, directly under the intro. **Do not** repeat a star/like
-> line in About/Contributors — the bottom closes with "Pull requests are welcome"
+> line in About/Contributors; the bottom closes with "Pull requests are welcome"
 > instead (see §15). Duplicating the CTA reads as nagging.
 
 ### 4. Overview ← highest-weighted text on the page
@@ -183,7 +183,7 @@ from a single Dart API on **Android, Windows, macOS, Linux, and iOS (MFi)**.
 ## Overview
 
 flutter_classic_bluetooth speaks **RFCOMM/SPP**, the classic Bluetooth serial
-transport — **not** Bluetooth Low Energy (BLE). {{2–3 sentences on how it wraps
+transport, **not** Bluetooth Low Energy (BLE). {{2-3 sentences on how it wraps
 each platform's native stack, client vs server, multiple connections, and the
 adapter/discovery/bond streams.}}
 
@@ -193,7 +193,7 @@ adapter/discovery/bond streams.}}
 - {{capability 2}}
 - {{capability 3}}
 ```
-> No preview image — this package ships none. The BLE disambiguation belongs in
+> No preview image; this package ships none. The BLE disambiguation belongs in
 > the very first sentence.
 
 ### 5. Table of contents
@@ -227,8 +227,8 @@ Dart API. Expand a group for details:
 <details>
 <summary><b>📡 {{Group}}</b></summary>
 
-- **{{Keyword}}** — {{short benefit}}
-- **{{Keyword}}** — {{short benefit}}
+- **{{Keyword}}**: {{short benefit}}
+- **{{Keyword}}**: {{short benefit}}
 
 </details>
 ```
@@ -247,7 +247,7 @@ can actually do (also queryable at runtime via `getPlatformCapabilities()`):
 |---------|---------|---------|-------|-------|-----|
 | {{Feature}} | ✅ | ✅ | ✅ | ✅ | ❌ |
 
-{{Numbered footnotes for every OS-specific caveat — MFi on iOS, IOBluetoothDevicePair
+{{Numbered footnotes for every OS-specific caveat: MFi on iOS, IOBluetoothDevicePair
 on macOS, BlueZ D-Bus on Linux, no-unpair-API on macOS, etc.}}
 ```
 > Each cell must match the real native implementation **and** the matching
@@ -294,13 +294,13 @@ import 'package:flutter_classic_bluetooth/flutter_classic_bluetooth.dart';
 ```md
 ## Platform setup
 
-**Android** — add the Bluetooth permissions to `AndroidManifest.xml` ({{both the
+**Android**: add the Bluetooth permissions to `AndroidManifest.xml` ({{both the
 ≤ API 30 and the API 31+ permission sets}}).
 
-**iOS** — declare the MFi protocol(s) in `UISupportedExternalAccessoryProtocols`
+**iOS**: declare the MFi protocol(s) in `UISupportedExternalAccessoryProtocols`
 and a `NSBluetoothAlwaysUsageDescription` usage string in `Info.plist`.
 
-**macOS** — add the `com.apple.security.device.bluetooth` entitlement and a usage
+**macOS**: add the `com.apple.security.device.bluetooth` entitlement and a usage
 string.
 ```
 > Show the actual XML each platform needs, copy-paste ready. This is the section
@@ -334,7 +334,7 @@ string.
 ## FAQ
 
 **Is this Bluetooth Classic or Bluetooth Low Energy (BLE)?**
-{{answer — Classic/RFCOMM, point BLE users elsewhere}}
+{{answer: Classic/RFCOMM, point BLE users elsewhere}}
 
 **{{question repeating target keywords}}**
 {{answer}}
@@ -349,7 +349,7 @@ string.
 
 - Found a bug or want a feature? Open an issue on the [issue tracker]({{REPO_URL}}/issues).
 - Questions and ideas are welcome via [GitHub Discussions]({{REPO_URL}}/discussions).
-- Pull requests are welcome — see the repository for contribution guidelines.
+- Pull requests are welcome; see the repository for contribution guidelines.
 ```
 
 ### 15. About
@@ -364,18 +364,18 @@ flutter_classic_bluetooth is created and owned by **Nurullah Al Masum**.
 
 ### Contributors
 
-flutter_classic_bluetooth grows with its community — every contributor is listed here:
+flutter_classic_bluetooth grows with its community, and every contributor is listed here:
 
 <a href="{{REPO_URL}}/graphs/contributors">
   <img src="https://contrib.rocks/image?repo={{OWNER}}/{{REPO}}" alt="flutter_classic_bluetooth contributors"/>
 </a>
 
-Want to help? Pull requests are welcome — see [Support and feedback](#support-and-feedback).
+Want to help? Pull requests are welcome; see [Support and feedback](#support-and-feedback).
 ```
 > State the license in prose here (no separate License section); the `LICENSE`
 > file remains the source of truth. Use an **ownership declaration with the
 > author's full name**. The Contributors block closes with "Pull requests are
-> welcome" — **not** a second star/like CTA (that lives once, at the top).
+> welcome", **not** a second star/like CTA (that lives once, at the top).
 
 ---
 
@@ -383,21 +383,21 @@ Want to help? Pull requests are welcome — see [Support and feedback](#support-
 
 Keep these aligned on every release:
 
-- **`description`** (pubspec): ≤ 180 chars (pana's sweet spot 60–180),
+- **`description`** (pubspec): up to 180 chars (pana's sweet spot 60-180),
   keyword-front-loaded. Pattern:
   `Flutter plugin for Bluetooth Classic (RFCOMM) across {{platforms}}. {{verbs}}.`
 - **`topics`** (pubspec): **max 5**, lowercase, hyphenated
   (`bluetooth`, `bluetooth-classic`, `rfcomm`, `serial`, `iot`). Mirror the
   README's primary keywords; don't waste a slot on a low-intent tag.
 - **`screenshots`** (pubspec): the `images/logo.png` entry that surfaces the logo
-  on pub.dev. This is the **only** place the logo appears — keep it in sync with
+  on pub.dev. This is the **only** place the logo appears; keep it in sync with
   the file on disk; do not add the logo to the README.
 - **Platform support matrix** must agree with the `BtcPlatformCapabilities` flags
   returned by `getPlatformCapabilities()` and with the native implementations. If
   a capability flag flips, update the matrix, the footnotes, and the relevant
   CHANGELOG entry in the same change.
 - **License**: lives in the `LICENSE` file (pub.dev reads it) and is stated in the
-  **About** section — no separate README section.
+  **About** section, no separate README section.
 - **`repository` / `issue_tracker`**: set and consistent with the links used in
   the README and the badges.
 
@@ -407,7 +407,7 @@ Keep these aligned on every release:
 
 Before publishing, confirm:
 
-- [ ] No top logo/banner image — the README opens with the badges; the logo is the
+- [ ] No top logo/banner image. The README opens with the badges; the logo is the
       pubspec `screenshots:` entry only.
 - [ ] Badges include **Dart and Flutter** (plugin) plus CI status.
 - [ ] Descriptive, keyword-rich H1 (not just the package name).

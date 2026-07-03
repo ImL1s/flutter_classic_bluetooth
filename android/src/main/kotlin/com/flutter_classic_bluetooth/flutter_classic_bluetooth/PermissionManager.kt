@@ -94,7 +94,7 @@ class PermissionManager : PluginRegistry.RequestPermissionsResultListener {
     ): Boolean {
         if (requestCode != REQUEST_CODE) return false
         // Re-check the permissions we actually require (SCAN+CONNECT, or location
-        // pre-S) rather than requiring every requested grant — denying the
+        // pre-S) rather than requiring every requested grant; denying the
         // optional ADVERTISE permission must not fail otherwise-granted calls.
         val act = activity
         val granted = act != null && hasPermissions(act)

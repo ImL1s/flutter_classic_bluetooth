@@ -17,14 +17,14 @@
 /// ```
 ///
 /// See also:
-/// - [BtcUnsupportedException] — feature not available on platform
-/// - [BtcPermissionException] — permission denied
-/// - [BtcDisabledException] — adapter is off
-/// - [BtcConnectionException] — connection failed
-/// - [BtcWriteException] — write failed
-/// - [BtcTimeoutException] — operation timed out
-/// - [BtcAddressException] — invalid MAC address
-/// - [BtcUuidException] — invalid UUID
+/// - [BtcUnsupportedException]: feature not available on platform
+/// - [BtcPermissionException]: permission denied
+/// - [BtcDisabledException]: adapter is off
+/// - [BtcConnectionException]: connection failed
+/// - [BtcWriteException]: write failed
+/// - [BtcTimeoutException]: operation timed out
+/// - [BtcAddressException]: invalid MAC address
+/// - [BtcUuidException]: invalid UUID
 ///
 /// {@category Exceptions}
 class BtcException implements Exception {
@@ -67,7 +67,7 @@ class BtcUnsupportedException extends BtcException {
 
   @override
   String toString() =>
-      'BtcUnsupportedException: $feature is not supported on $platform — $message';
+      'BtcUnsupportedException: $feature is not supported on $platform - $message';
 }
 
 /// Thrown when a required Bluetooth permission is denied.

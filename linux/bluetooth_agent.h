@@ -6,11 +6,11 @@
 // Auto-accepting BlueZ pairing agent (org.bluez.Agent1).
 //
 // Registering this as the default agent lets the plugin pair Secure Simple
-// Pairing ("just works") devices — the vast majority of modern Bluetooth
-// Classic modules, including ESP32 and most HC-05/06 — directly from
+// Pairing ("just works") devices (the vast majority of modern Bluetooth
+// Classic modules, including ESP32 and most HC-05/06) directly from
 // bondDevice(), with no desktop pairing dialog. Confirmation/authorization
 // requests are auto-accepted; legacy devices that require the user to type a
-// PIN or passkey are rejected (there is no interactive input path here) — pair
+// PIN or passkey are rejected (there is no interactive input path here). Pair
 // those through a system agent.
 //
 // If the desktop already runs a default agent, RequestDefaultAgent quietly
@@ -29,7 +29,7 @@ static void btc_agent_method_call(GDBusConnection*, const gchar*, const gchar*,
         g_strcmp0(method, "DisplayPinCode") == 0 ||
         g_strcmp0(method, "Cancel") == 0 ||
         g_strcmp0(method, "Release") == 0) {
-        // Accept (or acknowledge) — this is what enables just-works pairing.
+        // Accept (or acknowledge): this is what enables just-works pairing.
         g_dbus_method_invocation_return_value(invocation, nullptr);
     } else {
         // RequestPinCode / RequestPasskey and anything else: no input path.
@@ -93,7 +93,7 @@ inline guint dbus_register_pairing_agent(GDBusConnection* bus,
         G_DBUS_CALL_FLAGS_NONE, -1, nullptr, &error);
     if (r1) g_variant_unref(r1);
     if (error) {
-        // Already registered or BlueZ unavailable — keep the object but report
+        // Already registered or BlueZ unavailable: keep the object but report
         // no registration so pairing falls back to any system agent.
         g_error_free(error);
         error = nullptr;
@@ -104,7 +104,7 @@ inline guint dbus_register_pairing_agent(GDBusConnection* bus,
         "RequestDefaultAgent", g_variant_new("(o)", kBtcAgentPath), nullptr,
         G_DBUS_CALL_FLAGS_NONE, -1, nullptr, &error);
     if (r2) g_variant_unref(r2);
-    if (error) g_error_free(error);  // another default exists — non-fatal
+    if (error) g_error_free(error);  // another default exists, non-fatal
 
     *out_node = node;
     return reg_id;

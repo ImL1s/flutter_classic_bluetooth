@@ -11,7 +11,7 @@ void main() {
 
   // ── Plugin API Tests ─────────────────────────────────────────────────
 
-  group('Plugin API — Adapter', () {
+  group('Plugin API: Adapter', () {
     late FlutterClassicBluetooth bluetooth;
 
     setUp(() {
@@ -76,7 +76,7 @@ void main() {
     });
   });
 
-  group('Plugin API — Discovery', () {
+  group('Plugin API: Discovery', () {
     late FlutterClassicBluetooth bluetooth;
 
     setUp(() {
@@ -118,12 +118,12 @@ void main() {
       } on BtcDisabledException {
         // BT may be off
       } on BtcException {
-        // Permission denied / adapter error — acceptable in CI-less runs
+        // Permission denied / adapter error, acceptable in CI-less runs
       }
     });
   });
 
-  group('Plugin API — Pairing', () {
+  group('Plugin API: Pairing', () {
     late FlutterClassicBluetooth bluetooth;
 
     setUp(() {
@@ -157,7 +157,7 @@ void main() {
     });
   });
 
-  group('Plugin API — Connection validation', () {
+  group('Plugin API: Connection validation', () {
     late FlutterClassicBluetooth bluetooth;
 
     setUp(() {
@@ -190,7 +190,7 @@ void main() {
     });
   });
 
-  group('Plugin API — Capabilities', () {
+  group('Plugin API: Capabilities', () {
     late FlutterClassicBluetooth bluetooth;
 
     setUp(() {
@@ -234,7 +234,7 @@ void main() {
     testWidgets('setDiscoverable is reported via capabilities', (tester) async {
       // NOTE: setDiscoverable() shows an interactive system consent dialog on
       // Android and awaits the user's tap, so it can never complete in a
-      // headless integration run — calling it here would hang the whole suite.
+      // headless integration run: calling it here would hang the whole suite.
       // Verify the capability flag instead; the real call is covered by manual
       // on-device testing.
       final caps = await bluetooth.getPlatformCapabilities();
@@ -270,7 +270,7 @@ void main() {
     await tester.pumpAndSettle();
   }
 
-  group('App UI — Shell', () {
+  group('App UI: Shell', () {
     testWidgets('builds and shows the app bar title', (tester) async {
       await pumpApp(tester);
       expect(find.text('Bluetooth Classic'), findsAtLeast(1));
@@ -297,7 +297,7 @@ void main() {
     });
   });
 
-  group('App UI — Dashboard tab', () {
+  group('App UI: Dashboard tab', () {
     testWidgets('shows the adapter hero or an unsupported state', (
       tester,
     ) async {
@@ -313,7 +313,7 @@ void main() {
     });
   });
 
-  group('App UI — About (capabilities) tab', () {
+  group('App UI: About (capabilities) tab', () {
     testWidgets('lists the platform capability rows', (tester) async {
       await pumpApp(tester);
       await switchTab(tester, 'About');
@@ -344,7 +344,7 @@ void main() {
     });
   });
 
-  group('App UI — Server tab', () {
+  group('App UI: Server tab', () {
     testWidgets('shows the server form or an unsupported state', (
       tester,
     ) async {
@@ -360,7 +360,7 @@ void main() {
     });
   });
 
-  group('App UI — Discover tab', () {
+  group('App UI: Discover tab', () {
     testWidgets('shows the scan control or an appropriate empty state', (
       tester,
     ) async {
@@ -379,7 +379,7 @@ void main() {
     });
   });
 
-  group('App UI — Paired tab', () {
+  group('App UI: Paired tab', () {
     testWidgets('shows the paired list, empty state, or refresh action', (
       tester,
     ) async {
@@ -401,7 +401,7 @@ void main() {
     });
   });
 
-  group('App UI — Navigation flow', () {
+  group('App UI: Navigation flow', () {
     testWidgets('switches across tabs and back to the dashboard', (
       tester,
     ) async {
@@ -425,12 +425,12 @@ void main() {
     });
   });
 
-  group('App UI — Loading state', () {
+  group('App UI: Loading state', () {
     testWidgets('shows a spinner before the first data frame settles', (
       tester,
     ) async {
       await tester.pumpWidget(const BluetoothExampleApp());
-      await tester.pump(); // one frame — controller.init() may be in flight
+      await tester.pump(); // one frame, controller.init() may be in flight
       final spinner = find
           .byType(CircularProgressIndicator)
           .evaluate()

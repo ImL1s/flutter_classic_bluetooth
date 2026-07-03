@@ -341,8 +341,8 @@ void main() {
     });
 
     test('connect accepts valid address and UUID', () {
-      // The mock throws UnimplementedError for connect, which is fine —
-      // we verify validation passes.
+      // The mock throws UnimplementedError for connect, which is fine.
+      // We verify validation passes.
       expect(
         () => bluetooth.connect(
           address: 'AA:BB:CC:DD:EE:FF',
@@ -354,7 +354,7 @@ void main() {
 
     test('connect with no uuid passes validation (defaults to SPP)', () {
       // Validation passes (no BtcUuidException) and reaches the mock,
-      // which throws UnimplementedError — proving the SPP default is valid.
+      // which throws UnimplementedError, proving the SPP default is valid.
       expect(
         () => bluetooth.connect(address: 'AA:BB:CC:DD:EE:FF'),
         throwsA(isA<UnimplementedError>()),
@@ -1759,12 +1759,12 @@ void main() {
   });
 }
 
-/// A platform that doesn't implement anything — used to verify
+/// A platform that doesn't implement anything, used to verify
 /// that all methods throw [UnimplementedError].
 class _UnimplementedPlatform extends FlutterClassicBluetoothPlatform {}
 
 /// A platform that emits a few discovery results (including a name-less RSSI
-/// update) when discovery starts — used to exercise [FlutterClassicBluetooth.scan].
+/// update) when discovery starts, used to exercise [FlutterClassicBluetooth.scan].
 class _ScanPlatform extends MockFlutterClassicBluetoothPlatform {
   final StreamController<BtcDevice> controller =
       StreamController<BtcDevice>.broadcast();

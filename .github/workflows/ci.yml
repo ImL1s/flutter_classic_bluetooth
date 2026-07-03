@@ -25,19 +25,19 @@ jobs:
         with:
           channel: stable
 
-      - name: Package — install
+      - name: Package - install
         run: flutter pub get
 
-      - name: Package — format
+      - name: Package - format
         run: dart format --output=none --set-exit-if-changed .
 
-      - name: Package — analyze
+      - name: Package - analyze
         run: flutter analyze
 
-      - name: Package — test
+      - name: Package - test
         run: flutter test
 
-      - name: Example — install, analyze & test
+      - name: Example - install, analyze & test
         working-directory: example
         run: |
           flutter pub get
@@ -65,7 +65,7 @@ jobs:
           sudo apt-get install -y webp
 
       # Floor is 140 (the score provable without dartdoc/webp present). With webp
-      # installed the screenshot check passes, so CI should report ~150–160 — raise
+      # installed the screenshot check passes, so CI should report ~150-160. Raise
       # this gate once the real CI score is confirmed.
       - name: Require >= 140 pub points
         run: |
@@ -78,7 +78,7 @@ jobs:
             echo "::error::Could not read pana score."; tail -n 50 pana.err; exit 1
           fi
           if [ "$POINTS" -lt 140 ]; then
-            echo "::error::pana $POINTS/$MAX is below the required 140 — aborting."; exit 1
+            echo "::error::pana $POINTS/$MAX is below the required 140, aborting."; exit 1
           fi
 
   version:
@@ -102,13 +102,13 @@ jobs:
           echo "version=$VERSION" >> "$GITHUB_OUTPUT"
           if git rev-parse "v$VERSION" >/dev/null 2>&1; then
             echo "is_new=false" >> "$GITHUB_OUTPUT"
-            echo "v$VERSION is already tagged — nothing to release."
+            echo "v$VERSION is already tagged; nothing to release."
           else
             echo "is_new=true" >> "$GITHUB_OUTPUT"
-            echo "v$VERSION is new — will tag, then publish."
+            echo "v$VERSION is new; will tag, then publish."
           fi
 
-  # Push the tag with a PAT so it triggers the Publish workflow — a default
+  # Push the tag with a PAT so it triggers the Publish workflow; a default
   # GITHUB_TOKEN push would not. Requires the RELEASE_PAT repo secret.
   tag:
     name: Tag release

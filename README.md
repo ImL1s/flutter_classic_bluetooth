@@ -17,20 +17,20 @@
 **flutter_classic_bluetooth** is a Flutter plugin for **Bluetooth Classic
 serial communication over RFCOMM (the Serial Port Profile, SPP)**. It lets you
 **discover, pair, connect to, and exchange data with** Bluetooth Classic devices
-— **ESP32**, **ESP8266**, **Arduino** boards, **HC-05** / **HC-06** modules,
+(**ESP32**, **ESP8266**, **Arduino** boards, **HC-05** / **HC-06** modules,
 barcode scanners, thermal printers, OBD-II adapters, and other serial / UART
-peripherals — from a single Dart API on **Android, Windows, macOS, Linux, and
+peripherals) from a single Dart API on **Android, Windows, macOS, Linux, and
 iOS (MFi)**. Connections are exposed as Dart streams, so reading and writing
 bytes feels like any other `Stream`/`Sink`.
 
 > ⭐ **Find this useful?** [Star it on GitHub](https://github.com/almasumdev/flutter_classic_bluetooth)
-> and 👍 [like it on pub.dev](https://pub.dev/packages/flutter_classic_bluetooth) —
-> it helps other Flutter developers find a maintained Bluetooth Classic plugin.
+> and 👍 [like it on pub.dev](https://pub.dev/packages/flutter_classic_bluetooth).
+> It helps other Flutter developers find a maintained Bluetooth Classic plugin.
 
 ## Overview
 
 flutter_classic_bluetooth speaks **RFCOMM/SPP**, the classic Bluetooth serial
-transport — not Bluetooth Low Energy (BLE). It wraps each platform's native
+transport, not Bluetooth Low Energy (BLE). It wraps each platform's native
 stack (Android `BluetoothSocket`, Windows Winsock2 `AF_BTH`, Linux BlueZ
 RFCOMM sockets, macOS IOBluetooth, iOS ExternalAccessory) behind one consistent
 Dart interface. You can act as a **client** (connect out to a device) or as a
@@ -84,12 +84,12 @@ Dart API. Expand a group for details:
 <details>
 <summary><b>📡 Connectivity</b></summary>
 
-- RFCOMM/SPP **client** — connect by address + service UUID, secure or insecure
-- RFCOMM **server** — advertise an SDP service and accept incoming clients
+- RFCOMM/SPP **client**: connect by address + service UUID, secure or insecure
+- RFCOMM **server**: advertise an SDP service and accept incoming clients
 - **Multiple simultaneous** connections, each with its own id
 - Optional **connection timeout**
 - Optional **auto-reconnect** with exponential backoff (`connectWithReconnect`)
-- **Request/response** — `sendAndReceive()` writes a command and awaits its reply line
+- **Request/response**: `sendAndReceive()` writes a command and awaits its reply line
 
 </details>
 
@@ -107,8 +107,8 @@ Dart API. Expand a group for details:
 <summary><b>🔀 Streamed I/O</b></summary>
 
 - Incoming bytes as a Dart `Stream<Uint8List>`
-- **Line/frame reader** — `input.lines()` / `input.frames()` reassemble delimited messages across chunks
-- Ordered write sink — `add`, `writeBytes`, `writeString`, `writeLine`, `addStream`, `allSent`
+- **Line/frame reader**: `input.lines()` / `input.frames()` reassemble delimited messages across chunks
+- Ordered write sink: `add`, `writeBytes`, `writeString`, `writeLine`, `addStream`, `allSent`
 - Connection-state stream (`connecting` → `connected` → `disconnecting` → `disconnected`)
 
 </details>
@@ -125,7 +125,7 @@ Dart API. Expand a group for details:
 <details>
 <summary><b>🛡️ Reliability</b></summary>
 
-- Typed exception hierarchy — `BtcException` + subtypes
+- Typed exception hierarchy: `BtcException` + subtypes
 - Main-thread-safe event delivery on every platform
 - Honest per-platform capability reporting (no dead code paths)
 
@@ -148,37 +148,37 @@ can actually do (also queryable at runtime via `getPlatformCapabilities()`):
 | Enable / Disable | ✅ | ❌ | ❌ | ✅³ | ❌ |
 | Set discoverable | ✅ | ✅ | ❌ | ✅ | ❌ |
 
-¹ iOS uses the ExternalAccessory framework — only **MFi-certified** accessories are supported, and the `uuid` argument is treated as the MFi protocol string.<br/>
+¹ iOS uses the ExternalAccessory framework, so only **MFi-certified** accessories are supported, and the `uuid` argument is treated as the MFi protocol string.<br/>
 ² macOS pairs via `IOBluetoothDevicePair` and may show a system pairing prompt.<br/>
 ³ Linux uses the BlueZ D-Bus API (`org.bluez`); pairing a device that needs a PIN/passkey requires a system pairing agent.<br/>
-⁴ macOS has no public API to remove an existing pairing — unpair via System Settings.
+⁴ macOS has no public API to remove an existing pairing; unpair via System Settings.
 
 ## Roadmap
 
 What's shipped and what's next. Completed items are checked; the rest is on the
-list — [contributions](#support-and-feedback) welcome.
+list; [contributions](#support-and-feedback) welcome.
 
 **Shipped**
 
-- ✅ RFCOMM/SPP **client** — connect by address + UUID, secure/insecure, optional timeout
-- ✅ RFCOMM **server** — advertise an SDP service and accept incoming clients
+- ✅ RFCOMM/SPP **client**: connect by address + UUID, secure/insecure, optional timeout
+- ✅ RFCOMM **server**: advertise an SDP service and accept incoming clients
 - ✅ **Multiple simultaneous** connections, each with its own id
 - ✅ Device **discovery** with results and start/stop state streams
 - ✅ **Paired/bonded** device listing
 - ✅ **Pair / unpair** with a bond-state stream
 - ✅ Adapter **state stream**, **enable/disable**, and **set discoverable**
-- ✅ Streamed byte I/O — ordered write sink (`writeString` / `writeLine` / `writeBytes` / `addStream`)
-- ✅ Line/frame reader — split serial input on a delimiter (`input.lines()` / `input.frames()`)
-- ✅ Request/response helper — `sendAndReceive()` for AT-command / line protocols
+- ✅ Streamed byte I/O: ordered write sink (`writeString` / `writeLine` / `writeBytes` / `addStream`)
+- ✅ Line/frame reader: split serial input on a delimiter (`input.lines()` / `input.frames()`)
+- ✅ Request/response helper: `sendAndReceive()` for AT-command / line protocols
 - ✅ **Connection-state** lifecycle stream
 - ✅ Runtime **platform-capability** matrix
 - ✅ Typed **exception hierarchy** (`BtcException` + subtypes)
-- ✅ `BtcUuid.spp` default — `connect(address: ...)` just works for serial devices
+- ✅ `BtcUuid.spp` default: `connect(address: ...)` just works for serial devices
 - ✅ Optional **auto-reconnect** with exponential backoff (`connectWithReconnect`)
-- ✅ Linux **SSP pairing agent** — pair "just works" devices from `bondDevice()` with no desktop dialog
-- ✅ **Five platforms** — Android, Windows, macOS, Linux, iOS (MFi)
-- ✅ Linux via **BlueZ D-Bus** — discovery, adapter and pairing work without root
-- ✅ **Connection RSSI** on macOS — read the live link signal strength with `connection.readRssi()`
+- ✅ Linux **SSP pairing agent**: pair "just works" devices from `bondDevice()` with no desktop dialog
+- ✅ **Five platforms**: Android, Windows, macOS, Linux, iOS (MFi)
+- ✅ Linux via **BlueZ D-Bus**: discovery, adapter and pairing work without root
+- ✅ **Connection RSSI** on macOS: read the live link signal strength with `connection.readRssi()`
 
 **Planned**
 
@@ -186,10 +186,10 @@ list — [contributions](#support-and-feedback) welcome.
 
 **Not currently possible** (platform limits, tracked but blocked)
 
-- ⛔ Connection RSSI on **Android, iOS & Windows** — no public Bluetooth Classic API (macOS is supported; Linux would require privileged raw HCI). Discovery-time RSSI is available everywhere via `BtcDevice.rssi`.
-- ⛔ macOS programmatic unpair — no public Apple API
+- ⛔ Connection RSSI on **Android, iOS & Windows**: no public Bluetooth Classic API (macOS is supported; Linux would require privileged raw HCI). Discovery-time RSSI is available everywhere via `BtcDevice.rssi`.
+- ⛔ macOS programmatic unpair: no public Apple API
 
-**Out of scope** — use a dedicated package instead: Bluetooth Low Energy (BLE),
+**Out of scope**, use a dedicated package instead: Bluetooth Low Energy (BLE),
 and Web (Bluetooth Classic is not available in browsers).
 
 ## Example
@@ -221,7 +221,7 @@ import 'package:flutter_classic_bluetooth/flutter_classic_bluetooth.dart';
 
 ## Platform setup
 
-**Android** — add the Bluetooth permissions to `android/app/src/main/AndroidManifest.xml`:
+**Android**: add the Bluetooth permissions to `android/app/src/main/AndroidManifest.xml`:
 
 ```xml
 <!-- Android 11 (API 30) and below -->
@@ -234,7 +234,7 @@ import 'package:flutter_classic_bluetooth/flutter_classic_bluetooth.dart';
 <uses-permission android:name="android.permission.BLUETOOTH_ADVERTISE" />
 ```
 
-**iOS** — declare the MFi protocol(s) and a usage string in `ios/Runner/Info.plist`:
+**iOS**: declare the MFi protocol(s) and a usage string in `ios/Runner/Info.plist`:
 
 ```xml
 <key>UISupportedExternalAccessoryProtocols</key>
@@ -245,7 +245,7 @@ import 'package:flutter_classic_bluetooth/flutter_classic_bluetooth.dart';
 <string>This app communicates with Bluetooth accessories.</string>
 ```
 
-**macOS** — add the Bluetooth entitlement to `macos/Runner/*.entitlements` and a
+**macOS**: add the Bluetooth entitlement to `macos/Runner/*.entitlements` and a
 usage string to `Info.plist`:
 
 ```xml
@@ -253,7 +253,7 @@ usage string to `Info.plist`:
 <true/>
 ```
 
-**Linux** — install the GTK and BlueZ development packages the native plugin
+**Linux**: install the GTK and BlueZ development packages the native plugin
 builds against (Debian/Ubuntu shown; the build fails with a `gtk+-3.0` or
 `bluetooth/bluetooth.h` CMake error if they're missing):
 
@@ -282,7 +282,7 @@ if (caps.canDiscoverDevices) {
 
 ### Discover nearby devices
 
-One-shot — scan for a fixed window and get the de-duplicated list back, sorted
+One-shot: scan for a fixed window and get the de-duplicated list back, sorted
 by signal strength:
 
 ```dart
@@ -292,7 +292,7 @@ for (final d in devices) {
 }
 ```
 
-Live — stream results as they arrive:
+Live: stream results as they arrive:
 
 ```dart
 final sub = bluetooth.discoveryResults.listen((device) {
@@ -310,14 +310,14 @@ await sub.cancel();
 ```dart
 final devices = await bluetooth.getPairedDevices();
 for (final device in devices) {
-  print('${device.displayName} — ${device.address} [${device.bondState.name}]');
+  print('${device.displayName} - ${device.address} [${device.bondState.name}]');
 }
 ```
 
 ### Connect to a device
 
 ```dart
-// SPP is the default — for HC-05/06, ESP32, Arduino, etc. this is all you need:
+// SPP is the default. For HC-05/06, ESP32, Arduino, etc. this is all you need:
 final connection = await bluetooth.connect(address: 'AA:BB:CC:DD:EE:FF');
 print('Connected: id=${connection.id}');
 
@@ -342,8 +342,8 @@ connection.input.listen(
 ### Read line-by-line
 
 Serial devices send delimited text, but RFCOMM (like any stream) doesn't
-preserve message boundaries. `lines()` reassembles complete lines across chunks
-— it splits on `\n`, strips a trailing `\r`, and decodes to `String`:
+preserve message boundaries. `lines()` reassembles complete lines across chunks.
+It splits on `\n`, strips a trailing `\r`, and decodes to `String`:
 
 ```dart
 connection.input.lines().listen((line) => print('> $line'));
@@ -376,7 +376,7 @@ await connection.output.allSent;
 ### Request / response (AT commands)
 
 `sendAndReceive` writes a command and returns the first response line (framing
-and timeout handled for you) — the usual pattern for AT-command modules:
+and timeout handled for you), the usual pattern for AT-command modules:
 
 ```dart
 final version = await connection.sendAndReceive('AT+GMR');
@@ -410,7 +410,7 @@ connection.dispose(); // always release resources when done
 ### Reconnect automatically
 
 For long-lived links to a flaky device, `connectWithReconnect` keeps the
-connection alive across drops. Its `input` and `state` streams are **stable** —
+connection alive across drops. Its `input` and `state` streams are **stable**:
 subscribe once and keep receiving data as the underlying connection is replaced.
 
 ```dart
@@ -423,7 +423,7 @@ final link = bluetooth.connectWithReconnect(
   ),
 );
 
-link.state.listen((s) => print('Link: ${s.name}')); // connecting/connected/reconnecting/…
+link.state.listen((s) => print('Link: ${s.name}')); // connecting/connected/reconnecting/...
 link.input.listen((bytes) => print('RX ${bytes.length} bytes'));
 
 if (link.isConnected) await link.sendString('PING\r\n');
@@ -437,7 +437,7 @@ await link.close(); // stop reconnecting and release everything
 ```dart
 final server = await bluetooth.startServer(
   serviceName: 'MyService',
-  uuid: BtcUuid.spp, // optional — SPP is the default
+  uuid: BtcUuid.spp, // optional, SPP is the default
   secure: true,
 );
 
@@ -507,7 +507,7 @@ Every failure throws a typed `BtcException` (or a subtype): `BtcUnsupportedExcep
 ## FAQ
 
 **Is this Bluetooth Classic or Bluetooth Low Energy (BLE)?**
-Bluetooth **Classic** — RFCOMM/SPP serial communication. For BLE, use a
+Bluetooth **Classic**: RFCOMM/SPP serial communication. For BLE, use a
 BLE-specific package; this plugin targets classic serial peripherals like
 ESP32, HC-05/HC-06, printers, and scanners.
 
@@ -516,7 +516,7 @@ Yes. Any device that exposes a Bluetooth Classic **RFCOMM/SPP serial** profile
 works: an **ESP32** using `BluetoothSerial`, an **Arduino** or **ESP8266** wired
 to an **HC-05**/**HC-06** module, and other UART-over-Bluetooth peripherals
 (thermal printers, barcode scanners, OBD-II adapters). Pair the device, then
-just `connect(address: ...)` — the SPP UUID (`BtcUuid.spp`) is used by default.
+just `connect(address: ...)`; the SPP UUID (`BtcUuid.spp`) is used by default.
 
 **Which platforms are supported?**
 Android, Windows, macOS, and Linux for full client/server RFCOMM; iOS supports
@@ -534,7 +534,7 @@ Yes. Each `connect()` (and each accepted server client) returns an independent
 
 **How do I know if a feature works on the current device?**
 Call `getPlatformCapabilities()` and check the matching flag (e.g.
-`canDiscoverDevices`, `canCreateServer`) before invoking it — the plugin reports
+`canDiscoverDevices`, `canCreateServer`) before invoking it. The plugin reports
 capabilities honestly per platform.
 
 **How does pairing work on macOS and Linux?**
@@ -550,7 +550,7 @@ system pairing agent (e.g. a running desktop Bluetooth applet).
   [issue tracker](https://github.com/almasumdev/flutter_classic_bluetooth/issues).
 - Questions and ideas are welcome via
   [GitHub Discussions](https://github.com/almasumdev/flutter_classic_bluetooth/discussions).
-- Pull requests are welcome — see the repository for contribution guidelines.
+- Pull requests are welcome; see the repository for contribution guidelines.
 
 ## About
 
@@ -563,10 +563,10 @@ flutter_classic_bluetooth is created and owned by **Nurullah Al Masum**.
 
 ### Contributors
 
-flutter_classic_bluetooth grows with its community — every contributor is listed here:
+flutter_classic_bluetooth grows with its community, and every contributor is listed here:
 
 <a href="https://github.com/almasumdev/flutter_classic_bluetooth/graphs/contributors">
   <img src="https://contrib.rocks/image?repo=almasumdev/flutter_classic_bluetooth" alt="flutter_classic_bluetooth contributors"/>
 </a>
 
-Want to help? Pull requests are welcome — see [Support and feedback](#support-and-feedback).
+Want to help? Pull requests are welcome; see [Support and feedback](#support-and-feedback).

@@ -122,8 +122,8 @@ class _AdapterInfo extends StatelessWidget {
       icon: Icons.info_outline,
       child: Column(
         children: [
-          KeyValueRow('Name', controller.adapterName ?? '—'),
-          KeyValueRow('Address', controller.adapterAddress ?? '—', mono: true),
+          KeyValueRow('Name', controller.adapterName ?? '-'),
+          KeyValueRow('Address', controller.adapterAddress ?? '-', mono: true),
           KeyValueRow('State', controller.adapterState.name),
           KeyValueRow('Paired', '${controller.paired.length} device(s)'),
         ],

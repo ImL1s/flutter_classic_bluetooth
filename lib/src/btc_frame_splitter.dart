@@ -7,7 +7,7 @@ import 'package:flutter/services.dart';
 /// chunk boundaries so a frame may span several reads. The delimiter is stripped
 /// from the emitted frames.
 ///
-/// RFCOMM (like any stream transport) does not preserve message boundaries — a
+/// RFCOMM (like any stream transport) does not preserve message boundaries. A
 /// single `input` event may contain part of a line, several lines, or a line
 /// split mid-way. This transformer reassembles delimiter-terminated frames.
 ///
@@ -17,7 +17,7 @@ import 'package:flutter/services.dart';
 ///     .listen((frame) => print('line: ${utf8.decode(frame)}'));
 /// ```
 ///
-/// A trailing, un-terminated remainder is **not** emitted — framing waits for
+/// A trailing, un-terminated remainder is **not** emitted. Framing waits for
 /// the delimiter. If [maxFrameLength] is set and the buffer grows past it before
 /// a delimiter arrives, the stream emits a [StateError] and drops the buffer
 /// (a guard against a missing delimiter growing memory without bound).

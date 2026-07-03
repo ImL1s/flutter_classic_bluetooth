@@ -166,7 +166,7 @@ static FlMethodErrorResponse* bond_state_listen(FlEventChannel* channel,
 
 // ── BlueZ live signal handlers (run on the GLib main loop) ─────────────────
 
-// org.freedesktop.DBus.ObjectManager.InterfacesAdded — a new device appeared.
+// org.freedesktop.DBus.ObjectManager.InterfacesAdded: a new device appeared.
 static void on_interfaces_added(GDBusConnection*, const gchar*, const gchar*,
                                 const gchar*, const gchar*, GVariant* params,
                                 gpointer user_data) {
@@ -189,7 +189,7 @@ static void on_interfaces_added(GDBusConnection*, const gchar*, const gchar*,
     g_variant_unref(ifaces);
 }
 
-// org.bluez.Device1 PropertiesChanged — a known device updated (e.g. RSSI) as
+// org.bluez.Device1 PropertiesChanged: a known device updated (e.g. RSSI) as
 // it is rediscovered. Forward it as a discovery result while scanning.
 static void on_device_properties_changed(GDBusConnection*, const gchar*,
                                          const gchar* object_path, const gchar*,
@@ -216,7 +216,7 @@ static void on_device_properties_changed(GDBusConnection*, const gchar*,
     g_variant_unref(changed);
 }
 
-// org.bluez.Adapter1 PropertiesChanged — push live adapter power changes.
+// org.bluez.Adapter1 PropertiesChanged: push live adapter power changes.
 static void on_adapter_properties_changed(GDBusConnection*, const gchar*,
                                           const gchar*, const gchar*,
                                           const gchar*, GVariant* params,
@@ -762,7 +762,7 @@ static FlMethodResponse* handle_get_platform_capabilities(FlutterClassicBluetoot
     fl_value_set_string_take(caps, "supportsInsecureConnection", fl_value_new_bool(true));
     fl_value_set_string_take(caps, "requiresMfiCertification", fl_value_new_bool(false));
     fl_value_set_string_take(caps, "platformNote",
-        fl_value_new_string("Linux — Bluetooth Classic via BlueZ. Adapter state/power, discovery, discoverability, paired-device listing and pairing/unpairing use the BlueZ D-Bus API (org.bluez), so they work for an unprivileged desktop user; connect, server and data streaming use AF_BLUETOOTH RFCOMM sockets. Raw HCI is used only as a fallback when no system bus is available. The plugin registers an auto-accepting pairing agent, so Secure Simple Pairing (\"just works\") devices pair from bondDevice() without a desktop dialog; devices that require the user to type a PIN/passkey still need a system agent."));
+        fl_value_new_string("Linux: Bluetooth Classic via BlueZ. Adapter state/power, discovery, discoverability, paired-device listing and pairing/unpairing use the BlueZ D-Bus API (org.bluez), so they work for an unprivileged desktop user; connect, server and data streaming use AF_BLUETOOTH RFCOMM sockets. Raw HCI is used only as a fallback when no system bus is available. The plugin registers an auto-accepting pairing agent, so Secure Simple Pairing (\"just works\") devices pair from bondDevice() without a desktop dialog; devices that require the user to type a PIN/passkey still need a system agent."));
     return FL_METHOD_RESPONSE(fl_method_success_response_new(caps));
 }
 

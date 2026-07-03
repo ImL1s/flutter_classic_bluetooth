@@ -2,16 +2,16 @@
 # NOTE: when a .pubignore exists it REPLACES .gitignore for `pub publish`, so this
 # must re-list every build/working artifact .gitignore excludes, plus docs/.
 
-# Maintainer docs — useful on GitHub, not needed by package consumers.
+# Maintainer docs: useful on GitHub, not needed by package consumers.
 docs/
 
-# AI assistant instructions — local only.
+# AI assistant instructions. Local only.
 CLAUDE.md
 
-# Reference clones for comparison — never ship.
+# Reference clones for comparison, never ship.
 reference/
 
-# Local hardware test harness (ESP firmware, scratch apps) — never ship.
+# Local hardware test harness (ESP firmware, scratch apps), never ship.
 local_test/
 
 # Build artifacts and tooling state (mirrors .gitignore).
@@ -29,3 +29,6 @@ example/integration_test/esp32_live_test.dart
 .idea/
 *.iml
 .DS_Store
+
+# Internal implementation plan (never ship).
+doc/plan.md

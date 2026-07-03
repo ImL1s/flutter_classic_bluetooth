@@ -388,7 +388,7 @@ class _Composer extends StatelessWidget {
                   inputFormatters: [LengthLimitingTextInputFormatter(512)],
                   decoration: InputDecoration(
                     isDense: true,
-                    hintText: enabled ? 'Type a message…' : 'Disconnected',
+                    hintText: enabled ? 'Type a message...' : 'Disconnected',
                     filled: true,
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(24),

@@ -85,7 +85,7 @@ enum BtcDeviceType {
 /// | connecting | Establishing the first connection |
 /// | connected | Connected and ready for I/O |
 /// | reconnecting | Link dropped; backing off before the next attempt |
-/// | closed | Stopped by the caller — no further reconnects |
+/// | closed | Stopped by the caller; no further reconnects |
 /// | failed | Gave up after exhausting `maxAttempts` |
 ///
 /// {@category Enums}
@@ -99,7 +99,7 @@ enum BtcReconnectState {
   /// The link dropped; waiting/backing off before the next attempt.
   reconnecting,
 
-  /// Stopped by the caller — no further reconnects.
+  /// Stopped by the caller. No further reconnects.
   closed,
 
   /// Gave up after exhausting `maxAttempts`.
@@ -122,7 +122,7 @@ enum BtcConnectionState {
 
   /// Connection attempt in progress.
   ///
-  /// Represents the phase while `connect()` is awaiting — before a
+  /// Represents the phase while `connect()` is awaiting, before a
   /// [BtcConnection] object exists. A connection is only returned once it
   /// reaches [connected], so this value is observed via the pending future
   /// rather than a connection's `stateStream`.

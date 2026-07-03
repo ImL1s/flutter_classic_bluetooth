@@ -30,7 +30,7 @@ class RunnerTests: XCTestCase {
     plugin.handle(call) { result in
       let caps = result as? [String: Any]
       XCTAssertNotNil(caps)
-      // iOS only supports MFi accessories — discovery and server are unavailable.
+      // iOS only supports MFi accessories. Discovery and server are unavailable.
       XCTAssertEqual(caps?["requiresMfiCertification"] as? Bool, true)
       XCTAssertEqual(caps?["canDiscoverDevices"] as? Bool, false)
       resultExpectation.fulfill()

@@ -117,7 +117,7 @@ class BtcConnection {
   bool get isConnected => _state == BtcConnectionState.connected;
 
   /// Sends [command] (terminated by [newline]) and completes with the first
-  /// response line — or the first line for which [where] returns `true` —
+  /// response line (or the first line for which [where] returns `true`),
   /// decoded with [encoding].
   ///
   /// Lines are read via [input] with `.lines()` framing, so responses split
@@ -171,7 +171,7 @@ class BtcConnection {
   ///
   /// Supported on **macOS only** (via `IOBluetoothDevice`). Android, iOS,
   /// Windows and Linux have no public Bluetooth Classic API for connection RSSI
-  /// and throw [BtcUnsupportedException] — check
+  /// and throw [BtcUnsupportedException]. Check
   /// `BtcPlatformCapabilities.canReadConnectionRssi` before calling. (Note:
   /// discovery-time RSSI is always available separately on `BtcDevice.rssi`.)
   Future<int?> readRssi() async {

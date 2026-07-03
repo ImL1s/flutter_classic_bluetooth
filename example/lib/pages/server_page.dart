@@ -174,7 +174,7 @@ class _ServerPageState extends State<ServerPage> {
               title: 'No clients yet',
               message:
                   'Start the server, then connect to it from another '
-                  'device — clients appear here in real time.',
+                  'device. Clients appear here in real time.',
             ),
           )
         else

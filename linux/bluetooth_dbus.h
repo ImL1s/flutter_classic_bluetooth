@@ -16,7 +16,7 @@
 // RFCOMM socket: adapter presence/power/name/address, device discovery,
 // discoverability, paired-device enumeration and pairing/unpairing. Talking to
 // BlueZ over the system bus works for an ordinary desktop user (mediated by
-// polkit), whereas the raw HCI socket interface needs CAP_NET_RAW/root — so
+// polkit), whereas the raw HCI socket interface needs CAP_NET_RAW/root, so
 // D-Bus is what lets the plugin function in a normal Flutter desktop app.
 //
 // Every helper takes the caller-owned system-bus connection. When the bus is

@@ -73,7 +73,7 @@ enable_testing()
 
 # Add the Google Test dependency.
 include(FetchContent)
-# googletest v1.15.2 — release-1.11.0 declared cmake_minimum_required < 3.5,
+# googletest v1.15.2: release-1.11.0 declared cmake_minimum_required < 3.5,
 # which CMake 4.x (shipped with newer Visual Studio) rejects outright.
 FetchContent_Declare(
   googletest
