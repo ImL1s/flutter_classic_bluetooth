@@ -21,6 +21,7 @@
 
 #include "bluetooth_helper.h"
 #include "bluetooth_dbus.h"
+#include "bluetooth_agent.h"
 #include "bluetooth_connection.h"
 #include "bluetooth_server.h"
 
@@ -61,6 +62,9 @@ struct _FlutterClassicBluetoothPlugin {
     guint sub_iface_added;
     guint sub_device_props;
     guint sub_adapter_props;
+    // Auto-accepting pairing agent (org.bluez.Agent1) registration.
+    guint agent_reg_id;
+    GDBusNodeInfo* agent_node;
 };
 
 G_DEFINE_TYPE(FlutterClassicBluetoothPlugin, flutter_classic_bluetooth_plugin, g_object_get_type())
@@ -758,7 +762,7 @@ static FlMethodResponse* handle_get_platform_capabilities(FlutterClassicBluetoot
     fl_value_set_string_take(caps, "supportsInsecureConnection", fl_value_new_bool(true));
     fl_value_set_string_take(caps, "requiresMfiCertification", fl_value_new_bool(false));
     fl_value_set_string_take(caps, "platformNote",
-        fl_value_new_string("Linux — Bluetooth Classic via BlueZ. Adapter state/power, discovery, discoverability, paired-device listing and pairing/unpairing use the BlueZ D-Bus API (org.bluez), so they work for an unprivileged desktop user; connect, server and data streaming use AF_BLUETOOTH RFCOMM sockets. Raw HCI is used only as a fallback when no system bus is available. Pairing devices that need a PIN/passkey requires a system agent."));
+        fl_value_new_string("Linux — Bluetooth Classic via BlueZ. Adapter state/power, discovery, discoverability, paired-device listing and pairing/unpairing use the BlueZ D-Bus API (org.bluez), so they work for an unprivileged desktop user; connect, server and data streaming use AF_BLUETOOTH RFCOMM sockets. Raw HCI is used only as a fallback when no system bus is available. The plugin registers an auto-accepting pairing agent, so Secure Simple Pairing (\"just works\") devices pair from bondDevice() without a desktop dialog; devices that require the user to type a PIN/passkey still need a system agent."));
     return FL_METHOD_RESPONSE(fl_method_success_response_new(caps));
 }
 
@@ -857,6 +861,10 @@ static void flutter_classic_bluetooth_plugin_dispose(GObject* object) {
     g_clear_object(&self->bond_state_channel);
 
     if (self->system_bus) {
+        dbus_unregister_pairing_agent(self->system_bus, self->agent_reg_id,
+                                      self->agent_node);
+        self->agent_reg_id = 0;
+        self->agent_node = nullptr;
         if (self->sub_iface_added)
             g_dbus_connection_signal_unsubscribe(self->system_bus,
                                                  self->sub_iface_added);
@@ -896,6 +904,8 @@ static void flutter_classic_bluetooth_plugin_init(FlutterClassicBluetoothPlugin*
     self->sub_iface_added = 0;
     self->sub_device_props = 0;
     self->sub_adapter_props = 0;
+    self->agent_reg_id = 0;
+    self->agent_node = nullptr;
 }
 
 static void method_call_cb(FlMethodChannel* channel, FlMethodCall* method_call,
@@ -931,6 +941,11 @@ void flutter_classic_bluetooth_plugin_register_with_registrar(FlPluginRegistrar*
             "org.freedesktop.DBus.Properties", "PropertiesChanged",
             nullptr, "org.bluez.Adapter1", G_DBUS_SIGNAL_FLAGS_NONE,
             on_adapter_properties_changed, plugin, nullptr);
+
+        // Become the default pairing agent so SSP "just works" devices can pair
+        // from bondDevice() without a desktop dialog.
+        plugin->agent_reg_id =
+            dbus_register_pairing_agent(plugin->system_bus, &plugin->agent_node);
     }
 
     g_autoptr(FlStandardMethodCodec) codec = fl_standard_method_codec_new();

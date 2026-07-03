@@ -1126,6 +1126,27 @@ void main() {
           .setMockMethodCallHandler(methodChannel, null);
     });
 
+    test('writeLine appends the newline', () async {
+      const methodChannel = MethodChannel('flutter_classic_bluetooth/methods');
+      final calls = <MethodCall>[];
+      TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+          .setMockMethodCallHandler(methodChannel, (call) async {
+        calls.add(call);
+        return null;
+      });
+
+      final sink = BtcStreamSink(connectionId: 9, methodChannel: methodChannel);
+      await sink.writeLine('AT');
+
+      expect(
+        String.fromCharCodes(calls.single.arguments['data'] as Uint8List),
+        'AT\r\n',
+      );
+
+      TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+          .setMockMethodCallHandler(methodChannel, null);
+    });
+
     test('writes are chained in order', () async {
       final methodChannel =
           const MethodChannel('flutter_classic_bluetooth/methods');
@@ -1190,6 +1211,90 @@ void main() {
 
       conn.dispose();
       expect(conn.output.isClosed, isTrue);
+    });
+
+    test('sendAndReceive writes the command and returns the response line',
+        () async {
+      const method = MethodChannel('flutter_classic_bluetooth/methods');
+      const dataChannel =
+          EventChannel('flutter_classic_bluetooth/connection/1');
+      const stateChannel =
+          EventChannel('flutter_classic_bluetooth/connection_state/1');
+      final messenger =
+          TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger;
+
+      final writes = <String>[];
+      messenger.setMockMethodCallHandler(method, (call) async {
+        if (call.method == 'write') {
+          writes.add(String.fromCharCodes(call.arguments['data'] as Uint8List));
+        }
+        return null;
+      });
+      MockStreamHandlerEventSink? dataSink;
+      messenger.setMockStreamHandler(
+        dataChannel,
+        MockStreamHandler.inline(onListen: (args, sink) => dataSink = sink),
+      );
+      messenger.setMockStreamHandler(
+        stateChannel,
+        MockStreamHandler.inline(onListen: (args, sink) {}),
+      );
+
+      final conn = BtcConnection(
+        id: 1,
+        address: 'AA:BB:CC:DD:EE:FF',
+        methodChannel: method,
+      );
+
+      final future =
+          conn.sendAndReceive('AT', timeout: const Duration(seconds: 2));
+      await Future<void>.delayed(const Duration(milliseconds: 10));
+      dataSink!.success(Uint8List.fromList('OK\r\n'.codeUnits));
+
+      expect(await future, 'OK');
+      expect(writes, ['AT\r\n']);
+
+      conn.dispose();
+      messenger.setMockMethodCallHandler(method, null);
+      messenger.setMockStreamHandler(dataChannel, null);
+      messenger.setMockStreamHandler(stateChannel, null);
+    });
+
+    test('sendAndReceive throws BtcTimeoutException when no response arrives',
+        () async {
+      const method = MethodChannel('flutter_classic_bluetooth/methods');
+      const dataChannel =
+          EventChannel('flutter_classic_bluetooth/connection/2');
+      const stateChannel =
+          EventChannel('flutter_classic_bluetooth/connection_state/2');
+      final messenger =
+          TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger;
+
+      messenger.setMockMethodCallHandler(method, (call) async => null);
+      messenger.setMockStreamHandler(
+        dataChannel,
+        MockStreamHandler.inline(onListen: (args, sink) {}),
+      );
+      messenger.setMockStreamHandler(
+        stateChannel,
+        MockStreamHandler.inline(onListen: (args, sink) {}),
+      );
+
+      final conn = BtcConnection(
+        id: 2,
+        address: 'AA:BB:CC:DD:EE:FF',
+        methodChannel: method,
+      );
+
+      await expectLater(
+        conn.sendAndReceive('AT', timeout: const Duration(milliseconds: 50)),
+        throwsA(isA<BtcTimeoutException>()),
+      );
+
+      conn.dispose();
+      messenger.setMockMethodCallHandler(method, null);
+      messenger.setMockStreamHandler(dataChannel, null);
+      messenger.setMockStreamHandler(stateChannel, null);
     });
   });
 

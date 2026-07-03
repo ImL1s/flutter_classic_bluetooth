@@ -7,6 +7,16 @@
   splits on `\n`, strips a trailing `\r`, and decodes to `String`, so ESP32 /
   HC-05 / Arduino serial output reads cleanly with `connection.input.lines()`.
   A `.decoded()` helper streams multi-byte-safe text.
+* **Request/response**: `BtcConnection.sendAndReceive()` (and the same on
+  `BtcReconnectingConnection`) writes a command and returns the first response
+  line — or the first line matching a `where` predicate — with framing and a
+  timeout handled for you. Ideal for AT-command devices.
+* `BtcStreamSink.writeLine()` / `BtcReconnectingConnection.sendLine()` — write
+  text with a trailing newline (CRLF by default).
+* **Linux**: the plugin registers an auto-accepting BlueZ pairing agent
+  (`org.bluez.Agent1`), so Secure Simple Pairing ("just works") devices — ESP32,
+  most HC-05/06 — pair from `bondDevice()` without a desktop dialog. Devices that
+  require typing a PIN/passkey still need a system agent.
 
 ## 0.1.2
 

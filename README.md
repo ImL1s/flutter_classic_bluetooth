@@ -63,6 +63,7 @@ through broadcast streams.
   - [Receive data](#receive-data)
   - [Read line-by-line](#read-line-by-line)
   - [Send data](#send-data)
+  - [Request / response (AT commands)](#request--response-at-commands)
   - [Watch the connection state](#watch-the-connection-state)
   - [Disconnect and dispose](#disconnect-and-dispose)
   - [Reconnect automatically](#reconnect-automatically)
@@ -88,6 +89,7 @@ Dart API. Expand a group for details:
 - **Multiple simultaneous** connections, each with its own id
 - Optional **connection timeout**
 - Optional **auto-reconnect** with exponential backoff (`connectWithReconnect`)
+- **Request/response** — `sendAndReceive()` writes a command and awaits its reply line
 
 </details>
 
@@ -106,7 +108,7 @@ Dart API. Expand a group for details:
 
 - Incoming bytes as a Dart `Stream<Uint8List>`
 - **Line/frame reader** — `input.lines()` / `input.frames()` reassemble delimited messages across chunks
-- Ordered write sink — `add`, `writeBytes`, `writeString`, `addStream`, `allSent`
+- Ordered write sink — `add`, `writeBytes`, `writeString`, `writeLine`, `addStream`, `allSent`
 - Connection-state stream (`connecting` → `connected` → `disconnecting` → `disconnected`)
 
 </details>
@@ -165,22 +167,26 @@ list — [contributions](#support-and-feedback) welcome.
 - ✅ **Paired/bonded** device listing
 - ✅ **Pair / unpair** with a bond-state stream
 - ✅ Adapter **state stream**, **enable/disable**, and **set discoverable**
-- ✅ Streamed byte I/O with an ordered write sink (`writeString` / `writeBytes` / `addStream`)
+- ✅ Streamed byte I/O — ordered write sink (`writeString` / `writeLine` / `writeBytes` / `addStream`)
 - ✅ Line/frame reader — split serial input on a delimiter (`input.lines()` / `input.frames()`)
+- ✅ Request/response helper — `sendAndReceive()` for AT-command / line protocols
 - ✅ **Connection-state** lifecycle stream
 - ✅ Runtime **platform-capability** matrix
 - ✅ Typed **exception hierarchy** (`BtcException` + subtypes)
 - ✅ `BtcUuid.spp` default — `connect(address: ...)` just works for serial devices
 - ✅ Optional **auto-reconnect** with exponential backoff (`connectWithReconnect`)
+- ✅ Linux **SSP pairing agent** — pair "just works" devices from `bondDevice()` with no desktop dialog
 - ✅ **Five platforms** — Android, Windows, macOS, Linux, iOS (MFi)
 - ✅ Linux via **BlueZ D-Bus** — discovery, adapter and pairing work without root
 
 **Planned**
 
-- ⬜ Live RSSI updates on an active connection
-- ⬜ Linux: built-in pairing agent for PIN/passkey devices
-- ⬜ macOS: programmatic unpair (pending a public Apple API)
 - ⬜ Expanded on-device integration tests
+
+**Not currently possible** (platform limits, tracked but blocked)
+
+- ⛔ Live RSSI on an active Classic connection — no public API on Android/Windows
+- ⛔ macOS programmatic unpair — no public Apple API
 
 **Out of scope** — use a dedicated package instead: Bluetooth Low Energy (BLE),
 and Web (Bluetooth Classic is not available in browsers).
@@ -347,8 +353,26 @@ await connection.output.add(Uint8List.fromList([0x01, 0x02, 0x03]));
 await connection.output.writeBytes([0x04, 0x05]);
 await connection.output.writeString('AT+RESET\r\n');
 
+// A whole line (appends CRLF by default)
+await connection.output.writeLine('AT');
+
 // Wait until everything queued so far has been written
 await connection.output.allSent;
+```
+
+### Request / response (AT commands)
+
+`sendAndReceive` writes a command and returns the first response line (framing
+and timeout handled for you) — the usual pattern for AT-command modules:
+
+```dart
+final version = await connection.sendAndReceive('AT+GMR');
+final ok = await connection.sendAndReceive(
+  'AT',
+  where: (line) => line == 'OK', // skip echoes; return the line you want
+  timeout: const Duration(seconds: 2),
+);
+// Throws BtcTimeoutException if nothing matches in time.
 ```
 
 ### Watch the connection state

@@ -182,6 +182,40 @@ class BtcReconnectingConnection {
   Future<void> sendString(String text, {Encoding encoding = utf8}) =>
       send(Uint8List.fromList(encoding.encode(text)));
 
+  /// Sends [text] followed by [newline] (CRLF by default). See [send].
+  Future<void> sendLine(
+    String text, {
+    String newline = '\r\n',
+    Encoding encoding = utf8,
+  }) =>
+      sendString('$text$newline', encoding: encoding);
+
+  /// Sends [command] over the current connection and awaits its response line.
+  ///
+  /// Delegates to [BtcConnection.sendAndReceive] on the live connection. Throws
+  /// [BtcConnectionException] if the link is reconnecting, or
+  /// [BtcTimeoutException] if no response arrives within [timeout]. If the link
+  /// drops mid-transaction the call fails and can be retried once reconnected.
+  Future<String> sendAndReceive(
+    String command, {
+    Duration timeout = const Duration(seconds: 5),
+    bool Function(String line)? where,
+    String newline = '\r\n',
+    Encoding encoding = utf8,
+  }) {
+    final conn = _current;
+    if (conn == null || _state != BtcReconnectState.connected) {
+      throw const BtcConnectionException('Not connected');
+    }
+    return conn.sendAndReceive(
+      command,
+      timeout: timeout,
+      where: where,
+      newline: newline,
+      encoding: encoding,
+    );
+  }
+
   /// Stops reconnecting, disconnects, and releases all resources.
   ///
   /// After this the object is finished — its [input] and [state] streams close.

@@ -63,6 +63,15 @@ class BtcStreamSink {
   Future<void> writeString(String text, {Encoding encoding = utf8}) =>
       add(Uint8List.fromList(encoding.encode(text)));
 
+  /// Writes [text] followed by [newline] (CRLF by default) — the common shape
+  /// for line-based serial protocols (AT commands, etc.).
+  Future<void> writeLine(
+    String text, {
+    String newline = '\r\n',
+    Encoding encoding = utf8,
+  }) =>
+      writeString('$text$newline', encoding: encoding);
+
   /// Pipes every chunk of [stream] to the remote device, in order.
   ///
   /// Completes when [stream] is done and all of its chunks have been written.

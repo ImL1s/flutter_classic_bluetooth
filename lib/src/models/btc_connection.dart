@@ -1,8 +1,11 @@
 import 'dart:async';
+import 'dart:convert';
 
 import 'package:flutter/services.dart';
 
+import '../btc_frame_splitter.dart';
 import 'btc_enums.dart';
+import 'btc_exceptions.dart';
 import 'btc_stream_sink.dart';
 
 /// An active RFCOMM connection to a remote Bluetooth device.
@@ -112,6 +115,54 @@ class BtcConnection {
 
   /// Whether this connection is currently active.
   bool get isConnected => _state == BtcConnectionState.connected;
+
+  /// Sends [command] (terminated by [newline]) and completes with the first
+  /// response line — or the first line for which [where] returns `true` —
+  /// decoded with [encoding].
+  ///
+  /// Lines are read via [input] with `.lines()` framing, so responses split
+  /// across RFCOMM chunks are reassembled. Ideal for AT-command modules
+  /// (HC-05, ESP-AT) and other request/response line protocols.
+  ///
+  /// ```dart
+  /// final version = await connection.sendAndReceive('AT+GMR');
+  /// final ok = await connection.sendAndReceive('AT', where: (l) => l == 'OK');
+  /// ```
+  ///
+  /// Throws [BtcTimeoutException] if no matching line arrives within [timeout].
+  Future<String> sendAndReceive(
+    String command, {
+    Duration timeout = const Duration(seconds: 5),
+    bool Function(String line)? where,
+    String newline = '\r\n',
+    Encoding encoding = utf8,
+  }) async {
+    final completer = Completer<String>();
+    // Subscribe before writing so a fast response is never missed.
+    final sub = input.lines(encoding: encoding).listen(
+      (line) {
+        if (!completer.isCompleted && (where == null || where(line))) {
+          completer.complete(line);
+        }
+      },
+      onError: (Object e) {
+        if (!completer.isCompleted) completer.completeError(e);
+      },
+    );
+    try {
+      await _outputSink.writeString('$command$newline', encoding: encoding);
+      return await completer.future.timeout(
+        timeout,
+        onTimeout: () => throw BtcTimeoutException(
+          message:
+              'No response to "$command" within ${timeout.inMilliseconds}ms',
+          timeoutMs: timeout.inMilliseconds,
+        ),
+      );
+    } finally {
+      await sub.cancel();
+    }
+  }
 
   /// Gracefully disconnects: waits for all pending writes to complete,
   /// then closes the connection.
