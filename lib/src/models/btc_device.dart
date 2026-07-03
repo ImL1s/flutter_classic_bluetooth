@@ -92,6 +92,22 @@ class BtcDevice {
   /// Returns the best available display name for this device.
   String get displayName => alias ?? name ?? address;
 
+  /// Returns a copy updated with the non-null/known fields of [other].
+  ///
+  /// Useful when merging repeated discovery sightings of the same device: a
+  /// follow-up scan event (e.g. an RSSI refresh) often omits the name, and this
+  /// preserves the earlier value instead of blanking it.
+  BtcDevice mergedWith(BtcDevice other) => BtcDevice(
+        address: other.address,
+        name: other.name ?? name,
+        alias: other.alias ?? alias,
+        rssi: other.rssi ?? rssi,
+        type: other.type != BtcDeviceType.unknown ? other.type : type,
+        bondState:
+            other.bondState != BtcBondState.none ? other.bondState : bondState,
+        uuids: other.uuids.isNotEmpty ? other.uuids : uuids,
+      );
+
   @override
   bool operator ==(Object other) =>
       identical(this, other) || other is BtcDevice && other.address == address;

@@ -13,6 +13,11 @@
   timeout handled for you. Ideal for AT-command devices.
 * `BtcStreamSink.writeLine()` / `BtcReconnectingConnection.sendLine()` — write
   text with a trailing newline (CRLF by default).
+* One-shot `FlutterClassicBluetooth.scan()` — starts discovery, collects results
+  for a timeout (de-duplicated and merged), stops, and returns them sorted by
+  signal strength. Plus `BtcDevice.mergedWith()` to combine repeated sightings.
+* `BtcReconnectingConnection` now exposes `attempts` and `lastError` for UIs that
+  show reconnect progress.
 * **Linux**: the plugin registers an auto-accepting BlueZ pairing agent
   (`org.bluez.Agent1`), so Secure Simple Pairing ("just works") devices — ESP32,
   most HC-05/06 — pair from `bondDevice()` without a desktop dialog. Devices that

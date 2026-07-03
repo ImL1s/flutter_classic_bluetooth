@@ -187,6 +187,45 @@ class FlutterClassicBluetooth {
   /// Stream of devices found during discovery.
   Stream<BtcDevice> get discoveryResults => _platform.discoveryResults();
 
+  /// Runs a single bounded scan and returns the devices found.
+  ///
+  /// Convenience wrapper over [startDiscovery] + [discoveryResults]: it starts
+  /// discovery, collects results for [timeout] (de-duplicated by address and
+  /// merged so a device keeps its name across partial updates), stops
+  /// discovery, and returns the list sorted by signal strength (strongest
+  /// first). For a live feed, use [startDiscovery]/[discoveryResults] directly.
+  ///
+  /// | Platform | Supported |
+  /// |----------|-----------|
+  /// | Android | Yes |
+  /// | Windows | Yes |
+  /// | macOS | Yes |
+  /// | Linux | Yes |
+  /// | iOS | No (throws [BtcUnsupportedException]) |
+  Future<List<BtcDevice>> scan({
+    Duration timeout = const Duration(seconds: 12),
+  }) async {
+    final found = <String, BtcDevice>{};
+    final sub = discoveryResults.listen((device) {
+      final prev = found[device.address];
+      found[device.address] = prev == null ? device : prev.mergedWith(device);
+    });
+    try {
+      await startDiscovery();
+      await Future<void>.delayed(timeout);
+    } finally {
+      try {
+        await stopDiscovery();
+      } catch (_) {
+        // Discovery may already have stopped; ignore.
+      }
+      await sub.cancel();
+    }
+    final list = found.values.toList()
+      ..sort((a, b) => (b.rssi ?? -1000).compareTo(a.rssi ?? -1000));
+    return list;
+  }
+
   // ── Pairing ──────────────────────────────────────────────────────────
 
   /// Returns the list of currently paired/bonded devices.

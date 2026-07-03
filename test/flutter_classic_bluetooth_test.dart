@@ -849,6 +849,20 @@ void main() {
       expect(device.toString(), contains('AA:BB:CC:DD:EE:FF'));
       expect(device.toString(), contains('Dev'));
     });
+
+    test('mergedWith keeps earlier non-null fields, applies new ones', () {
+      const a = BtcDevice(
+        address: 'AA:BB:CC:DD:EE:FF',
+        name: 'Name',
+        rssi: -50,
+        uuids: ['u1'],
+      );
+      const b = BtcDevice(address: 'AA:BB:CC:DD:EE:FF', rssi: -40);
+      final m = a.mergedWith(b);
+      expect(m.name, 'Name'); // preserved (b had none)
+      expect(m.rssi, -40); // updated
+      expect(m.uuids, ['u1']); // preserved
+    });
   });
 
   // ── PlatformCapabilities Model ────────────────────────────────────────
@@ -1374,6 +1388,26 @@ void main() {
     });
   });
 
+  group('scan', () {
+    test('collects, de-dupes and sorts results by signal', () async {
+      final platform = _ScanPlatform();
+      FlutterClassicBluetoothPlatform.instance = platform;
+      addTearDown(platform.controller.close);
+      final bluetooth = FlutterClassicBluetooth();
+
+      final devices =
+          await bluetooth.scan(timeout: const Duration(milliseconds: 60));
+
+      expect(
+        devices.map((d) => d.address).toList(),
+        ['AA:BB:CC:DD:EE:F1', 'AA:BB:CC:DD:EE:F2'], // strongest first
+      );
+      expect(
+          devices.first.name, 'One'); // preserved across the rssi-only update
+      expect(devices.first.rssi, -35); // updated
+    });
+  });
+
   // ── Frame splitting / line reading ────────────────────────────────────
 
   group('BtcFrameSplitter', () {
@@ -1550,6 +1584,27 @@ void main() {
       expect(states.last, BtcReconnectState.failed);
     });
 
+    test('exposes attempts and lastError after failures', () async {
+      final link = BtcReconnectingConnection(
+        address: 'AA:BB:CC:DD:EE:FF',
+        connector: () async => throw const BtcConnectionException('refused'),
+        policy: const BtcReconnectPolicy(
+          maxAttempts: 1,
+          initialBackoff: Duration(milliseconds: 5),
+          maxBackoff: Duration(milliseconds: 5),
+          backoffMultiplier: 1.0,
+          connectTimeout: null,
+        ),
+      )..start();
+      addTearDown(link.close);
+
+      await Future<void>.delayed(const Duration(milliseconds: 40));
+
+      expect(link.currentState, BtcReconnectState.failed);
+      expect(link.attempts, greaterThan(0));
+      expect(link.lastError, isA<BtcConnectionException>());
+    });
+
     test('close() stops further reconnects', () async {
       var calls = 0;
       final link = BtcReconnectingConnection(
@@ -1580,3 +1635,25 @@ void main() {
 /// A platform that doesn't implement anything — used to verify
 /// that all methods throw [UnimplementedError].
 class _UnimplementedPlatform extends FlutterClassicBluetoothPlatform {}
+
+/// A platform that emits a few discovery results (including a name-less RSSI
+/// update) when discovery starts — used to exercise [FlutterClassicBluetooth.scan].
+class _ScanPlatform extends MockFlutterClassicBluetoothPlatform {
+  final StreamController<BtcDevice> controller =
+      StreamController<BtcDevice>.broadcast();
+
+  @override
+  Stream<BtcDevice> discoveryResults() => controller.stream;
+
+  @override
+  Future<void> startDiscovery() async {
+    controller.add(
+      const BtcDevice(address: 'AA:BB:CC:DD:EE:F1', name: 'One', rssi: -40),
+    );
+    controller.add(
+      const BtcDevice(address: 'AA:BB:CC:DD:EE:F2', name: 'Two', rssi: -70),
+    );
+    // A follow-up sighting of F1 with only a stronger RSSI (no name).
+    controller.add(const BtcDevice(address: 'AA:BB:CC:DD:EE:F1', rssi: -35));
+  }
+}

@@ -96,7 +96,7 @@ Dart API. Expand a group for details:
 <details>
 <summary><b>🔍 Discovery & pairing</b></summary>
 
-- Device **discovery** with results and start/stop state streams
+- Device **discovery** with results and start/stop state streams, plus a one-shot `scan()`
 - **Paired/bonded** device listing
 - **Bond / unbond** devices and observe bond-state changes
 - **Make discoverable** (where supported)
@@ -280,6 +280,18 @@ if (caps.canDiscoverDevices) {
 ```
 
 ### Discover nearby devices
+
+One-shot — scan for a fixed window and get the de-duplicated list back, sorted
+by signal strength:
+
+```dart
+final devices = await bluetooth.scan(timeout: const Duration(seconds: 8));
+for (final d in devices) {
+  print('${d.displayName} (${d.address}) ${d.rssi ?? ''}');
+}
+```
+
+Live — stream results as they arrive:
 
 ```dart
 final sub = bluetooth.discoveryResults.listen((device) {

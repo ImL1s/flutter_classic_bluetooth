@@ -66,6 +66,7 @@ class BtcReconnectingConnection {
   StreamSubscription<BtcConnectionState>? _stateSub;
   Timer? _retryTimer;
   int _attempt = 0;
+  Object? _lastError;
   bool _closed = false;
   bool _retryPending = false;
   BtcReconnectState _state = BtcReconnectState.connecting;
@@ -84,6 +85,12 @@ class BtcReconnectingConnection {
 
   /// Whether a connection is established right now.
   bool get isConnected => _state == BtcReconnectState.connected;
+
+  /// Consecutive failed reconnect attempts since the last successful connect.
+  int get attempts => _attempt;
+
+  /// The error from the most recent failed connect attempt, or `null`.
+  Object? get lastError => _lastError;
 
   /// Begins connecting. Has no effect if already started or [close]d.
   void start() {
@@ -111,7 +118,8 @@ class BtcReconnectingConnection {
                 timeoutMs: timeout.inMilliseconds,
               ),
             ));
-    } catch (_) {
+    } catch (e) {
+      _lastError = e;
       _onDropped();
       return;
     }
@@ -125,6 +133,7 @@ class BtcReconnectingConnection {
 
     _current = conn;
     _attempt = 0;
+    _lastError = null;
     _retryPending = false;
     _setState(BtcReconnectState.connected);
 
