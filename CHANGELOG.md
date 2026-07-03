@@ -18,6 +18,11 @@
   signal strength. Plus `BtcDevice.mergedWith()` to combine repeated sightings.
 * `BtcReconnectingConnection` now exposes `attempts` and `lastError` for UIs that
   show reconnect progress.
+* **Connection RSSI (macOS)**: `BtcConnection.readRssi()` reads the live signal
+  strength of an open link via `IOBluetoothDevice`. Gated by the new
+  `BtcPlatformCapabilities.canReadConnectionRssi` flag; Android, iOS, Windows and
+  Linux throw `BtcUnsupportedException` (no public Classic API for connection
+  RSSI). Discovery-time RSSI stays available everywhere on `BtcDevice.rssi`.
 * **Linux**: the plugin registers an auto-accepting BlueZ pairing agent
   (`org.bluez.Agent1`), so Secure Simple Pairing ("just works") devices — ESP32,
   most HC-05/06 — pair from `bondDevice()` without a desktop dialog. Devices that

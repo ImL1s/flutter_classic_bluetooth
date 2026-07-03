@@ -893,6 +893,7 @@ void main() {
       const original = BtcPlatformCapabilities(
         canDiscoverDevices: true,
         canEnableBluetooth: true,
+        canReadConnectionRssi: true,
         requiresMfiCertification: true,
         platformNote: 'iOS',
       );
@@ -901,6 +902,7 @@ void main() {
 
       expect(restored.canDiscoverDevices, original.canDiscoverDevices);
       expect(restored.canEnableBluetooth, original.canEnableBluetooth);
+      expect(restored.canReadConnectionRssi, original.canReadConnectionRssi);
       expect(
           restored.requiresMfiCertification, original.requiresMfiCertification);
       expect(restored.platformNote, original.platformNote);
@@ -919,6 +921,7 @@ void main() {
       expect(caps.supportsMultipleConnections, isFalse);
       expect(caps.supportsSecureConnection, isFalse);
       expect(caps.supportsInsecureConnection, isFalse);
+      expect(caps.canReadConnectionRssi, isFalse);
       expect(caps.requiresMfiCertification, isFalse);
       expect(caps.platformNote, isNull);
     });
@@ -1307,6 +1310,130 @@ void main() {
 
       conn.dispose();
       messenger.setMockMethodCallHandler(method, null);
+      messenger.setMockStreamHandler(dataChannel, null);
+      messenger.setMockStreamHandler(stateChannel, null);
+    });
+
+    test('readRssi sends getConnectionRssi and returns the value', () async {
+      const method = MethodChannel('flutter_classic_bluetooth/methods');
+      const dataChannel =
+          EventChannel('flutter_classic_bluetooth/connection/7');
+      const stateChannel =
+          EventChannel('flutter_classic_bluetooth/connection_state/7');
+      final messenger =
+          TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger;
+
+      MethodCall? seen;
+      messenger.setMockMethodCallHandler(method, (call) async {
+        seen = call;
+        return -42;
+      });
+      messenger.setMockStreamHandler(
+          dataChannel, MockStreamHandler.inline(onListen: (args, sink) {}));
+      messenger.setMockStreamHandler(
+          stateChannel, MockStreamHandler.inline(onListen: (args, sink) {}));
+
+      final conn = BtcConnection(
+          id: 7, address: 'AA:BB:CC:DD:EE:FF', methodChannel: method);
+
+      expect(await conn.readRssi(), -42);
+      expect(seen?.method, 'getConnectionRssi');
+      expect(seen?.arguments['id'], 7);
+
+      conn.dispose();
+      messenger.setMockMethodCallHandler(method, null);
+      messenger.setMockStreamHandler(dataChannel, null);
+      messenger.setMockStreamHandler(stateChannel, null);
+    });
+
+    test('readRssi returns null when the platform has no sample', () async {
+      const method = MethodChannel('flutter_classic_bluetooth/methods');
+      const dataChannel =
+          EventChannel('flutter_classic_bluetooth/connection/8');
+      const stateChannel =
+          EventChannel('flutter_classic_bluetooth/connection_state/8');
+      final messenger =
+          TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger;
+
+      messenger.setMockMethodCallHandler(method, (call) async => null);
+      messenger.setMockStreamHandler(
+          dataChannel, MockStreamHandler.inline(onListen: (args, sink) {}));
+      messenger.setMockStreamHandler(
+          stateChannel, MockStreamHandler.inline(onListen: (args, sink) {}));
+
+      final conn = BtcConnection(
+          id: 8, address: 'AA:BB:CC:DD:EE:FF', methodChannel: method);
+
+      expect(await conn.readRssi(), isNull);
+
+      conn.dispose();
+      messenger.setMockMethodCallHandler(method, null);
+      messenger.setMockStreamHandler(dataChannel, null);
+      messenger.setMockStreamHandler(stateChannel, null);
+    });
+
+    test('readRssi maps an unsupported PlatformException to unsupported',
+        () async {
+      const method = MethodChannel('flutter_classic_bluetooth/methods');
+      const dataChannel =
+          EventChannel('flutter_classic_bluetooth/connection/9');
+      const stateChannel =
+          EventChannel('flutter_classic_bluetooth/connection_state/9');
+      final messenger =
+          TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger;
+
+      messenger.setMockMethodCallHandler(method, (call) async {
+        throw PlatformException(
+          code: 'unsupported',
+          message: 'no RSSI on Windows',
+          details: {'feature': 'getConnectionRssi', 'platform': 'Windows'},
+        );
+      });
+      messenger.setMockStreamHandler(
+          dataChannel, MockStreamHandler.inline(onListen: (args, sink) {}));
+      messenger.setMockStreamHandler(
+          stateChannel, MockStreamHandler.inline(onListen: (args, sink) {}));
+
+      final conn = BtcConnection(
+          id: 9, address: 'AA:BB:CC:DD:EE:FF', methodChannel: method);
+
+      await expectLater(
+        conn.readRssi(),
+        throwsA(isA<BtcUnsupportedException>()
+            .having((e) => e.platform, 'platform', 'Windows')),
+      );
+
+      conn.dispose();
+      messenger.setMockMethodCallHandler(method, null);
+      messenger.setMockStreamHandler(dataChannel, null);
+      messenger.setMockStreamHandler(stateChannel, null);
+    });
+
+    test('readRssi maps a MissingPluginException to unsupported', () async {
+      const method = MethodChannel('flutter_classic_bluetooth/methods');
+      const dataChannel =
+          EventChannel('flutter_classic_bluetooth/connection/10');
+      const stateChannel =
+          EventChannel('flutter_classic_bluetooth/connection_state/10');
+      final messenger =
+          TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger;
+
+      // No method handler → invokeMethod throws MissingPluginException.
+      messenger.setMockMethodCallHandler(method, null);
+      messenger.setMockStreamHandler(
+          dataChannel, MockStreamHandler.inline(onListen: (args, sink) {}));
+      messenger.setMockStreamHandler(
+          stateChannel, MockStreamHandler.inline(onListen: (args, sink) {}));
+
+      final conn = BtcConnection(
+          id: 10, address: 'AA:BB:CC:DD:EE:FF', methodChannel: method);
+
+      await expectLater(
+        conn.readRssi(),
+        throwsA(isA<BtcUnsupportedException>()),
+      );
+
+      conn.dispose();
       messenger.setMockStreamHandler(dataChannel, null);
       messenger.setMockStreamHandler(stateChannel, null);
     });

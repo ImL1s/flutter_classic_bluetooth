@@ -178,6 +178,7 @@ list — [contributions](#support-and-feedback) welcome.
 - ✅ Linux **SSP pairing agent** — pair "just works" devices from `bondDevice()` with no desktop dialog
 - ✅ **Five platforms** — Android, Windows, macOS, Linux, iOS (MFi)
 - ✅ Linux via **BlueZ D-Bus** — discovery, adapter and pairing work without root
+- ✅ **Connection RSSI** on macOS — read the live link signal strength with `connection.readRssi()`
 
 **Planned**
 
@@ -185,7 +186,7 @@ list — [contributions](#support-and-feedback) welcome.
 
 **Not currently possible** (platform limits, tracked but blocked)
 
-- ⛔ Live RSSI on an active Classic connection — no public API on Android/Windows
+- ⛔ Connection RSSI on **Android, iOS & Windows** — no public Bluetooth Classic API (macOS is supported; Linux would require privileged raw HCI). Discovery-time RSSI is available everywhere via `BtcDevice.rssi`.
 - ⛔ macOS programmatic unpair — no public Apple API
 
 **Out of scope** — use a dedicated package instead: Bluetooth Low Energy (BLE),

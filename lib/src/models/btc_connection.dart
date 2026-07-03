@@ -164,6 +164,37 @@ class BtcConnection {
     }
   }
 
+  /// Reads the live signal strength (RSSI, in dBm) of this open connection.
+  ///
+  /// Returns a negative dBm value (e.g. `-42`; closer to `0` is stronger), or
+  /// `null` when the platform supports RSSI but has no fresh sample this instant.
+  ///
+  /// Supported on **macOS only** (via `IOBluetoothDevice`). Android, iOS,
+  /// Windows and Linux have no public Bluetooth Classic API for connection RSSI
+  /// and throw [BtcUnsupportedException] — check
+  /// `BtcPlatformCapabilities.canReadConnectionRssi` before calling. (Note:
+  /// discovery-time RSSI is always available separately on `BtcDevice.rssi`.)
+  Future<int?> readRssi() async {
+    try {
+      return await _methodChannel
+          .invokeMethod<int>('getConnectionRssi', {'id': id});
+    } on MissingPluginException {
+      throw const BtcUnsupportedException(
+        feature: 'getConnectionRssi',
+        platform: 'this platform',
+      );
+    } on PlatformException catch (e) {
+      if (e.code == 'unsupported') {
+        throw BtcUnsupportedException(
+          feature: e.details?['feature'] as String? ?? 'getConnectionRssi',
+          platform: e.details?['platform'] as String? ?? 'unknown',
+          reason: e.message,
+        );
+      }
+      throw BtcException(e.message ?? 'Failed to read RSSI', code: e.code);
+    }
+  }
+
   /// Gracefully disconnects: waits for all pending writes to complete,
   /// then closes the connection.
   Future<void> finish() async {

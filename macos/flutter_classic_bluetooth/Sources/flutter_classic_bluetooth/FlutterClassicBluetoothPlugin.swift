@@ -154,6 +154,20 @@ public class FlutterClassicBluetoothPlugin: NSObject, FlutterPlugin {
             }
             handleWrite(id: id, data: data, result: result)
 
+        case "getConnectionRssi":
+            guard let id = args?["id"] as? Int else {
+                result(FlutterError(code: "connectionFailed", message: "Connection ID is required", details: nil))
+                return
+            }
+            guard let conn = connections[id] else {
+                result(FlutterError(code: "connectionFailed", message: "Connection not found", details: nil))
+                return
+            }
+            // rawRSSI() returns 127 when no baseband sample is available yet;
+            // report that as null rather than a bogus reading.
+            let raw = conn.device.rawRSSI()
+            result(raw == 127 ? nil : Int(raw))
+
         case "startServer":
             let uuid = args?["uuid"] as? String ?? "00001101-0000-1000-8000-00805F9B34FB"
             let serviceName = args?["serviceName"] as? String ?? "FlutterBluetooth"
@@ -364,8 +378,9 @@ public class FlutterClassicBluetoothPlugin: NSObject, FlutterPlugin {
             "supportsMultipleConnections": true,
             "supportsSecureConnection": true,
             "supportsInsecureConnection": false,
+            "canReadConnectionRssi": true,
             "requiresMfiCertification": false,
-            "platformNote": "macOS — Bluetooth Classic via IOBluetooth. Discovery, connect, server, paired-device listing and pairing (IOBluetoothDevicePair) are supported. Unpairing must be done through System Settings."
+            "platformNote": "macOS — Bluetooth Classic via IOBluetooth. Discovery, connect, server, paired-device listing, pairing (IOBluetoothDevicePair) and connection RSSI are supported. Unpairing must be done through System Settings."
         ])
     }
 

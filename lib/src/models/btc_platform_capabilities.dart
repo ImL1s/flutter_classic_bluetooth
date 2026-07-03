@@ -46,6 +46,13 @@ class BtcPlatformCapabilities {
   /// Whether the platform supports unauthenticated RFCOMM connections.
   final bool supportsInsecureConnection;
 
+  /// Whether the platform can read the live RSSI of an *open* connection.
+  ///
+  /// True only on **macOS** (via `IOBluetoothDevice`). No other platform
+  /// exposes a public Bluetooth Classic API for connection RSSI. Discovery-time
+  /// RSSI is reported separately on [BtcDevice.rssi] and is unaffected by this.
+  final bool canReadConnectionRssi;
+
   /// Whether the platform requires MFi certification for accessories.
   ///
   /// True only on iOS, where Bluetooth Classic is limited to
@@ -68,6 +75,7 @@ class BtcPlatformCapabilities {
     this.supportsMultipleConnections = false,
     this.supportsSecureConnection = false,
     this.supportsInsecureConnection = false,
+    this.canReadConnectionRssi = false,
     this.requiresMfiCertification = false,
     this.platformNote,
   });
@@ -89,6 +97,7 @@ class BtcPlatformCapabilities {
           map['supportsSecureConnection'] as bool? ?? false,
       supportsInsecureConnection:
           map['supportsInsecureConnection'] as bool? ?? false,
+      canReadConnectionRssi: map['canReadConnectionRssi'] as bool? ?? false,
       requiresMfiCertification:
           map['requiresMfiCertification'] as bool? ?? false,
       platformNote: map['platformNote'] as String?,
@@ -109,6 +118,7 @@ class BtcPlatformCapabilities {
       'supportsMultipleConnections': supportsMultipleConnections,
       'supportsSecureConnection': supportsSecureConnection,
       'supportsInsecureConnection': supportsInsecureConnection,
+      'canReadConnectionRssi': canReadConnectionRssi,
       'requiresMfiCertification': requiresMfiCertification,
       'platformNote': platformNote,
     };
