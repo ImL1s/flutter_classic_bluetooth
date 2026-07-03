@@ -34,11 +34,12 @@ class _ConnectionPageState extends State<ConnectionPage> {
   final _scroll = ScrollController();
   final _frames = <_Frame>[];
 
-  StreamSubscription<Uint8List>? _dataSub;
+  StreamSubscription<dynamic>? _dataSub;
   StreamSubscription<BtcConnectionState>? _stateSub;
 
   BtcConnectionState _state = BtcConnectionState.connected;
   bool _hex = false;
+  bool _lineMode = false;
   bool _appendNewline = true;
   int _rx = 0;
   int _tx = 0;
@@ -46,15 +47,33 @@ class _ConnectionPageState extends State<ConnectionPage> {
   @override
   void initState() {
     super.initState();
-    _dataSub = widget.connection.input.listen(
-      (data) => _add(_Dir.received, data),
-      onError: (_) => _system('Input stream error'),
-      onDone: () => _system('Remote closed the stream'),
-    );
+    _subscribe();
     _stateSub = widget.connection.stateStream.listen((s) {
       if (!mounted) return;
       setState(() => _state = s);
     });
+  }
+
+  /// (Re)subscribes to the input stream in the current mode. In line mode we
+  /// use `input.lines()` so each complete, delimiter-terminated line becomes one
+  /// received frame; otherwise raw chunks are shown as they arrive.
+  void _subscribe() {
+    _dataSub?.cancel();
+    void onError(Object _) => _system('Input stream error');
+    void onDone() => _system('Remote closed the stream');
+    if (_lineMode) {
+      _dataSub = widget.connection.input.lines().listen(
+        (line) => _add(_Dir.received, Uint8List.fromList(utf8.encode(line))),
+        onError: onError,
+        onDone: onDone,
+      );
+    } else {
+      _dataSub = widget.connection.input.listen(
+        (data) => _add(_Dir.received, data),
+        onError: onError,
+        onDone: onDone,
+      );
+    }
   }
 
   void _add(_Dir dir, Uint8List bytes) {
@@ -150,6 +169,14 @@ class _ConnectionPageState extends State<ConnectionPage> {
             child: Center(
               child: StatusPill(label: v.label, color: v.color, icon: v.icon),
             ),
+          ),
+          IconButton(
+            tooltip: _lineMode ? 'Raw chunks' : 'Split into lines',
+            icon: Icon(_lineMode ? Icons.notes : Icons.wrap_text),
+            onPressed: () => setState(() {
+              _lineMode = !_lineMode;
+              _subscribe();
+            }),
           ),
           IconButton(
             tooltip: _hex ? 'Show as text' : 'Show as hex',
