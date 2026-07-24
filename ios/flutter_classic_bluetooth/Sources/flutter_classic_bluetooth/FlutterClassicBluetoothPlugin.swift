@@ -25,6 +25,28 @@ public class FlutterClassicBluetoothPlugin: NSObject, FlutterPlugin {
         adapterChannel.setStreamHandler(instance.adapterStateHandler)
 
         registrar.addMethodCallDelegate(instance, channel: channel)
+
+        EAAccessoryManager.shared().registerForLocalNotifications()
+        NotificationCenter.default.addObserver(
+            instance,
+            selector: #selector(accessoryDidDisconnect(_:)),
+            name: .EAAccessoryDidDisconnect,
+            object: nil
+        )
+    }
+
+    @objc private func accessoryDidDisconnect(_ notification: Notification) {
+        guard let accessory = notification.userInfo?[EAAccessoryKey] as? EAAccessory else {
+            return
+        }
+        for (id, wrapper) in connections {
+            if wrapper.accessoryConnectionID == accessory.connectionID {
+                wrapper.close()
+                connections.removeValue(forKey: id)
+
+                break
+            }
+        }
     }
 
     public func handle(_ call: FlutterMethodCall, result: @escaping FlutterResult) {
@@ -195,7 +217,7 @@ public class FlutterClassicBluetoothPlugin: NSObject, FlutterPlugin {
         let connId = nextConnectionId
         nextConnectionId += 1
 
-        let wrapper = EASessionWrapper(id: connId, session: session, messenger: messenger)
+        let wrapper = EASessionWrapper(id: connId, session: session, accessoryConnectionID: accessory.connectionID, messenger: messenger)
         wrapper.startReading()
         connections[connId] = wrapper
 
@@ -249,13 +271,15 @@ public class FlutterClassicBluetoothPlugin: NSObject, FlutterPlugin {
 
 class EASessionWrapper: NSObject, StreamDelegate {
     let id: Int
+    let accessoryConnectionID: Int
     private let session: EASession
     private var messenger: FlutterBinaryMessenger
     private var dataStreamHandler: IOSStreamHandler?
     private var stateStreamHandler: IOSStreamHandler?
 
-    init(id: Int, session: EASession, messenger: FlutterBinaryMessenger) {
+    init(id: Int, session: EASession, accessoryConnectionID: Int, messenger: FlutterBinaryMessenger) {
         self.id = id
+        self.accessoryConnectionID = accessoryConnectionID
         self.session = session
         self.messenger = messenger
         super.init()
