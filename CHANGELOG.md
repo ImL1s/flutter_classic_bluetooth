@@ -1,3 +1,12 @@
+## 0.1.4
+
+### Fixed
+* **iOS**: skip MAC-address and UUID format validation on iOS. The
+  ExternalAccessory (MFi) framework hides the Bluetooth MAC address and exposes
+  accessories by an opaque identifier, so the colon-separated MAC and standard
+  UUID checks wrongly rejected valid iOS values. Validation still applies on all
+  other platforms. Thanks to [@abbiyuarsyah](https://github.com/abbiyuarsyah).
+
 ## 0.1.3
 
 ### Added
