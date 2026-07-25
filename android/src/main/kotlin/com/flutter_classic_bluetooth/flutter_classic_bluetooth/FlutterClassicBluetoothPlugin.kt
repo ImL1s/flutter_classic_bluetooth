@@ -6,6 +6,7 @@ import android.bluetooth.BluetoothDevice
 import android.bluetooth.BluetoothManager
 import android.content.Context
 import android.content.Intent
+import android.content.IntentFilter
 import android.content.pm.PackageManager
 import android.os.Build
 import android.os.Handler
@@ -48,6 +49,11 @@ class FlutterClassicBluetoothPlugin :
     // (platform) thread; Bluetooth I/O runs on background threads.
     private val mainHandler = Handler(Looper.getMainLooper())
 
+    // Detects when a remote Bluetooth device physically disconnects (e.g.
+    // printer turned off) and emits "disconnected" on the matching connection's
+    // state stream.
+    private var aclDisconnectReceiver: AclDisconnectReceiver? = null
+
     // Event channels
     private lateinit var adapterStateChannel: EventChannel
     private lateinit var discoveryStateChannel: EventChannel
@@ -75,10 +81,17 @@ class FlutterClassicBluetoothPlugin :
 
         bondStateChannel = EventChannel(messenger, BluetoothHelper.BOND_STATE_CHANNEL)
         bondStateChannel.setStreamHandler(BondStateReceiver(context))
+
+        aclDisconnectReceiver = AclDisconnectReceiver(connections)
+        BluetoothHelper.registerExportedReceiver(
+            context, aclDisconnectReceiver!!, IntentFilter(BluetoothDevice.ACTION_ACL_DISCONNECTED)
+        )
     }
 
     override fun onDetachedFromEngine(binding: FlutterPlugin.FlutterPluginBinding) {
         channel.setMethodCallHandler(null)
+        aclDisconnectReceiver?.let { context.unregisterReceiver(it) }
+        aclDisconnectReceiver = null
         closeAll()
     }
 
