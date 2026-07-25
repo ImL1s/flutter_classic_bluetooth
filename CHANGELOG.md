@@ -1,3 +1,22 @@
+## 0.1.5
+
+### Added
+* **Physical disconnect detection** (Android & iOS): when a connected device
+  suddenly goes away (printer powered off, accessory unplugged, out of range),
+  the plugin now detects it immediately, closes the dead connection, and emits
+  `disconnected` on the connection's state stream so UIs and reconnect logic can
+  react instead of the link appearing healthy. Android listens for
+  `ACTION_ACL_DISCONNECTED`; iOS observes `EAAccessoryDidDisconnect`. Thanks to
+  [@abbiyuarsyah](https://github.com/abbiyuarsyah).
+
+### Fixed
+* An ACL disconnect tears down the whole physical link, so all connections to
+  the departed device are now closed, not just the first match (Android & iOS).
+* iOS emits the terminal `disconnected` state exactly once, even when the stream
+  delegate and the accessory-disconnect notification both fire for the same
+  disconnect.
+* iOS removes its `EAAccessoryDidDisconnect` observer on teardown.
+
 ## 0.1.4
 
 ### Fixed

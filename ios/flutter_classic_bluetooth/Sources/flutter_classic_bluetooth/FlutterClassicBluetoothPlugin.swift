@@ -39,14 +39,19 @@ public class FlutterClassicBluetoothPlugin: NSObject, FlutterPlugin {
         guard let accessory = notification.userInfo?[EAAccessoryKey] as? EAAccessory else {
             return
         }
-        for (id, wrapper) in connections {
-            if wrapper.accessoryConnectionID == accessory.connectionID {
-                wrapper.close()
-                connections.removeValue(forKey: id)
-
-                break
-            }
+        // Close every session tied to the accessory that went away. Collect the
+        // ids first so we do not mutate the dictionary while iterating it.
+        let staleIds = connections
+            .filter { $0.value.accessoryConnectionID == accessory.connectionID }
+            .map { $0.key }
+        for id in staleIds {
+            connections[id]?.close()
+            connections.removeValue(forKey: id)
         }
+    }
+
+    deinit {
+        NotificationCenter.default.removeObserver(self)
     }
 
     public func handle(_ call: FlutterMethodCall, result: @escaping FlutterResult) {
@@ -276,6 +281,7 @@ class EASessionWrapper: NSObject, StreamDelegate {
     private var messenger: FlutterBinaryMessenger
     private var dataStreamHandler: IOSStreamHandler?
     private var stateStreamHandler: IOSStreamHandler?
+    private var didEmitDisconnected = false
 
     init(id: Int, session: EASession, accessoryConnectionID: Int, messenger: FlutterBinaryMessenger) {
         self.id = id
@@ -328,6 +334,15 @@ class EASessionWrapper: NSObject, StreamDelegate {
         session.inputStream?.remove(from: .current, forMode: .default)
         session.outputStream?.close()
         session.outputStream?.remove(from: .current, forMode: .default)
+        emitDisconnected()
+    }
+
+    /// Emits the terminal "disconnected" state exactly once. Both the stream
+    /// delegate and the accessory-disconnect notification can reach here for the
+    /// same physical disconnect, so guard against a duplicate emit.
+    private func emitDisconnected() {
+        if didEmitDisconnected { return }
+        didEmitDisconnected = true
         stateStreamHandler?.eventSink?("disconnected")
     }
 
@@ -343,9 +358,9 @@ class EASessionWrapper: NSObject, StreamDelegate {
                 dataStreamHandler?.eventSink?(FlutterStandardTypedData(bytes: data))
             }
         case .errorOccurred:
-            stateStreamHandler?.eventSink?("disconnected")
+            emitDisconnected()
         case .endEncountered:
-            stateStreamHandler?.eventSink?("disconnected")
+            emitDisconnected()
         default:
             break
         }

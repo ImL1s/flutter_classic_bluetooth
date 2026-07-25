@@ -27,14 +27,16 @@ class AclDisconnectReceiver(
             intent.getParcelableExtra(BluetoothDevice.EXTRA_DEVICE)
         } ?: return
 
+        // An ACL disconnect tears down the whole physical link, so close every
+        // connection to this device, not just the first match. Iterate in
+        // reverse so removeAt() does not shift the indices still to be visited.
         val address = device.address
         synchronized(connections) {
-            for (i in 0 until connections.size()) {
+            for (i in connections.size() - 1 downTo 0) {
                 val conn = connections.valueAt(i)
                 if (conn.address == address) {
                     conn.close()
                     connections.removeAt(i)
-                    break
                 }
             }
         }
