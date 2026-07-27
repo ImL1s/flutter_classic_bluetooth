@@ -1,3 +1,10 @@
+## 0.1.6
+
+### Changed
+* Reworded the package description and swapped the `iot` topic for `printer` so
+  developers searching pub.dev for thermal printer support can find the plugin.
+  Metadata only; no API or behaviour changes.
+
 ## 0.1.5
 
 ### Added
