@@ -1,3 +1,11 @@
+## 0.1.7
+
+### Fixed
+* Windows: discovery result and state events are now delivered on the platform
+  thread. They were being sent from the background discovery thread, which made
+  Flutter warn about non-platform-thread channel messages and could drop events.
+  Thanks to @translibrius for the report (#6).
+
 ## 0.1.6
 
 ### Changed

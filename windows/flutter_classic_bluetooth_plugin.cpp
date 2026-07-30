@@ -360,8 +360,11 @@ void FlutterClassicBluetoothPlugin::HandleStartDiscovery(
     discovery_state_handler_->sink()->Success(EncodableValue(true));
   }
 
-  // Discovery runs in a background thread; results are sent via event channel
-  discovery_thread_ = std::thread([this]() {
+  // Discovery runs in a background thread, but channel messages must be sent on
+  // the platform thread, so results and the final state are routed through the
+  // dispatcher instead of touching the sinks directly.
+  std::weak_ptr<UiThreadDispatcher> weak_dispatcher = dispatcher_;
+  discovery_thread_ = std::thread([this, weak_dispatcher]() {
     BLUETOOTH_DEVICE_SEARCH_PARAMS search_params = {};
     search_params.dwSize = sizeof(BLUETOOTH_DEVICE_SEARCH_PARAMS);
     search_params.fReturnAuthenticated = TRUE;
@@ -378,16 +381,24 @@ void FlutterClassicBluetoothPlugin::HandleStartDiscovery(
     if (find) {
       do {
         if (!discovering_.load()) break;
-        if (discovery_results_handler_ && discovery_results_handler_->sink()) {
-          discovery_results_handler_->sink()->Success(
-              EncodableValue(DeviceToMap(device_info)));
+        auto device_map = DeviceToMap(device_info);
+        if (auto d = weak_dispatcher.lock()) {
+          d->Post([this, device_map]() {
+            if (discovery_results_handler_ && discovery_results_handler_->sink()) {
+              discovery_results_handler_->sink()->Success(EncodableValue(device_map));
+            }
+          });
         }
       } while (BluetoothFindNextDevice(find, &device_info));
       BluetoothFindDeviceClose(find);
     }
     discovering_.store(false);
-    if (discovery_state_handler_ && discovery_state_handler_->sink()) {
-      discovery_state_handler_->sink()->Success(EncodableValue(false));
+    if (auto d = weak_dispatcher.lock()) {
+      d->Post([this]() {
+        if (discovery_state_handler_ && discovery_state_handler_->sink()) {
+          discovery_state_handler_->sink()->Success(EncodableValue(false));
+        }
+      });
     }
   });
   discovery_thread_.detach();
