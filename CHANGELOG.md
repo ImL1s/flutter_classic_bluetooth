@@ -1,3 +1,10 @@
+## 0.1.8
+
+### Changed
+* Swapped the `rfcomm` topic for `thermal-printer`. RFCOMM stays in the package
+  description, so nothing is lost there, and the freed slot targets the larger
+  thermal printer audience where discovery searches actually land. Metadata only.
+
 ## 0.1.7
 
 ### Fixed
