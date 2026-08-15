@@ -373,6 +373,21 @@ class FlutterClassicBluetooth {
     );
   }
 
+  /// The Android API level this is running on, or null elsewhere.
+  ///
+  /// Exposed because which runtime permissions *exist* is a property of the OS
+  /// version, and callers were reduced to inferring it from how a permission
+  /// request behaved — which is guesswork, and has already been wrong once:
+  /// `permission_handler` short-circuits a request for a permission the OS does
+  /// not define by reporting it granted, so "granted" means both "the user
+  /// agreed" and "there was nothing to agree to".
+  ///
+  /// | Platform | Supported |
+  /// |----------|-----------|
+  /// | Android | Yes |
+  /// | Others | No — returns null |
+  Future<int?> androidSdkInt() => _platform.androidSdkInt();
+
   /// Aborts an in-flight [connect] to [address].
   ///
   /// Returns true when a blocked attempt was found and released. Called

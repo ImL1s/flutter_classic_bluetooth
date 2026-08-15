@@ -153,6 +153,10 @@ class FlutterClassicBluetoothPlugin :
 
             "connect" -> handleConnect(call, result)
             "cancelConnect" -> handleCancelConnect(call, result)
+            // Which runtime permissions exist at all is a property of the OS
+            // version, and inferring it from how a permission request behaves
+            // is guesswork that has already been wrong once.
+            "androidSdkInt" -> result.success(Build.VERSION.SDK_INT)
             "disconnect" -> handleDisconnect(call, result)
             "write" -> handleWrite(call, result)
 

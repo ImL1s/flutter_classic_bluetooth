@@ -84,6 +84,11 @@ class MockFlutterClassicBluetoothPlatform
   /// Addresses this mock was asked to abort, in order.
   final List<String> cancelledConnects = [];
 
+  int? sdkInt = 34;
+
+  @override
+  Future<int?> androidSdkInt() => Future.value(sdkInt);
+
   @override
   Future<bool> cancelConnect(String address) {
     cancelledConnects.add(address);

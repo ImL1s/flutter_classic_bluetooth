@@ -172,6 +172,9 @@ class MethodChannelFlutterClassicBluetooth
   }
 
   @override
+  Future<int?> androidSdkInt() => _invoke<int>('androidSdkInt');
+
+  @override
   Future<bool> cancelConnect(String address) async {
     final released = await _invoke<bool>('cancelConnect', {'address': address});
     return released ?? false;

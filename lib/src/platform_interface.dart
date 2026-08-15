@@ -154,6 +154,11 @@ abstract class FlutterClassicBluetoothPlatform extends PlatformInterface {
     throw UnimplementedError('connect() has not been implemented.');
   }
 
+  /// The Android API level, or null on every other platform.
+  Future<int?> androidSdkInt() {
+    throw UnimplementedError('androidSdkInt() has not been implemented.');
+  }
+
   /// Aborts an in-flight [connect] to [address].
   ///
   /// Returns true if a connection attempt was actually blocked and has been
