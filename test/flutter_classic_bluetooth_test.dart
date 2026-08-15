@@ -1784,10 +1784,96 @@ void main() {
       expect(calls, after); // no attempts after close
     });
   });
+  _lateSuccessTests();
 }
 
 /// A platform that doesn't implement anything, used to verify
 /// that all methods throw [UnimplementedError].
+
+/// A connection that records whether anything closed it.
+class _SpyConnection implements BtcConnection {
+  _SpyConnection();
+  bool closed = false;
+
+  @override
+  Future<void> close() async => closed = true;
+
+  @override
+  dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
+}
+
+void _lateSuccessTests() {
+  group('a connection that arrives after the deadline', () {
+    late MockFlutterClassicBluetoothPlatform mockPlatform;
+    late FlutterClassicBluetooth bluetooth;
+
+    setUp(() {
+      mockPlatform = MockFlutterClassicBluetoothPlatform();
+      FlutterClassicBluetoothPlatform.instance = mockPlatform;
+      bluetooth = FlutterClassicBluetooth();
+    });
+
+    test('is closed rather than left for the platform to hold', () async {
+      // `Future.timeout` discards the value it was too late for; it does not
+      // cancel the work underneath. Cancellation and success race over a few
+      // milliseconds, and the native worker can commit — register the
+      // connection, post success — between `cancelConnect` finding nothing to
+      // close and the timer's exception reaching the caller.
+      //
+      // What is left is an RFCOMM link the platform holds and no Dart object
+      // owns. An ELM327 accepts exactly one, so every later attempt in every
+      // later tier fails until the app restarts or Bluetooth is toggled — and
+      // it is likeliest in the case the retry cascade exists for, a secure SDP
+      // lookup that succeeds just as the deadline expires.
+      final spy = _SpyConnection();
+      mockPlatform.connectResponse = () =>
+          Future.delayed(const Duration(milliseconds: 120), () => spy);
+
+      await expectLater(
+        bluetooth.connect(
+          address: 'AA:BB:CC:DD:EE:FF',
+          timeout: const Duration(milliseconds: 20),
+        ),
+        throwsA(isA<BtcTimeoutException>()),
+      );
+      expect(spy.closed, isFalse, reason: 'sanity: it has not arrived yet');
+
+      await Future<void>.delayed(const Duration(milliseconds: 250));
+      expect(spy.closed, isTrue,
+          reason: 'the caller gave up, so nothing else will ever close it');
+    });
+
+    test('is not closed when it arrives in time', () async {
+      // The other half. The reaper must not touch a connection the caller
+      // actually received — closing that would break every successful
+      // connect, which is a far worse failure than the one it prevents.
+      final spy = _SpyConnection();
+      mockPlatform.connectResponse = () async => spy;
+
+      final connection = await bluetooth.connect(
+        address: 'AA:BB:CC:DD:EE:FF',
+        timeout: const Duration(seconds: 5),
+      );
+      await Future<void>.delayed(const Duration(milliseconds: 50));
+      expect(identical(connection, spy), isTrue);
+      expect(spy.closed, isFalse,
+          reason: 'the caller owns this one and is using it');
+    });
+  });
+
+  test('attempt ids do not restart from zero', () {
+    // Native cancellation tombstones outlive the Dart isolate — they are only
+    // cleared when the engine detaches. A counter that starts at zero every
+    // hot restart therefore collides with a tombstone from the previous run,
+    // and the first connect after a restart is cancelled the instant it
+    // begins. That reads as a dead adapter, and it is exactly the kind of
+    // thing on-device QA meets and cannot explain.
+    final a = FlutterClassicBluetooth.debugFreshAttemptSeed();
+    expect(a, greaterThan(1000000),
+        reason: 'seeded from the clock, not from zero');
+  });
+}
+
 class _UnimplementedPlatform extends FlutterClassicBluetoothPlatform {}
 
 /// A platform that emits a few discovery results (including a name-less RSSI

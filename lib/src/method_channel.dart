@@ -1,3 +1,5 @@
+import 'dart:io' show Platform;
+
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 
@@ -177,12 +179,21 @@ class MethodChannelFlutterClassicBluetooth
     );
   }
 
+  /// Both of these are documented to answer rather than throw off Android,
+  /// and both threw `MissingPluginException` instead — there is no iOS or
+  /// desktop implementation to receive the call. A caller following the
+  /// documented contract got an exception from the branch that exists to
+  /// handle absence.
   @override
-  Future<int?> androidSdkInt() => _invoke<int>('androidSdkInt');
+  Future<int?> androidSdkInt() async {
+    if (!Platform.isAndroid) return null;
+    return _invoke<int>('androidSdkInt');
+  }
 
   @override
   Future<bool> cancelConnect(String address, {int? attemptId}) async {
     if (attemptId == null) return false;
+    if (!Platform.isAndroid) return false;
     final released =
         await _invoke<bool>('cancelConnect', {'attemptId': attemptId});
     return released ?? false;

@@ -16,6 +16,9 @@ class PermissionManager : PluginRegistry.RequestPermissionsResultListener {
     }
 
     private var pendingResult: MethodChannel.Result? = null
+
+    /** The action the outstanding request was made for. */
+    private var pendingAction: Action? = null
     private var activity: Activity? = null
 
     fun setActivity(activity: Activity?) {
@@ -88,6 +91,14 @@ class PermissionManager : PluginRegistry.RequestPermissionsResultListener {
             return
         }
         pendingResult = result
+        // Kept beside the result, because the callback has to re-check the
+        // action that was *requested*. It defaulted to `discover`, so a
+        // connect-scoped request — which correctly asks for CONNECT alone —
+        // was validated against discovery's CONNECT+SCAN set and reported
+        // denied after the user had granted exactly what was asked for. The
+        // retry then succeeds, which makes it look like a glitch rather than a
+        // contract error.
+        pendingAction = action
 
         ActivityCompat.requestPermissions(act, requiredPermissions(action), REQUEST_CODE)
     }
@@ -122,13 +133,17 @@ class PermissionManager : PluginRegistry.RequestPermissionsResultListener {
         grantResults: IntArray
     ): Boolean {
         if (requestCode != REQUEST_CODE) return false
-        // Re-check the permissions we actually require (SCAN+CONNECT, or location
-        // pre-S) rather than requiring every requested grant; denying the
-        // optional ADVERTISE permission must not fail otherwise-granted calls.
+        // Re-check the permissions the *request* required rather than every
+        // grant returned; denying an optional permission must not fail an
+        // otherwise-granted call. The action comes from the request, not from
+        // the default — checking `discover`'s set after a `connect` request was
+        // asking whether a permission nobody requested had been granted.
         val act = activity
-        val granted = act != null && hasPermissions(act)
+        val action = pendingAction ?: Action.discover
+        val granted = act != null && hasPermissions(act, action)
         pendingResult?.success(granted)
         pendingResult = null
+        pendingAction = null
         return true
     }
 }

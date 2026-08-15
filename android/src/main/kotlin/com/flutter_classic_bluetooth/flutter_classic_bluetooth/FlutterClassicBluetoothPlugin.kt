@@ -318,6 +318,23 @@ class FlutterClassicBluetoothPlugin :
     private val cancelledAttempts = HashSet<Long>()
 
     /**
+     * Connections registered by an attempt, so a late cancel can still reach
+     * one.
+     *
+     * The tombstone check and the registration used to be separate critical
+     * sections, and a cancel landing between them saw an empty `inFlight`,
+     * reported success, and left this thread free to publish a connection the
+     * caller had already abandoned. An ELM327 accepts exactly one RFCOMM link,
+     * so that orphan makes every later attempt fail until the app restarts.
+     *
+     * Guarded by the `inFlight` monitor, which is what makes the two atomic
+     * with respect to each other: either the cancel writes its tombstone first
+     * and the worker sees it, or the worker publishes first and the cancel
+     * finds it here.
+     */
+    private val attemptConnections = HashMap<Long, Int>()
+
+    /**
      * Aborts an in-flight connect.
      *
      * Returns true unconditionally on a valid id, because the tombstone makes
@@ -331,11 +348,24 @@ class FlutterClassicBluetoothPlugin :
             result.error("invalidAttempt", "attemptId is required", null)
             return
         }
-        val socket = synchronized(inFlight) {
+        val socket: BluetoothSocket?
+        val connId: Int?
+        synchronized(inFlight) {
             cancelledAttempts.add(attemptId)
-            inFlight.remove(attemptId)
+            socket = inFlight.remove(attemptId)
+            connId = attemptConnections.remove(attemptId)
         }
         try { socket?.close() } catch (_: IOException) {}
+        // An attempt that had already completed still has to be undone: the
+        // caller has given up on it, and nothing else knows the id.
+        if (connId != null) {
+            val connection = synchronized(connections) {
+                val c = connections.get(connId)
+                connections.remove(connId)
+                c
+            }
+            try { connection?.close() } catch (_: Exception) {}
+        }
         result.success(true)
     }
 
@@ -363,8 +393,16 @@ class FlutterClassicBluetoothPlugin :
                         return@Thread
                     }
 
-                    // Cancel discovery to speed up connection
-                    adapter?.cancelDiscovery()
+                    // Cancelling discovery makes the connect faster, and on
+                    // API 31+ it needs BLUETOOTH_SCAN — which a connect flow
+                    // has no reason to hold, and which action-scoped
+                    // permission requests deliberately do not grant. A
+                    // SecurityException here would abort a connect that was
+                    // about to succeed, for an optimisation.
+                    try {
+                        adapter?.cancelDiscovery()
+                    } catch (_: SecurityException) {
+                    }
 
                     // Held here so every exit that has not handed ownership
                     // to `connections` can close it. Both catch blocks used to
@@ -418,14 +456,6 @@ class FlutterClassicBluetoothPlugin :
                     // `connections` belonged to nobody. A cancel landing here
                     // used to report false and let this thread register a
                     // connection the caller had abandoned.
-                    if (synchronized(inFlight) { cancelledAttempts.contains(attemptId) }) {
-                        try { socket.close() } catch (_: IOException) {}
-                        mainHandler.post {
-                            result.error("connectionCancelled", "Cancelled", null)
-                        }
-                        return@Thread
-                    }
-
                     val connId = nextConnectionId.getAndIncrement()
                     val connection = BluetoothConnectionWrapper(
                         id = connId,
@@ -433,8 +463,27 @@ class FlutterClassicBluetoothPlugin :
                         address = address,
                     )
 
-                    synchronized(connections) {
-                        connections.put(connId, connection)
+                    // One step, under the cancel's own lock. Checking the
+                    // tombstone and then publishing were two critical sections
+                    // with a gap between them, and a cancel arriving in that
+                    // gap found nothing to close, told the caller it had
+                    // succeeded, and left this thread to register a connection
+                    // nobody owned.
+                    val claimed = synchronized(inFlight) {
+                        if (cancelledAttempts.contains(attemptId)) {
+                            false
+                        } else {
+                            synchronized(connections) { connections.put(connId, connection) }
+                            attemptConnections[attemptId] = connId
+                            true
+                        }
+                    }
+                    if (!claimed) {
+                        try { socket.close() } catch (_: IOException) {}
+                        mainHandler.post {
+                            result.error("connectionCancelled", "Cancelled", null)
+                        }
+                        return@Thread
                     }
                     // Ownership transferred: `handleDisconnect` can reach it now.
                     pending = null
@@ -674,6 +723,7 @@ class FlutterClassicBluetoothPlugin :
             }
             inFlight.clear()
             cancelledAttempts.clear()
+            attemptConnections.clear()
         }
         synchronized(connections) {
             for (i in 0 until connections.size()) {

@@ -1,4 +1,7 @@
+import 'dart:async';
 import 'dart:io';
+
+import 'package:flutter/foundation.dart';
 
 import 'btc_uuid.dart';
 import 'btc_reconnecting_connection.dart';
@@ -372,6 +375,31 @@ class FlutterClassicBluetooth {
         } on Object {
           // Ignored deliberately; the timeout below is the real outcome.
         }
+
+        // A connection that arrives anyway still has to be closed.
+        //
+        // `Future.timeout` discards the value it was too late for; it does not
+        // cancel the work underneath. Cancellation and success race over a few
+        // milliseconds, and the native worker can commit — register the
+        // connection, post success — between `cancelConnect` finding nothing
+        // to close and this exception reaching the caller. What is left is an
+        // RFCOMM link the platform holds and no Dart object owns.
+        //
+        // An ELM327 accepts exactly one, so the orphan makes every later
+        // attempt in every later tier fail until the app restarts or Bluetooth
+        // is toggled — and it is likeliest in the case the retry cascade
+        // exists for: a secure SDP lookup that succeeds just as the deadline
+        // expires.
+        //
+        // Installed here rather than beside the timeout, because *here* is
+        // where giving up is certain. A reaper armed before the race would
+        // have to guess whether the caller received the connection, and
+        // guessing wrong closes one that is in use.
+        unawaited(future.then(
+          (connection) => connection.close().catchError((_) {}),
+          onError: (_) {},
+        ));
+
         throw BtcTimeoutException(
           message: 'Connection to $address timed out',
           timeoutMs: timeout.inMilliseconds,
@@ -408,9 +436,22 @@ class FlutterClassicBluetooth {
   Future<bool> cancelConnect(String address, {int? attemptId}) =>
       _platform.cancelConnect(address, attemptId: attemptId);
 
-  /// Monotonic, per-isolate. Only ever compared for equality on the native
-  /// side, so it needs no coordination beyond this.
-  int _attemptCounter = 0;
+  /// Monotonic, and seeded so that it does not repeat across a hot restart.
+  ///
+  /// Only ever compared for equality on the native side — but the native
+  /// cancellation tombstones outlive the Dart isolate, and they are only
+  /// cleared when the engine detaches. Starting from zero every restart meant
+  /// the first connect after a hot restart could collide with a tombstone left
+  /// by the previous run and be cancelled the instant it began, which reads as
+  /// a dead adapter and is exactly the kind of thing on-device QA meets and
+  /// cannot explain.
+  int _attemptCounter = _freshAttemptSeed();
+
+  static int _freshAttemptSeed() => DateTime.now().microsecondsSinceEpoch;
+
+  /// The seed a fresh isolate would start from. Test seam only.
+  @visibleForTesting
+  static int debugFreshAttemptSeed() => _freshAttemptSeed();
 
   /// Disconnects the connection with the given [id].
   ///
