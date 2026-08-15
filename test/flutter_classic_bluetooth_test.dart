@@ -75,6 +75,7 @@ class MockFlutterClassicBluetoothPlatform
     String uuid = BtcUuid.spp,
     bool secure = true,
     int? channel,
+    int? attemptId,
   }) {
     final override = connectResponse;
     if (override != null) return override();
@@ -90,10 +91,14 @@ class MockFlutterClassicBluetoothPlatform
   Future<int?> androidSdkInt() => Future.value(sdkInt);
 
   @override
-  Future<bool> cancelConnect(String address) {
+  Future<bool> cancelConnect(String address, {int? attemptId}) {
     cancelledConnects.add(address);
+    cancelledAttemptIds.add(attemptId);
     return Future.value(true);
   }
+
+  /// The attempt ids this mock was asked to abort.
+  final List<int?> cancelledAttemptIds = [];
 
   @override
   Future<void> disconnect(int id) => Future.value();
@@ -1909,6 +1914,12 @@ void explicitChannelTests() {
         equals(['AA:BB:CC:DD:EE:FF']),
         reason: 'the socket must be closed, because closing it is the only '
             'thing that releases a blocked connect()',
+      );
+      expect(
+        mock.cancelledAttemptIds.single,
+        isNotNull,
+        reason: 'and it must name the attempt, because a cascade runs several '
+            'against the same adapter',
       );
     });
   });

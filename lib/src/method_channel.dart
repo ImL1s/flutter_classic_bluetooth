@@ -154,11 +154,17 @@ class MethodChannelFlutterClassicBluetooth
     String uuid = BtcUuid.spp,
     bool secure = true,
     int? channel,
+    int? attemptId,
   }) async {
     final result = await _invoke<Map>('connect', {
       'address': address,
       'uuid': uuid,
       'secure': secure,
+      // Identifies this attempt for cancellation. Address is not an identity:
+      // two attempts against the same adapter overlap during a fallback
+      // cascade, and cancelling "the attempt on AA:BB.." could close the wrong
+      // one.
+      if (attemptId != null) 'attemptId': attemptId,
       // Omitted rather than sent as null, so older native builds that do not
       // know the key behave exactly as before.
       if (channel != null) 'channel': channel,
@@ -175,8 +181,10 @@ class MethodChannelFlutterClassicBluetooth
   Future<int?> androidSdkInt() => _invoke<int>('androidSdkInt');
 
   @override
-  Future<bool> cancelConnect(String address) async {
-    final released = await _invoke<bool>('cancelConnect', {'address': address});
+  Future<bool> cancelConnect(String address, {int? attemptId}) async {
+    if (attemptId == null) return false;
+    final released =
+        await _invoke<bool>('cancelConnect', {'attemptId': attemptId});
     return released ?? false;
   }
 

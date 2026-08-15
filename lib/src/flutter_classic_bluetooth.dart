@@ -341,11 +341,18 @@ class FlutterClassicBluetooth {
         'RFCOMM channel must be between 1 and 30',
       );
     }
+    // Identifies this attempt so a timeout can cancel exactly it. Address is
+    // not an identity: a fallback cascade runs several attempts against the
+    // same adapter, and "cancel the attempt on AA:BB.." could close the wrong
+    // one — or find nothing, report failure, and leave a worker free to
+    // register a connection its caller had already abandoned.
+    final attemptId = ++_attemptCounter;
     final future = _platform.connect(
       address: address,
       uuid: uuid,
       secure: secure,
       channel: channel,
+      attemptId: attemptId,
     );
     if (timeout == null) return future;
     return future.timeout(
@@ -361,7 +368,7 @@ class FlutterClassicBluetooth {
         // Failure to cancel is not worth surfacing over the timeout itself,
         // which is the more useful thing to tell the caller.
         try {
-          await cancelConnect(address);
+          await cancelConnect(address, attemptId: attemptId);
         } on Object {
           // Ignored deliberately; the timeout below is the real outcome.
         }
@@ -398,8 +405,12 @@ class FlutterClassicBluetooth {
   /// |----------|-----------|
   /// | Android | Yes |
   /// | Others | No — returns false |
-  Future<bool> cancelConnect(String address) =>
-      _platform.cancelConnect(address);
+  Future<bool> cancelConnect(String address, {int? attemptId}) =>
+      _platform.cancelConnect(address, attemptId: attemptId);
+
+  /// Monotonic, per-isolate. Only ever compared for equality on the native
+  /// side, so it needs no coordination beyond this.
+  int _attemptCounter = 0;
 
   /// Disconnects the connection with the given [id].
   ///

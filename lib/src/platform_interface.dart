@@ -150,6 +150,7 @@ abstract class FlutterClassicBluetoothPlatform extends PlatformInterface {
     String uuid = BtcUuid.spp,
     bool secure = true,
     int? channel,
+    int? attemptId,
   }) {
     throw UnimplementedError('connect() has not been implemented.');
   }
@@ -163,7 +164,7 @@ abstract class FlutterClassicBluetoothPlatform extends PlatformInterface {
   ///
   /// Returns true if a connection attempt was actually blocked and has been
   /// released. Android only; other platforms return false.
-  Future<bool> cancelConnect(String address) {
+  Future<bool> cancelConnect(String address, {int? attemptId}) {
     throw UnimplementedError('cancelConnect() has not been implemented.');
   }
 

@@ -136,10 +136,10 @@ class FlutterClassicBluetoothPlugin :
             "enableBluetooth" -> handleEnableBluetooth(result)
             "disableBluetooth" -> handleDisableBluetooth(result)
 
-            "getAdapterName" -> permissionManager.ensurePermissions(context, result) {
+            "getAdapterName" -> permissionManager.ensurePermissions(context, result, PermissionManager.Action.connect) {
                 result.success(adapter?.name)
             }
-            "getAdapterAddress" -> permissionManager.ensurePermissions(context, result) {
+            "getAdapterAddress" -> permissionManager.ensurePermissions(context, result, PermissionManager.Action.connect) {
                 result.success(adapter?.address)
             }
 
@@ -177,7 +177,7 @@ class FlutterClassicBluetoothPlugin :
             result.success(true)
             return
         }
-        permissionManager.ensurePermissions(context, result) {
+        permissionManager.ensurePermissions(context, result, PermissionManager.Action.connect) {
             val intent = Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE)
             activityResultManager.startActivityForResult(
                 intent, ActivityResultManager.REQUEST_ENABLE_BT, result
@@ -191,7 +191,7 @@ class FlutterClassicBluetoothPlugin :
             result.error("bluetoothDisabled", "No Bluetooth adapter", null)
             return
         }
-        permissionManager.ensurePermissions(context, result) {
+        permissionManager.ensurePermissions(context, result, PermissionManager.Action.connect) {
             @Suppress("DEPRECATION")
             val success = adapter!!.disable()
             result.success(success)
@@ -232,7 +232,7 @@ class FlutterClassicBluetoothPlugin :
             result.error("bluetoothDisabled", "No Bluetooth adapter", null)
             return
         }
-        permissionManager.ensurePermissions(context, result) {
+        permissionManager.ensurePermissions(context, result, PermissionManager.Action.connect) {
             val devices = bt.bondedDevices
                 ?.filter { it.type != BluetoothDevice.DEVICE_TYPE_LE }
                 ?.map { BluetoothHelper.deviceToMap(it) }
@@ -248,7 +248,7 @@ class FlutterClassicBluetoothPlugin :
             result.error("invalidAddress", "Address is required", null)
             return
         }
-        permissionManager.ensurePermissions(context, result) {
+        permissionManager.ensurePermissions(context, result, PermissionManager.Action.connect) {
             val device = adapter?.getRemoteDevice(address)
             if (device == null) {
                 result.error("invalidAddress", "Device not found: $address", null)
@@ -266,7 +266,7 @@ class FlutterClassicBluetoothPlugin :
             result.error("invalidAddress", "Address is required", null)
             return
         }
-        permissionManager.ensurePermissions(context, result) {
+        permissionManager.ensurePermissions(context, result, PermissionManager.Action.connect) {
             val device = adapter?.getRemoteDevice(address)
             if (device == null) {
                 result.error("invalidAddress", "Device not found: $address", null)
@@ -296,18 +296,47 @@ class FlutterClassicBluetoothPlugin :
      * before this there was nothing to close it *with* — the socket did not
      * enter `connections` until after a successful connect.
      */
-    private val inFlight = HashMap<String, BluetoothSocket>()
+    private val inFlight = HashMap<Long, BluetoothSocket>()
 
-    /** Aborts an in-flight connect by closing the socket it is blocked on. */
+    /**
+     * Attempts the caller has abandoned.
+     *
+     * A tombstone rather than a socket lookup, because cancellation and socket
+     * creation race in both directions. Keyed by address, the previous version
+     * could not tell two overlapping attempts on the same adapter apart: the
+     * second `put` replaced the first, the first worker's unconditional
+     * `remove` could then drop the second's socket, and a cancel could close
+     * the wrong attempt entirely. Worse, a cancel arriving before the socket
+     * existed found nothing, reported false, and the worker went on to connect
+     * and register a connection its caller had already given up on — while
+     * that caller, told only that it had timed out, started another tier
+     * against an adapter that accepts one link.
+     *
+     * The tombstone is terminal: once set, the worker refuses to register no
+     * matter where it had got to.
+     */
+    private val cancelledAttempts = HashSet<Long>()
+
+    /**
+     * Aborts an in-flight connect.
+     *
+     * Returns true unconditionally on a valid id, because the tombstone makes
+     * it true: whether or not a socket existed to close, that attempt can no
+     * longer produce a connection. "There was nothing to cancel" and "it is
+     * cancelled now" are the same terminal state to the caller.
+     */
     private fun handleCancelConnect(call: MethodCall, result: Result) {
-        val address = call.argument<String>("address")
-        if (address == null) {
-            result.error("invalidAddress", "Address is required", null)
+        val attemptId = (call.argument<Number>("attemptId"))?.toLong()
+        if (attemptId == null) {
+            result.error("invalidAttempt", "attemptId is required", null)
             return
         }
-        val socket = synchronized(inFlight) { inFlight.remove(address) }
+        val socket = synchronized(inFlight) {
+            cancelledAttempts.add(attemptId)
+            inFlight.remove(attemptId)
+        }
         try { socket?.close() } catch (_: IOException) {}
-        result.success(socket != null)
+        result.success(true)
     }
 
     private fun handleConnect(call: MethodCall, result: Result) {
@@ -315,13 +344,14 @@ class FlutterClassicBluetoothPlugin :
         val uuidStr = call.argument<String>("uuid") ?: BluetoothHelper.DEFAULT_UUID
         val secure = call.argument<Boolean>("secure") ?: true
         val channel = call.argument<Int>("channel")
+        val attemptId = (call.argument<Number>("attemptId"))?.toLong() ?: -1L
 
         if (address == null) {
             result.error("invalidAddress", "Address is required", null)
             return
         }
 
-        permissionManager.ensurePermissions(context, result) {
+        permissionManager.ensurePermissions(context, result, PermissionManager.Action.connect) {
             Thread {
                 try {
                     val device = adapter?.getRemoteDevice(address)
@@ -344,6 +374,15 @@ class FlutterClassicBluetoothPlugin :
                     // three-tier fallback leaked three.
                     var pending: BluetoothSocket? = null
                     try {
+                    // Refuse before doing anything if the caller has already
+                    // given up — the thread may have been descheduled for
+                    // longer than the Dart deadline before reaching here.
+                    if (synchronized(inFlight) { cancelledAttempts.contains(attemptId) }) {
+                        mainHandler.post {
+                            result.error("connectionCancelled", "Cancelled", null)
+                        }
+                        return@Thread
+                    }
                     val socket = if (channel != null) {
                         openChannelSocket(device, channel, secure)
                     } else {
@@ -356,11 +395,35 @@ class FlutterClassicBluetoothPlugin :
                     }
                     pending = socket
 
-                    synchronized(inFlight) { inFlight.put(address, socket) }
+                    // Registered and re-checked under the same lock, so a
+                    // cancel cannot slip between the two.
+                    val abandoned = synchronized(inFlight) {
+                        if (cancelledAttempts.contains(attemptId)) true
+                        else { inFlight.put(attemptId, socket); false }
+                    }
+                    if (abandoned) {
+                        mainHandler.post {
+                            result.error("connectionCancelled", "Cancelled", null)
+                        }
+                        return@Thread
+                    }
+
                     try {
                         socket.connect()
                     } finally {
-                        synchronized(inFlight) { inFlight.remove(address) }
+                        synchronized(inFlight) { inFlight.remove(attemptId) }
+                    }
+
+                    // The window between leaving `inFlight` and entering
+                    // `connections` belonged to nobody. A cancel landing here
+                    // used to report false and let this thread register a
+                    // connection the caller had abandoned.
+                    if (synchronized(inFlight) { cancelledAttempts.contains(attemptId) }) {
+                        try { socket.close() } catch (_: IOException) {}
+                        mainHandler.post {
+                            result.error("connectionCancelled", "Cancelled", null)
+                        }
+                        return@Thread
                     }
 
                     val connId = nextConnectionId.getAndIncrement()
@@ -510,7 +573,7 @@ class FlutterClassicBluetoothPlugin :
             return
         }
 
-        permissionManager.ensurePermissions(context, result) {
+        permissionManager.ensurePermissions(context, result, PermissionManager.Action.connect) {
             try {
                 val serverId = nextServerId.getAndIncrement()
                 val server = BluetoothServerSocketWrapper(
@@ -567,7 +630,7 @@ class FlutterClassicBluetoothPlugin :
 
     private fun handleSetDiscoverable(call: MethodCall, result: Result) {
         val duration = call.argument<Int>("duration") ?: 120
-        permissionManager.ensurePermissions(context, result) {
+        permissionManager.ensurePermissions(context, result, PermissionManager.Action.advertise) {
             val intent = Intent(BluetoothAdapter.ACTION_REQUEST_DISCOVERABLE).apply {
                 putExtra(BluetoothAdapter.EXTRA_DISCOVERABLE_DURATION, duration)
             }
@@ -602,6 +665,16 @@ class FlutterClassicBluetoothPlugin :
     // ── Cleanup ────────────────────────────────────────────────────────
 
     private fun closeAll() {
+        // Attempts still blocked in `connect()` are resources too. Detaching
+        // without closing them left a thread holding the adapter with nothing
+        // left that could release it.
+        synchronized(inFlight) {
+            for (socket in inFlight.values) {
+                try { socket.close() } catch (_: IOException) {}
+            }
+            inFlight.clear()
+            cancelledAttempts.clear()
+        }
         synchronized(connections) {
             for (i in 0 until connections.size()) {
                 connections.valueAt(i).close()

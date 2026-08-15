@@ -22,23 +22,60 @@ class PermissionManager : PluginRegistry.RequestPermissionsResultListener {
         this.activity = activity
     }
 
-    fun hasPermissions(context: Context): Boolean {
-        return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-            ContextCompat.checkSelfPermission(context, Manifest.permission.BLUETOOTH_SCAN) == PackageManager.PERMISSION_GRANTED &&
-            ContextCompat.checkSelfPermission(context, Manifest.permission.BLUETOOTH_CONNECT) == PackageManager.PERMISSION_GRANTED
-        } else {
-            ContextCompat.checkSelfPermission(context, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED
-        }
-    }
+    /**
+     * What the caller is about to do.
+     *
+     * One permission set covered everything, which made supported adapters
+     * unconnectable. Talking to a device the user has already paired is not
+     * discovery: on Android 12+ it needs `BLUETOOTH_CONNECT` and not
+     * `BLUETOOTH_SCAN`, and below that it needs no runtime permission at all —
+     * `BLUETOOTH` and `BLUETOOTH_ADMIN` are install-time. Requiring fine
+     * location before listing bonded devices asked for the user's whereabouts
+     * to reach an adapter in their own car.
+     *
+     * `BLUETOOTH_ADVERTISE` was in the request set too, and a client never
+     * needs it.
+     */
+    enum class Action { connect, discover, advertise }
 
-    fun requestPermissions(result: MethodChannel.Result) {
+    /** The permissions [action] actually requires on this Android version. */
+    fun requiredPermissions(action: Action): Array<String> =
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+            when (action) {
+                Action.connect -> arrayOf(Manifest.permission.BLUETOOTH_CONNECT)
+                Action.discover -> arrayOf(
+                    Manifest.permission.BLUETOOTH_SCAN,
+                    Manifest.permission.BLUETOOTH_CONNECT,
+                )
+                // Only a device making *itself* findable needs this, which is
+                // the server side. A client was being asked for it too.
+                Action.advertise -> arrayOf(
+                    Manifest.permission.BLUETOOTH_ADVERTISE,
+                    Manifest.permission.BLUETOOTH_CONNECT,
+                )
+            }
+        } else {
+            when (action) {
+                // Install-time permissions cover these entirely.
+                Action.connect, Action.advertise -> emptyArray()
+                // Only discovery is gated behind location before Android 12.
+                Action.discover -> arrayOf(Manifest.permission.ACCESS_FINE_LOCATION)
+            }
+        }
+
+    fun hasPermissions(context: Context, action: Action = Action.discover): Boolean =
+        requiredPermissions(action).all {
+            ContextCompat.checkSelfPermission(context, it) == PackageManager.PERMISSION_GRANTED
+        }
+
+    fun requestPermissions(result: MethodChannel.Result, action: Action = Action.discover) {
         val act = activity
         if (act == null) {
             result.error("permissionDenied", "No activity available to request permissions", null)
             return
         }
 
-        if (hasPermissions(act)) {
+        if (hasPermissions(act, action)) {
             result.success(true)
             return
         }
@@ -52,24 +89,16 @@ class PermissionManager : PluginRegistry.RequestPermissionsResultListener {
         }
         pendingResult = result
 
-        val permissions = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-            arrayOf(
-                Manifest.permission.BLUETOOTH_SCAN,
-                Manifest.permission.BLUETOOTH_CONNECT,
-                Manifest.permission.BLUETOOTH_ADVERTISE
-            )
-        } else {
-            arrayOf(
-                Manifest.permission.ACCESS_FINE_LOCATION,
-                Manifest.permission.ACCESS_COARSE_LOCATION
-            )
-        }
-
-        ActivityCompat.requestPermissions(act, permissions, REQUEST_CODE)
+        ActivityCompat.requestPermissions(act, requiredPermissions(action), REQUEST_CODE)
     }
 
-    fun ensurePermissions(context: Context, result: MethodChannel.Result, action: () -> Unit) {
-        if (hasPermissions(context)) {
+    fun ensurePermissions(
+        context: Context,
+        result: MethodChannel.Result,
+        required: Action = Action.discover,
+        action: () -> Unit,
+    ) {
+        if (hasPermissions(context, required)) {
             action()
         } else {
             requestPermissions(object : MethodChannel.Result {
@@ -83,7 +112,7 @@ class PermissionManager : PluginRegistry.RequestPermissionsResultListener {
                 override fun notImplemented() {
                     result.notImplemented()
                 }
-            })
+            }, required)
         }
     }
 
