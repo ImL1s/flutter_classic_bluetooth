@@ -152,6 +152,7 @@ class FlutterClassicBluetoothPlugin :
             "unbondDevice" -> handleUnbondDevice(call, result)
 
             "connect" -> handleConnect(call, result)
+            "cancelConnect" -> handleCancelConnect(call, result)
             "disconnect" -> handleDisconnect(call, result)
             "write" -> handleWrite(call, result)
 
@@ -281,6 +282,30 @@ class FlutterClassicBluetoothPlugin :
     // ── Connection ─────────────────────────────────────────────────────
 
     @Suppress("MissingPermission")
+    /**
+     * Sockets currently blocked in `connect()`, by address.
+     *
+     * `BluetoothSocket.connect()` has no timeout and no interrupt. A Dart-side
+     * `Future.timeout` stops the caller waiting but leaves the native call
+     * blocked, holding the device against every later attempt until the app is
+     * restarted. Closing the socket is the only thing that unblocks it, and
+     * before this there was nothing to close it *with* — the socket did not
+     * enter `connections` until after a successful connect.
+     */
+    private val inFlight = HashMap<String, BluetoothSocket>()
+
+    /** Aborts an in-flight connect by closing the socket it is blocked on. */
+    private fun handleCancelConnect(call: MethodCall, result: Result) {
+        val address = call.argument<String>("address")
+        if (address == null) {
+            result.error("invalidAddress", "Address is required", null)
+            return
+        }
+        val socket = synchronized(inFlight) { inFlight.remove(address) }
+        try { socket?.close() } catch (_: IOException) {}
+        result.success(socket != null)
+    }
+
     private fun handleConnect(call: MethodCall, result: Result) {
         val address = call.argument<String>("address")
         val uuidStr = call.argument<String>("uuid") ?: BluetoothHelper.DEFAULT_UUID
@@ -307,6 +332,14 @@ class FlutterClassicBluetoothPlugin :
                     // Cancel discovery to speed up connection
                     adapter?.cancelDiscovery()
 
+                    // Held here so every exit that has not handed ownership
+                    // to `connections` can close it. Both catch blocks used to
+                    // report the failure and drop the socket on the floor:
+                    // each failed attempt leaked a file descriptor and left
+                    // Bluetooth stack state behind, and a caller walking a
+                    // three-tier fallback leaked three.
+                    var pending: BluetoothSocket? = null
+                    try {
                     val socket = if (channel != null) {
                         openChannelSocket(device, channel, secure)
                     } else {
@@ -317,8 +350,14 @@ class FlutterClassicBluetoothPlugin :
                             device.createInsecureRfcommSocketToServiceRecord(uuid)
                         }
                     }
+                    pending = socket
 
-                    socket.connect()
+                    synchronized(inFlight) { inFlight.put(address, socket) }
+                    try {
+                        socket.connect()
+                    } finally {
+                        synchronized(inFlight) { inFlight.remove(address) }
+                    }
 
                     val connId = nextConnectionId.getAndIncrement()
                     val connection = BluetoothConnectionWrapper(
@@ -330,6 +369,8 @@ class FlutterClassicBluetoothPlugin :
                     synchronized(connections) {
                         connections.put(connId, connection)
                     }
+                    // Ownership transferred: `handleDisconnect` can reach it now.
+                    pending = null
 
                     // Channel registration + result delivery must be on the main
                     // thread; do it before completing the Future so Dart can
@@ -340,6 +381,9 @@ class FlutterClassicBluetoothPlugin :
                         EventChannel(messenger, BluetoothHelper.connectionStateChannel(connId))
                             .setStreamHandler(connection.stateStreamHandler)
                         result.success(mapOf("id" to connId, "address" to address))
+                    }
+                    } finally {
+                        try { pending?.close() } catch (_: IOException) {}
                     }
                 } catch (e: IOException) {
                     mainHandler.post {
@@ -436,11 +480,14 @@ class FlutterClassicBluetoothPlugin :
             result.error("connectionFailed", "Connection not found: $id", null)
             return
         }
-        try {
-            connection.write(data)
-            result.success(null)
-        } catch (e: IOException) {
-            result.error("writeFailed", "Write failed: ${e.message}", null)
+        connection.writeAsync(data) { error ->
+            mainHandler.post {
+                if (error == null) {
+                    result.success(null)
+                } else {
+                    result.error("writeFailed", "Write failed: ${error.message}", null)
+                }
+            }
         }
     }
 

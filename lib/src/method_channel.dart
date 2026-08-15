@@ -172,6 +172,12 @@ class MethodChannelFlutterClassicBluetooth
   }
 
   @override
+  Future<bool> cancelConnect(String address) async {
+    final released = await _invoke<bool>('cancelConnect', {'address': address});
+    return released ?? false;
+  }
+
+  @override
   Future<void> disconnect(int id) async {
     await _invoke<void>('disconnect', {'id': id});
   }

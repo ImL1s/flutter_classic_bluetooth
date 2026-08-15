@@ -350,12 +350,41 @@ class FlutterClassicBluetooth {
     if (timeout == null) return future;
     return future.timeout(
       timeout,
-      onTimeout: () => throw BtcTimeoutException(
-        message: 'Connection to $address timed out',
-        timeoutMs: timeout.inMilliseconds,
-      ),
+      onTimeout: () async {
+        // `BluetoothSocket.connect()` has no timeout and no interrupt, so
+        // giving up on the Dart side used to leave the native call blocked —
+        // holding the device against every later attempt until the app was
+        // restarted, and letting a late success register a connection Dart
+        // could no longer close. Closing the socket is the only thing that
+        // releases it.
+        //
+        // Failure to cancel is not worth surfacing over the timeout itself,
+        // which is the more useful thing to tell the caller.
+        try {
+          await cancelConnect(address);
+        } on Object {
+          // Ignored deliberately; the timeout below is the real outcome.
+        }
+        throw BtcTimeoutException(
+          message: 'Connection to $address timed out',
+          timeoutMs: timeout.inMilliseconds,
+        );
+      },
     );
   }
+
+  /// Aborts an in-flight [connect] to [address].
+  ///
+  /// Returns true when a blocked attempt was found and released. Called
+  /// automatically when [connect]'s own [timeout] expires; exposed because a
+  /// caller running its own race may need it too.
+  ///
+  /// | Platform | Supported |
+  /// |----------|-----------|
+  /// | Android | Yes |
+  /// | Others | No — returns false |
+  Future<bool> cancelConnect(String address) =>
+      _platform.cancelConnect(address);
 
   /// Disconnects the connection with the given [id].
   ///

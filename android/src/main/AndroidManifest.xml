@@ -12,5 +12,13 @@
   <uses-permission android:name="android.permission.BLUETOOTH_CONNECT" />
   <uses-permission android:name="android.permission.BLUETOOTH_ADVERTISE" />
 
-  <uses-feature android:name="android.hardware.bluetooth" android:required="true" />
+  <!--
+    `required="false"`. `uses-feature` merges with OR, so a library declaring
+    this as required overrides an app that declares it optional — and Play then
+    filters the app off every device without Bluetooth hardware. That is a
+    decision for the app to make, not for a transport plugin one of its screens
+    happens to use. An app that genuinely needs Bluetooth can declare it
+    required itself.
+  -->
+  <uses-feature android:name="android.hardware.bluetooth" android:required="false" />
 </manifest>

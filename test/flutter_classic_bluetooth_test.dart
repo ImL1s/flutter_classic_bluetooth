@@ -65,6 +65,10 @@ class MockFlutterClassicBluetoothPlatform
   Stream<BtcBondState> bondState(String address) =>
       Stream.value(BtcBondState.bonded);
 
+  /// Overrides what `connect()` returns, for tests about the call itself
+  /// rather than about the connection it produces.
+  Future<BtcConnection> Function()? connectResponse;
+
   @override
   Future<BtcConnection> connect({
     required String address,
@@ -72,7 +76,18 @@ class MockFlutterClassicBluetoothPlatform
     bool secure = true,
     int? channel,
   }) {
+    final override = connectResponse;
+    if (override != null) return override();
     throw UnimplementedError('connect() mock not implemented');
+  }
+
+  /// Addresses this mock was asked to abort, in order.
+  final List<String> cancelledConnects = [];
+
+  @override
+  Future<bool> cancelConnect(String address) {
+    cancelledConnects.add(address);
+    return Future.value(true);
   }
 
   @override
@@ -1854,6 +1869,41 @@ void explicitChannelTests() {
           channel: 1,
         ),
         completes,
+      );
+    });
+  });
+
+  group('connect timeout', () {
+    test('aborts the native attempt rather than only giving up on it',
+        () async {
+      // `BluetoothSocket.connect()` has no timeout and no interrupt, so a
+      // Dart-side `Future.timeout` used to stop the caller waiting while the
+      // native call stayed blocked — holding the device against every later
+      // attempt until the app was restarted, and letting a late success
+      // register a connection Dart could no longer close. A caller walking a
+      // fallback cascade would stack one of these per tier.
+      final previous = FlutterClassicBluetoothPlatform.instance;
+      addTearDown(() => FlutterClassicBluetoothPlatform.instance = previous);
+
+      final mock = MockFlutterClassicBluetoothPlatform();
+      // Never completes, which is exactly what a wedged adapter looks like.
+      mock.connectResponse = () => Completer<BtcConnection>().future;
+      FlutterClassicBluetoothPlatform.instance = mock;
+
+      final btc = FlutterClassicBluetooth();
+      await expectLater(
+        btc.connect(
+          address: 'AA:BB:CC:DD:EE:FF',
+          timeout: const Duration(milliseconds: 50),
+        ),
+        throwsA(isA<BtcTimeoutException>()),
+      );
+
+      expect(
+        mock.cancelledConnects,
+        equals(['AA:BB:CC:DD:EE:FF']),
+        reason: 'the socket must be closed, because closing it is the only '
+            'thing that releases a blocked connect()',
       );
     });
   });

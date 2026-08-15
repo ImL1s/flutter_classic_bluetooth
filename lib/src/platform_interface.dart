@@ -154,6 +154,14 @@ abstract class FlutterClassicBluetoothPlatform extends PlatformInterface {
     throw UnimplementedError('connect() has not been implemented.');
   }
 
+  /// Aborts an in-flight [connect] to [address].
+  ///
+  /// Returns true if a connection attempt was actually blocked and has been
+  /// released. Android only; other platforms return false.
+  Future<bool> cancelConnect(String address) {
+    throw UnimplementedError('cancelConnect() has not been implemented.');
+  }
+
   /// Disconnects the connection with the given [id].
   Future<void> disconnect(int id) {
     throw UnimplementedError('disconnect() has not been implemented.');
