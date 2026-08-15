@@ -6,6 +6,13 @@ analyzer:
     - reference/**
     - local_test/**
     - example/integration_test/esp32_live_test.dart
+    - build/**
+    - android/**
+    - ios/**
+    - web/**
+    - windows/**
+    - macos/**
+    - linux/**
 
 # Additional information about this file can be found at
 # https://dart.dev/guides/language/analysis-options

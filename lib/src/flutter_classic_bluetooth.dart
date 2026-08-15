@@ -309,19 +309,44 @@ class FlutterClassicBluetooth {
   /// | Linux | Yes |
   /// | iOS | ⚠️ (MFi accessories via protocol string) |
   ///
+  /// [channel] connects to an explicit RFCOMM channel instead of looking the
+  /// service up by [uuid]. Use it for devices that do not publish a usable SPP
+  /// service record — a large family of cheap serial adapters, ELM327 OBD-II
+  /// clones especially, simply listen on channel 1 and advertise nothing, so
+  /// they pair normally and then cannot be connected to by UUID at all.
+  ///
+  /// [uuid] is ignored when [channel] is given. Android only: the other
+  /// platforms have no equivalent, and passing it there throws.
+  ///
   /// Throws [BtcAddressException] if [address] is not a valid MAC.
   /// Throws [BtcUuidException] if [uuid] is not a valid UUID.
   /// Throws [BtcTimeoutException] if [timeout] elapses first.
+  /// Throws [ArgumentError] if [channel] is outside 1-30.
   Future<BtcConnection> connect({
     required String address,
     String uuid = BtcUuid.spp,
     bool secure = true,
     Duration? timeout,
+    int? channel,
   }) {
     _validateAddress(address);
-    _validateUuid(uuid);
-    final future =
-        _platform.connect(address: address, uuid: uuid, secure: secure);
+    if (channel == null) {
+      _validateUuid(uuid);
+    } else if (channel < 1 || channel > 30) {
+      // Rejected here rather than at the socket, so the caller gets a clear
+      // programming error instead of a connection failure to diagnose.
+      throw ArgumentError.value(
+        channel,
+        'channel',
+        'RFCOMM channel must be between 1 and 30',
+      );
+    }
+    final future = _platform.connect(
+      address: address,
+      uuid: uuid,
+      secure: secure,
+      channel: channel,
+    );
     if (timeout == null) return future;
     return future.timeout(
       timeout,

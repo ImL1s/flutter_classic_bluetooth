@@ -32,3 +32,5 @@ example/integration_test/esp32_live_test.dart
 
 # Internal implementation plan (never ship).
 doc/plan.md
+
+.omc/

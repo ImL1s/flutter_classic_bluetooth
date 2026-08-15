@@ -140,11 +140,16 @@ abstract class FlutterClassicBluetoothPlatform extends PlatformInterface {
   /// Connects to the device at [address] using the given [uuid].
   ///
   /// If [secure] is `true` (default), uses authenticated/encrypted RFCOMM.
+  ///
+  /// [channel] connects to an explicit RFCOMM channel and skips SDP entirely.
+  /// [uuid] is ignored when it is set. Android only.
+  ///
   /// Returns a [BtcConnection] for reading/writing data.
   Future<BtcConnection> connect({
     required String address,
     String uuid = BtcUuid.spp,
     bool secure = true,
+    int? channel,
   }) {
     throw UnimplementedError('connect() has not been implemented.');
   }

@@ -153,11 +153,15 @@ class MethodChannelFlutterClassicBluetooth
     required String address,
     String uuid = BtcUuid.spp,
     bool secure = true,
+    int? channel,
   }) async {
     final result = await _invoke<Map>('connect', {
       'address': address,
       'uuid': uuid,
       'secure': secure,
+      // Omitted rather than sent as null, so older native builds that do not
+      // know the key behave exactly as before.
+      if (channel != null) 'channel': channel,
     });
     final map = Map<dynamic, dynamic>.from(result!);
     return BtcConnection(

@@ -4,6 +4,7 @@ import android.app.Activity
 import android.bluetooth.BluetoothAdapter
 import android.bluetooth.BluetoothDevice
 import android.bluetooth.BluetoothManager
+import android.bluetooth.BluetoothSocket
 import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
@@ -23,6 +24,7 @@ import io.flutter.plugin.common.MethodChannel
 import io.flutter.plugin.common.MethodChannel.MethodCallHandler
 import io.flutter.plugin.common.MethodChannel.Result
 import java.io.IOException
+import java.lang.reflect.InvocationTargetException
 import java.util.UUID
 
 class FlutterClassicBluetoothPlugin :
@@ -283,6 +285,7 @@ class FlutterClassicBluetoothPlugin :
         val address = call.argument<String>("address")
         val uuidStr = call.argument<String>("uuid") ?: BluetoothHelper.DEFAULT_UUID
         val secure = call.argument<Boolean>("secure") ?: true
+        val channel = call.argument<Int>("channel")
 
         if (address == null) {
             result.error("invalidAddress", "Address is required", null)
@@ -304,11 +307,15 @@ class FlutterClassicBluetoothPlugin :
                     // Cancel discovery to speed up connection
                     adapter?.cancelDiscovery()
 
-                    val uuid = UUID.fromString(uuidStr)
-                    val socket = if (secure) {
-                        device.createRfcommSocketToServiceRecord(uuid)
+                    val socket = if (channel != null) {
+                        openChannelSocket(device, channel, secure)
                     } else {
-                        device.createInsecureRfcommSocketToServiceRecord(uuid)
+                        val uuid = UUID.fromString(uuidStr)
+                        if (secure) {
+                            device.createRfcommSocketToServiceRecord(uuid)
+                        } else {
+                            device.createInsecureRfcommSocketToServiceRecord(uuid)
+                        }
                     }
 
                     socket.connect()
@@ -350,6 +357,54 @@ class FlutterClassicBluetoothPlugin :
                 name = "bt-connect"
                 start()
             }
+        }
+    }
+
+    /**
+     * Opens an RFCOMM socket on an explicit channel, bypassing SDP.
+     *
+     * Both public factory methods — `createRfcommSocketToServiceRecord` and its
+     * insecure twin — perform a service-discovery lookup and fail when the
+     * device does not publish a usable SPP record. A large family of cheap
+     * serial adapters, ELM327 OBD-II clones in particular, simply listen on
+     * channel 1 and advertise nothing: they pair normally and then cannot be
+     * connected to at all.
+     *
+     * Android does expose `createRfcommSocket(int)` and
+     * `createInsecureRfcommSocket(int)` on [BluetoothDevice], but they are
+     * hidden from the SDK, so reflection is the only route. They have been
+     * reachable this way for many releases and are what OBD-II apps on the
+     * platform rely on. Should a future release restrict them, that is reported
+     * plainly rather than degrading into a generic connection failure.
+     */
+    @Throws(IOException::class)
+    private fun openChannelSocket(
+        device: BluetoothDevice,
+        channel: Int,
+        secure: Boolean,
+    ): BluetoothSocket {
+        require(channel in 1..30) { "RFCOMM channel must be 1-30, got $channel" }
+        val methodName =
+            if (secure) "createRfcommSocket" else "createInsecureRfcommSocket"
+        try {
+            val method =
+                device.javaClass.getMethod(methodName, Int::class.javaPrimitiveType)
+            return method.invoke(device, channel) as BluetoothSocket
+        } catch (e: InvocationTargetException) {
+            // Unwrap, so the caller sees the IOException the socket layer threw
+            // rather than a reflection wrapper around it.
+            val cause = e.cause
+            if (cause is IOException) throw cause
+            throw IOException(
+                "Failed to open RFCOMM channel $channel: ${cause?.message ?: e.message}",
+                e,
+            )
+        } catch (e: Exception) {
+            throw IOException(
+                "This Android build does not expose $methodName(int); " +
+                    "explicit-channel connections are unavailable here",
+                e,
+            )
         }
     }
 
@@ -396,6 +451,7 @@ class FlutterClassicBluetoothPlugin :
         val uuidStr = call.argument<String>("uuid") ?: BluetoothHelper.DEFAULT_UUID
         val serviceName = call.argument<String>("serviceName") ?: "FlutterBluetooth"
         val secure = call.argument<Boolean>("secure") ?: true
+        val channel = call.argument<Int>("channel")
 
         val bt = adapter
         if (bt == null) {

@@ -1,3 +1,23 @@
+## 0.1.9
+
+### Added
+* `connect(channel:)` — connect to an explicit RFCOMM channel, skipping SDP.
+
+  Both existing paths, `createRfcommSocketToServiceRecord` and its insecure
+  twin, perform a service-discovery lookup and fail when the device publishes
+  no usable SPP record. A large family of cheap serial adapters — ELM327 OBD-II
+  clones above all — simply listen on channel 1 and advertise nothing, so they
+  pair normally and then cannot be connected to at all.
+
+  When `channel` is given, `uuid` is ignored and the socket is opened through
+  Android's hidden `createRfcommSocket(int)` / `createInsecureRfcommSocket(int)`.
+  Out-of-range values are refused before any I/O, and a build that does not
+  expose those methods reports that plainly rather than as a generic connection
+  failure.
+
+  Android only. The argument is omitted from the platform call when unset, so
+  existing behaviour is byte-for-byte unchanged.
+
 ## 0.1.8
 
 ### Changed

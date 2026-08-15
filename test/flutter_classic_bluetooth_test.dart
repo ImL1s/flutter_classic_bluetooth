@@ -70,6 +70,7 @@ class MockFlutterClassicBluetoothPlatform
     required String address,
     String uuid = BtcUuid.spp,
     bool secure = true,
+    int? channel,
   }) {
     throw UnimplementedError('connect() mock not implemented');
   }
@@ -106,6 +107,7 @@ class MockFlutterClassicBluetoothPlatform
 }
 
 void main() {
+  explicitChannelTests();
   TestWidgetsFlutterBinding.ensureInitialized();
 
   // ── Platform Interface Tests ──────────────────────────────────────────
@@ -1783,4 +1785,76 @@ class _ScanPlatform extends MockFlutterClassicBluetoothPlatform {
     // A follow-up sighting of F1 with only a stronger RSSI (no name).
     controller.add(const BtcDevice(address: 'AA:BB:CC:DD:EE:F1', rssi: -35));
   }
+}
+
+/// Connecting to an explicit RFCOMM channel.
+///
+/// Both UUID-based factory methods perform an SDP lookup and fail when the
+/// device publishes no usable SPP record. A large family of cheap serial
+/// adapters — ELM327 OBD-II clones above all — listen on channel 1 and
+/// advertise nothing, so they pair normally and cannot be connected to by UUID
+/// at all. `channel:` is the escape hatch for exactly those devices.
+void explicitChannelTests() {
+  group('connect(channel:)', () {
+    late MethodChannelFlutterClassicBluetooth platform;
+    late List<MethodCall> log;
+
+    setUp(() {
+      platform = MethodChannelFlutterClassicBluetooth();
+      log = [];
+      TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+          .setMockMethodCallHandler(platform.methodChannel,
+              (MethodCall call) async {
+        log.add(call);
+        if (call.method == 'connect') {
+          return {'id': 1, 'address': call.arguments['address']};
+        }
+        return null;
+      });
+    });
+
+    tearDown(() {
+      TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+          .setMockMethodCallHandler(platform.methodChannel, null);
+    });
+
+    test('is forwarded to the platform', () async {
+      await platform.connect(address: '11:22:33:44:55:66', channel: 1);
+      expect(log.single.arguments['channel'], 1);
+    });
+
+    test('is omitted entirely when not given', () async {
+      // Absent rather than null, so a native build that predates this key
+      // behaves exactly as it did before.
+      await platform.connect(address: '11:22:33:44:55:66');
+      expect(log.single.arguments.containsKey('channel'), isFalse);
+    });
+
+    test('an out-of-range channel is refused before any I/O', () {
+      // A programming error should read as one, not as a connection failure to
+      // be diagnosed against the adapter.
+      final btc = FlutterClassicBluetooth();
+      for (final bad in [0, -1, 31]) {
+        expect(
+          () => btc.connect(address: '11:22:33:44:55:66', channel: bad),
+          throwsA(isA<ArgumentError>()),
+          reason: 'channel $bad',
+        );
+      }
+    });
+
+    test('the UUID is not validated when a channel is given', () async {
+      // The UUID is unused on this path, so rejecting a malformed one would
+      // block a call that is perfectly well formed.
+      final btc = FlutterClassicBluetooth();
+      await expectLater(
+        btc.connect(
+          address: '11:22:33:44:55:66',
+          uuid: 'not-a-uuid',
+          channel: 1,
+        ),
+        completes,
+      );
+    });
+  });
 }
