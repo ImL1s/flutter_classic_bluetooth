@@ -62,6 +62,27 @@ class BluetoothConnectionWrapper(
         Thread(runnable, "bt-write-$id").apply { isDaemon = true }
     }
 
+    /**
+     * Completion callbacks for writes that have been accepted but not yet run.
+     *
+     * `shutdownNow()` discards queued tasks, and a discarded task never invokes
+     * its callback — so the Dart future for that write never completed. The
+     * app's command chain is serial: one unfinished write parks every later
+     * command behind it, and a fault-code scan sits on its spinner for good.
+     * Closing has to answer every write it accepted.
+     */
+    private val pendingWrites = mutableListOf<PendingWrite>()
+
+    /** A write's completion, answerable exactly once. */
+    private class PendingWrite(private val onComplete: (IOException?) -> Unit) {
+        private val done = AtomicBoolean(false)
+        fun complete(error: IOException?): Boolean {
+            if (!done.compareAndSet(false, true)) return false
+            onComplete(error)
+            return true
+        }
+    }
+
     private fun startReading() {
         // A second `onListen` — a Dart-side re-subscribe — used to start
         // another reader on the same InputStream. Two threads reading one
@@ -116,18 +137,28 @@ class BluetoothConnectionWrapper(
      * command chain depends on.
      */
     fun writeAsync(data: ByteArray, onComplete: (IOException?) -> Unit) {
+        // Answered exactly once, by whichever of the writer thread or
+        // `close()` reaches it first.
+        val entry = PendingWrite(onComplete)
+        synchronized(pendingWrites) { pendingWrites.add(entry) }
+
+        fun finish(error: IOException?) {
+            synchronized(pendingWrites) { pendingWrites.remove(entry) }
+            entry.complete(error)
+        }
+
         try {
             writer.execute {
                 try {
                     outputStream.write(data)
                     outputStream.flush()
-                    onComplete(null)
+                    finish(null)
                 } catch (e: IOException) {
-                    onComplete(IOException("Failed to write to connection $id: ${e.message}"))
+                    finish(IOException("Failed to write to connection $id: ${e.message}"))
                 }
             }
         } catch (_: RejectedExecutionException) {
-            onComplete(IOException("Connection $id is closed"))
+            finish(IOException("Connection $id is closed"))
         }
     }
 
@@ -135,8 +166,18 @@ class BluetoothConnectionWrapper(
         requestedClosing = true
         emitDisconnected()
         // Shut the writer down before closing the socket so a queued write
-        // cannot fire against a closed stream.
+        // cannot fire against a closed stream — then answer every write that
+        // was accepted and will now never run, because a caller waiting on one
+        // of those waits forever.
         writer.shutdownNow()
+        val orphaned = synchronized(pendingWrites) {
+            val copy = pendingWrites.toList()
+            pendingWrites.clear()
+            copy
+        }
+        for (entry in orphaned) {
+            entry.complete(IOException("Connection $id closed before the write ran"))
+        }
         try { socket.close() } catch (_: IOException) {}
         readThread?.interrupt()
         readThread = null
