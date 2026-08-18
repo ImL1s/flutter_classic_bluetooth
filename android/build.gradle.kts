@@ -1,8 +1,13 @@
 group = "com.flutter_classic_bluetooth.flutter_classic_bluetooth"
 version = "1.0-SNAPSHOT"
 
+// The Kotlin Gradle Plugin is deliberately absent. Flutter 3.44+ supplies
+// Kotlin itself ("Built-in Kotlin"), and a plugin that applies its own KGP now
+// warns — "Future versions of Flutter will fail to build if your app uses
+// plugins that apply KGP" — and will eventually break every app that depends
+// on it. See
+// https://docs.flutter.dev/release/breaking-changes/migrate-to-built-in-kotlin/for-plugin-authors
 buildscript {
-    val kotlinVersion = "2.2.20"
     repositories {
         google()
         mavenCentral()
@@ -10,7 +15,6 @@ buildscript {
 
     dependencies {
         classpath("com.android.tools.build:gradle:8.11.1")
-        classpath("org.jetbrains.kotlin:kotlin-gradle-plugin:$kotlinVersion")
     }
 }
 
@@ -23,7 +27,6 @@ allprojects {
 
 plugins {
     id("com.android.library")
-    id("kotlin-android")
 }
 
 android {
@@ -34,10 +37,6 @@ android {
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_17
         targetCompatibility = JavaVersion.VERSION_17
-    }
-
-    kotlinOptions {
-        jvmTarget = JavaVersion.VERSION_17.toString()
     }
 
     sourceSets {
@@ -67,6 +66,12 @@ android {
                 }
             }
         }
+    }
+}
+
+kotlin {
+    compilerOptions {
+        jvmTarget = org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_17
     }
 }
 

@@ -18,8 +18,12 @@ screenshots:
     path: images/logo.png
 
 environment:
-  sdk: '>=3.3.0 <4.0.0'
-  flutter: '>=3.3.0'
+  sdk: '>=3.12.0 <4.0.0'
+  # Raised from 3.3.0 by the Built-in Kotlin migration: `kotlin.compilerOptions`
+  # needs KGP >= 2.0, which Flutter only ships from 3.44. The alternative was to
+  # keep applying KGP conditionally for AGP < 9, which preserves old Flutter at
+  # the cost of carrying the deprecated path the warning is about.
+  flutter: '>=3.44.0'
 
 dependencies:
   flutter:
